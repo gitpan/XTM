@@ -55,9 +55,10 @@ Please refer to the online documentation
 =head1 AUTHOR INFORMATION
 
 Copyright 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
- 
+
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+http://www.perl.com/perl/misc/Artistic.html
 
 =cut
 

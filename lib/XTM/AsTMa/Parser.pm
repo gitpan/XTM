@@ -8,7 +8,7 @@ require AutoLoader;
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 use Data::Dumper;
 use Parse::RecDescent;
@@ -225,34 +225,56 @@ sub handle_astma {
   $self->handle_begin();
 
   my $prev_text_length;
-  my $line = 1;
+  my $line = 0;
   while ($prev_text_length = length ($text)) {            # as long as there is something
-    while ($text =~ s/^\s*[\n\r]//s) { $line++ };         # get rid of empty line
+    while ($text =~ s/^\s*?[\n\r]//s) { $line++ };         # get rid of empty line
 
     if (!$text) {
-      last;
+	last;
+    } elsif ($text =~ s/^%log\s*(.*?)[\n\r]//s) {
+	$line++;
+	warn "XTM::AsTMa: Log at line $line". ($1 ? " $1" : '');
+    } elsif ($text =~ /^%cancel/) {
+	$line++;
+	warn "XTM::AsTMa: Cancelled at line $line";
+	last;
     } elsif($text =~ s/^(\w+)\s*:\s*([\w\-]+)\s*[\n\r]//s) { # find encoding
-      $line++;
-      $self->handle_encoding ($1, $2);
+	$line++;
+	$self->handle_encoding ($1, $2);
     } elsif ($text =~ /^\#/) {                            # collect comments on the way
       my @comments;
       while ($text =~ s/^\#(.*?)[\n\r]//s) {
 	$line++;
 	push @comments, $1;
       };
-
       $self->handle_comment (join ("\n    ", grep (($_ =~ s/-->/-=>/g, $_), @comments))) if @comments;
     } else {                                              # try to parse in topic or association
       my $block;
-      while ($text =~ s/^([^\#\n\r][[:blank:]]*[\w\-].*?[\n\r])//s) {
+      my $start_line = $line;
+      while (1) {
+	last if $text =~ /^[\#\%\n\r]/s; # comment, directives
+	last if $text =~ /^\s*[\n\r]/s;  # lines containing only spaces
+	last unless $text;
+	$text =~ s/^([[:blank:]]*.*?[\n\r])//s;
 	$line++;
-	$block .= $1;
+        my $l = $1;
+        $l =~ s/\s+#.*//; # anything which start with <blank>#, all blanks are ignored
+	$block .= $l;
       }
+
+#print  "Check block:----$block----\n-----";
+
+#      while ($text =~ s/^([^\#\n\r\s][[:blank:]]*.*?[\n\r])//s) {
+#	$line++;
+#        my $l = $1;
+#        $l =~ s/#.*//;
+#	$block .= $1;
+#      }
       $block =~ s/\\[\n\r]//g; # merge \<cr> lines
       eval {
 	my $c = $parser->startrule (\$block);
-	die "XTM::AsTMa: Found unparseable '$block' before line $line"    unless $block =~ /^\s*$/s;
-	die "XTM::AsTMa: no component around '$block' before line $line"  unless defined $c;
+	die "XTM::AsTMa: Found unparseable '$block' between lines [$start_line, $line]"    unless $block =~ /^\s*$/s;
+	die "XTM::AsTMa: no component around '$block' between lines [$start_line, $line]"  unless defined $c;
 	$self->handle_component ($c);
       }; if ($@) {
 	die $@;
@@ -266,8 +288,8 @@ sub handle_astma {
 
     $self->handle_trailer_start();
 
-    print STDERR "\ndefined: ", join (",", @{$self->{defined}})     if $log_level >= 2;
-    print STDERR "\nmentioned: ", join (",", @{$self->{mentioned}}) if $log_level >= 2;
+    print STDERR "\ndefined: ",   ($self->{defined}   ? join (",", @{$self->{defined}})   : 'none') if $log_level >= 2;
+    print STDERR "\nmentioned: ", ($self->{mentioned} ? join (",", @{$self->{mentioned}}) : 'none') if $log_level >= 2;
     
     foreach my $href (@{$self->{mentioned}}) {
       use URI;

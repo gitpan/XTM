@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
 
-use Test::More tests => 34;
+use Test::More tests => 38;
 
 use XTM;
 use XTM::Memory;
@@ -27,6 +27,8 @@ require_ok( 'XTM::AsTMa' );
 
 
 
+
+
 die_ok ('ttt (bbb)
 in: 
 ', 1, 'empty in');
@@ -34,6 +36,7 @@ in:
 die_ok ('(aaa)
 aaa :
 ', 1, 'empty role');
+
 
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
@@ -49,9 +52,6 @@ in: bookstore/(book|image)
 '));
 is (scalar @{$tm->topics}, 1, 'XPath expression in in (had problems in the past)');
 
-#print Dumper $tm;
-#exit;
-
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
 # comment1
@@ -62,7 +62,6 @@ aaa
 '));
 is ($tm->id, 'myname', 'test id');
 
-
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
 topic1
@@ -70,7 +69,6 @@ topic1
 topic2
 '));
 is (@{$tm->topics()}, 2, 'empty line contains blanks');
-
 
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
@@ -120,6 +118,18 @@ is (@{$tm->topics ('occurrence regexps /rumsti/')}, 1, 'test topic 5');
 is (@{$tm->topics ('occurrence regexps /bla/')},    1, 'test topic 6');
 is (@{$tm->topics ('occurrence regexps /123 456/')},1, 'test topic 7');
 is (@{$tm->associations()},                         0, 'test topic 8');
+
+#-----------------------------------------------------------------------
+# test topic (comment inline)
+$tm = new XTM (tie => new XTM::AsTMa (text => '
+aaa
+bn: AAA  # comment
+bn: AAA# no-comment
+oc: http://rumsti#no-comment'));
+is (@{$tm->topics ('baseName regexps /AAA$/')},          1, 'test comment in baseName');
+is (@{$tm->topics ('baseName regexps /comment$/')},      1, 'test comment in baseName 2');
+is (@{$tm->topics ('occurrence regexps /rumsti/')},      1, 'test comment in occurrence');
+is (@{$tm->topics ('occurrence regexps /^comment/')},    0, 'test comment in occurrence 2');
 
 #-----------------------------------------------------------------------
 # test topic (scope)

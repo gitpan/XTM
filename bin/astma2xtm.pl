@@ -1,17 +1,20 @@
 #!/usr/bin/perl
 
-package XTMFormatter;
+use strict;
 
+package XTMFormatter;
 
 use XTM::AsTMa::Parser;
 use XTM::Namespaces;
 use XTM;
 
-use vars qw(@ISA $undefined_topics $log_level);
+use vars qw(@ISA $undefined_topics $log_level $VERSION);
 @ISA = qw(XTM::AsTMa::Parser);
 
 $undefined_topics = 'auto_complete';
 $log_level        = 0;
+
+$VERSION = "0.3";
 
 use IO::String;
 use XML::Writer;
@@ -59,7 +62,7 @@ sub handle_undefined_topic {
     }
     $self->handle_component ($t);
   } elsif ($undefined_topics eq 'warn') {
-    warn "XTM::astma2xtm: topic '".$u->fragment."' mentioned but not defined\n";
+    warn "XTM::astma2xtm: topic '".$tid."' mentioned but not defined\n";
   } else {
     # ignore
   }
@@ -95,7 +98,7 @@ sub handle_encoding {
   $self->{writer}->xmlDecl($encoding);
   $self->{writer}->startTag([ $XTM::Namespaces::topicmap_ns, "topicMap"],
 			    "id"          => $name,
-			    [ $XTM::Namespaces::xlink_ns, "href" ] => "",
+#			    [ $XTM::Namespaces::xlink_ns, "href" ] => "",
 			   );
   $self->{encoding_found} = 1;
 }
@@ -144,27 +147,24 @@ at
 and produces on STDOUT an XTM representation of this map.
 All conversion problems and warnings will go to STDERR.
 
-Type 'help' within this shell to get an overview over available
-commands.
-
 =head1 OPTIONS
 
 Following command line switches are understood by the program:
 
 =over
 
-=item B<help> 
+=item B<help>
 
 ...does hopefully what you would expect.
 
-=item B<undefined_topics> (default: auto_complete) 
+=item B<undefined-topics> (default: auto-complete)
 
 This directive controls how the parser will react on topics which are mentioned but never defined
 in this AsTMa instance:
 
 =over
 
-=item auto_complete will cause the topics to be created with some reasonable default baseName,
+=item auto-complete will cause the topics to be created with some reasonable default baseName,
 
 =item warn will create a warning for each use on STDERR,
 
@@ -174,14 +174,14 @@ in this AsTMa instance:
 
 =cut
 
-$XTMFormatter::auto_complete = 0;
+my $undefined_topics = "auto-complete";
 
 =pod
 
-=item B<copy-ids> (default: no)
+=item B<copy-ids> (default: off)
 
-If on, then the converter will copy all IDs, not only of the topics into the XTM code.
-Currently not implemented.
+If on, then the converter will copy all IDs, not only those of the topics into the XTM code.
+Currently B<not> implemented.
 
 =cut
 
@@ -189,7 +189,7 @@ my $copy_ids = 0;
 
 =pod
 
-=item B<basename-generation> (default: remove blanks)
+=item B<basename-generation> (default: make-blanks)
 
 This feature will allow to customize B<how> the basename is derived
 from the topic information. Currently, all dashes will be converted into
@@ -197,15 +197,15 @@ blanks.
 
 =cut
 
-my $basename_generation = 0;
+my $basename_generation = 'make-blanks';
 
 =pod
 
-=item B<copy-default-psi> (default: 1) 
+=item B<copy-default-psi> (default: on)
 
-By default, the PSIs of default type, default scope are copied into the XTM code. As any
-XTM processor should add them when reading the XTM instance, they could be dropped without
-a loss of information
+By default, the PSIs of default type and default scope are copied into the XTM code. As any
+XTM processor should automatically add them when reading an XTM instance, they can be suppressed
+without any loss of information.
 
 =cut
 
@@ -213,7 +213,7 @@ my $copy_default_psi = 1;
 
 =pod
 
-=item B<log-level> (default: 0) 
+=item B<log-level> (default: 0)
 
 The log level determines the verbosity of the program for the STDERR output. This is for debugging mainly.
 
@@ -223,9 +223,9 @@ my $log_level = 0;
 
 =pod
 
-=item B<about> (default: no) 
+=item B<about> (default: off)
 
-The program will print out some information about the software itself, (version) and 
+The program will print out some information about the software itself, (version) and
 will terminate thereafter.
 
 =cut
@@ -244,9 +244,10 @@ Please refer to the online documentation
 =head1 AUTHOR INFORMATION
 
 Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
- 
+
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+http://www.perl.com/perl/misc/Artistic.html
 
 =cut
 
@@ -256,33 +257,33 @@ use Data::Dumper;
 
 
 my $help;
-if (!GetOptions ('help|?|man'          => \$help,
-		 'undefined-topics=s'  => \$XTMFormatter::undefined_topics,
-		 'copy-ids'            => \$copy_ids,
-		 'basename-generation' => \$basename_generation,
-		 'copy-default-psi'    => \$copy_default_psi,
-		 'log-level=i'         => \$log_level,
-		 'about!'              => \$about,
+if (!GetOptions ('help|?|man'            => \$help,
+		 'undefined-topics=s'    => \$undefined_topics,
+		 'copy-ids!'             => \$copy_ids,
+		 'basename-generation=s' => \$basename_generation,
+		 'copy-default-psi!'     => \$copy_default_psi,
+		 'log-level=i'           => \$log_level,
+		 'about!'                => \$about,
 		) || $help) {
   pod2usage(-exitstatus => 0, -verbose => 2);
 }
 
-$XTMFormatter::log_level = $log_level;
-
-die "Copy ids currently not implemented" if $copy_ids;
-die "Customizable basename generation currently not implemented" if $basename_generation;
-die "Suppressing PSIs is not yet supported." unless $copy_default_psi;
+die "Copy ids currently not implemented"                         if $copy_ids;
+die "Customizable basename generation currently not implemented" if $basename_generation ne "make-blanks";
+die "Suppressing PSIs is not yet supported."                     unless $copy_default_psi;
 
 if ($about) {
   use XTM;
   print STDOUT "AsTMa Topic Map Converter ($VERSION)
 XTM ($XTM::VERSION)
-XTM::AsTMa ($XTM::AsTMa)
-XTM::AsTMa::Parser ($XTM::AsTMa::Parser)
+XTM::AsTMa ($XTM::AsTMa::VERSION)
+XTM::AsTMa::Parser ($XTM::AsTMa::Parser::VERSION)
 ";
   exit;
 }
 
+$XTMFormatter::log_level     = $log_level;
+$XTMFormatter::auto_complete = $undefined_topics eq 'auto-complete' ? 1 : 0;
 
 my $buffer = '';
 my $output = IO::String->new ($buffer);
@@ -305,7 +306,8 @@ my $fo     = new XTMFormatter($writer);
 
 undef $/; # read all
 $fo->handle_astma (text          => <>,
-		   log_level     => $log_level);
+		   log_level     => $log_level,
+		   auto_complete => ($XTMFormatter::undefined_topics eq 'auto_complete'));
 $output->close();
 print $buffer;
 

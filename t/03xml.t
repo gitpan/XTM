@@ -1,9 +1,9 @@
 # -*-perl-*-
 use strict;
- 
-use Test::More tests => 34;
 
-my $die_problem = 1; # XML::LibXML (or my usage of it) has a problem, mask out some tests
+use Test::More tests => 38;
+
+my $die_problem = 0; # XML::LibXML (or my usage of it) has a problem, mask out some tests
 
 use XTM;
 use Data::Dumper;

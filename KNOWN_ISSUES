@@ -1,0 +1,3 @@
+xtm.pl: 	if a (AsTMa or XTM) topic map has changed in the file system, a "load" will still
+		use the old version (cached in XTM::Virtual)
+astma2xtm.pl:	VERSIONs do not show up correctly

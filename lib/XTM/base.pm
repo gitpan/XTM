@@ -2,7 +2,7 @@ package XTM::base;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.28';
+$VERSION = '0.30';
 
 =pod
 
@@ -47,11 +47,11 @@ Following programs come with this distribution:
 
 A simple text interface to load & query topic maps locally.
 
-=item L<astmaxtm>.pl
+=item L<astma2xtm>.pl
 
 An AsTMa= to XTM converter.
 
-=item L<prettify>.pl
+=item L<prettifyxtm>.pl
 
 A filter which formats any incoming XTM stream into a nested XML document.
 
@@ -176,9 +176,10 @@ generic class definition
 =head1 AUTHOR INFORMATION
 
 Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
- 
+
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+http://www.perl.com/perl/misc/Artistic.html
 
 =cut
 

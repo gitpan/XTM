@@ -204,7 +204,8 @@ sub sync_in {
 #						RequiredFeatures => {
 #								     'http://xml.org/sax/features/validation' => 1,
 #								    }
-);
+						);
+#  print "I'm using ", ref ($parser), "\n";
 # this is to silence Perl in -w context: I use undef values sometimes in expressions and I'm happy with it
   use Carp ();
   local $SIG{__WARN__} = sub {};
@@ -263,9 +264,10 @@ L<XTM>
 =head1 AUTHOR INFORMATION
 
 Copyright 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
- 
+
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+http://www.perl.com/perl/misc/Artistic.html
 
 =cut
 

@@ -1,10 +1,21 @@
 Revision history for Perl extension XTM.
+0.30  Wed May  8 17:50:02 EST 2002
+	- removed dependency of File::Slurp (weird version number), reported by az
+	- fixed bug in incorrectly reporting line numbers in AsTMa::Parser, reported by az
+	- various documention bugs fixed (still much to do)
+	- astma2xtm.pl: some minor changes in switches (see man page)
+	- AsTMa parser: local comments MUST have at least one blank before the '#' (see docs, may break some maps, sorry)
+	- activated tests (old XML::LibXML core dump error has disappeared)
+
+0.29  Feb 25 07:23 EST 2002
+	- Debian test version
 
 0.28  Wed Jan 16 22:17:57 EST 2002
 	- fixed empty character handling in AsTMa::Parser, added line number for better debugging
 	- added more accurate dependencies
 	- added some explanation to the README
 	- fixed XTM::XML::MemoryBuilder to work with SAX::Expat, LibXML::SAX and PurePerl (still a problem there)
+	- AsTMa parser: added directives %cancel, %warn
 
 0.27  Mon Jan 14 12:23:41 EST 2002
 	- added missing XTM::AsTMA::MemoryBuilder

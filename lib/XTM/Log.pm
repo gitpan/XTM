@@ -9,12 +9,9 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( flog elog);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 use vars qw($logfile $loglevel);
-
-$logfile  = 'xtmd.log';
-$loglevel = 1;
 
 =pod
 
@@ -41,7 +38,19 @@ Following variables can be set to control the behavior of this package:
 
 =item C<logfile> (xtmd.log)
 
+=cut
+
+$logfile  = 'xtmd.log';
+
+=pod
+
 =item C<loglevel> (1)
+
+=cut
+
+$loglevel = 1;
+
+=pod
 
 =back
 
@@ -77,17 +86,17 @@ Example:
 =cut
 
 use POSIX qw(strftime);
+use IO::File;
 
-use File::Slurp;
 sub flog {
   my $entity = shift;
   my $level  = shift || 1;
   my @msgs   = @_;
   unless ($level > $loglevel) {
-    append_file($logfile, (strftime "%Y %a %b %e %H:%M:%S", localtime)." - $entity($level): ".
+    my $fh = new IO::File ">>$logfile" || warn "XTM::Log: Cannot open logfile '$logfile' in flog";
+    print $fh (strftime "%Y %a %b %e %H:%M:%S", localtime)." - $entity($level): ".
 		(@msgs ? join (" ", @msgs) : "Here!!").
-		"\n");
-    
+		"\n";
   }
 }
 
@@ -133,10 +142,11 @@ L<XTM>
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, Robert Barta <rho@telecoma.net>, All rights reserved.
- 
+Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+http://www.perl.com/perl/misc/Artistic.html
 
 =cut
 

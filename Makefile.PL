@@ -12,9 +12,8 @@ WriteMakefile(
 	      'PREREQ_PM'     => { 
 #				  'XML::SAX'             => 0.03,
 #				  'XML::LibXML'          => 1.31,
-#				  'IO::File'             => 1.06021,
 				  'Data::Dumper' => 2.102,
-				  'File::Slurp' => 2001.1103,
+				  'IO::File' => 1.08,
 				  'File::stat' => 0,
 				  'Getopt::Long' => 2.25,
 				  'IO::String' => 1.01,

@@ -29,7 +29,8 @@ XTM::AsTMa - Topic Map Parsing of AsTMa instances.
 
 =head1 DESCRIPTION
 
-This package provides parsing functionality for AsTMA instances:
+This package provides parsing functionality for AsTMA instances as described in the
+package documentation (doc directory) or at
 
 =begin html
 
@@ -45,7 +46,32 @@ This package provides parsing functionality for AsTMA instances:
 
 =end man
 
-Currently, only AsTMa= is supported, but WITHOUT macros.
+Currently, only AsTMa= is supported, with the following constraints/additions:
+
+=over
+
+=item no macro support (deprecated in the language).
+
+=item following directives are supported:
+
+=over
+
+=item %cancel
+
+Cancels the parse process on this very line and ignores the rest of the AsTMa instance. Useful for
+debugging faulty maps. There is an appropriate line written to STDERR.
+
+=item %log [ message ]
+
+Writes a line to STDERR reporting the line number and an optional message. Useful for debugging.
+
+=back
+
+A directive can be inserted anywhere in the document. 
+
+=back
+
+
 
 =head1 INTERFACE
 
@@ -158,8 +184,8 @@ sub sync_in {
   use XTM::AsTMa::MemoryBuilder;
   my $ap = new XTM::AsTMa::MemoryBuilder(tm => new XTM::Memory);              # will hold/build the Topic Map
   $ap->handle_astma (text          => $atm_stream,
-		     auto_complete => $self->{auto_complete},
-		     log_level     => 0);
+#		     log_level     => 2,
+		     auto_complete => $self->{auto_complete});
   return $ap->{tm};
 }
 
@@ -186,9 +212,10 @@ L<XTM>
 =head1 AUTHOR INFORMATION
 
 Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
- 
+
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+http://www.perl.com/perl/misc/Artistic.html
 
 =cut
 

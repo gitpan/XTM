@@ -12,12 +12,14 @@ use XTM;
 use XTM::PSI;
 use XTM::Log ('elog');
 use XTM::XML::ParseError;
+use XTM::Namespaces;
+
+my $tmns    = $XTM::Namespaces::topicmap_ns;
+my $xlinkns = $XTM::Namespaces::xlink_ns;
 
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
 
-my $tmns    = 'http://www.topicmaps.org/xtm/1.0/';
-my $xlinkns = 'http://www.w3.org/1999/xlink';
 
 =pod
 
@@ -95,6 +97,8 @@ my %handlers =
       my $handler = shift;
       my $element = shift;
 
+#print "topic end: ", Dumper $element;
+
       my $t = pop @{$handler->{parent}};
       unless ($t->instanceOfs && @{$t->instanceOfs}) {               # if instanceOf not defined, default (3.6.1)
 	$t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})));
@@ -103,6 +107,7 @@ my %handlers =
 	if $t->subjectIdentity_s > 1;
       $t->add_subjectIdentity ($t->subjectIdentity_s);  $t->undefine (qw (subjectIdentitys));
       $handler->{parent}->[-1]->add ($t);
+#print "topic end is :", Dumper $t;
     }
    },
 #-- topicRef ------------------------------------------------------------------------------------
@@ -687,9 +692,11 @@ sub end_element {
   my $self = shift;
   my $data = shift;
 
-#  print "end_element $data->{LocalName}","\n"; #, Dumper ($self, $data);
+#print "end_element $data->{LocalName}", Dumper ($self, $data);
 
+#print "looking for $tmns getting: ", $data->{NamespaceURI}, "\n";
   if ($data->{NamespaceURI} eq $tmns) { # ignore the others
+#print "foud ns\n";
     if ($self->{allowed_elements}->[-1]->{element} eq $data->{LocalName}) {
       pop @{$self->{allowed_elements}};
     }
@@ -718,9 +725,10 @@ sub xtm_error {
 =head1 AUTHOR INFORMATION
 
 Copyright 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
- 
+
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+http://www.perl.com/perl/misc/Artistic.html
 
 =cut
 

@@ -4,7 +4,7 @@ use strict;
 no strict ('subs');
 use vars qw($VERSION);
 
-$VERSION = "0.5";
+$VERSION = "0.7";
 
 =pod
 
@@ -18,7 +18,7 @@ XTM Bench - a simple XTM Interpreter
 
 =head1 DESCRIPTION
 
-This simple, textual oriented user interface gives access to some Topic
+This simple, text-oriented user interface gives access to some Topic
 Map functions. This program is mainly thought for quick prototyping
 and testing Topic Maps and/or TM software.
 
@@ -33,7 +33,7 @@ Following command line switches are understood by the program:
 
 =item 
 
-B<history> <file> (default: none) 
+B<history> <file> (default: none)
 
 File which will be replayed at start of session. You can have any number of histories
 here, they will be all replayed in the order given. If the history is specified here,
@@ -105,15 +105,24 @@ The interpreter will look for history files:
 
 =end text
 
+=begin man
+
+      $ENV{HOME}/.xtm/history
+      $ENV{HOME}/.xtmhistory
+      ./.xtmhistory
+
+=end man
+
 in this order taking only the first it will find. It will only use the last
 100 lines.
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, Robert Barta <rho@telecoma.net>, All rights reserved.
- 
+Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
+http://www.perl.com/perl/misc/Artistic.html
 
 =cut
 
@@ -156,13 +165,14 @@ my $prompt = "xtm> ";
 my $OUT = $batch ? \*STDOUT : $term->OUT || \*STDOUT;
 my $ERR = $batch ? \*STDERR : $term->OUT || \*STDERR;
 
+use IO::File;
 
 if (@history) {
 ##-- work on history files -----------------------------------------
   foreach my $h (@history) {
-    use File::Slurp;
+    my $fh = new IO::File $h || warn "Could not open '$h'";
     print $ERR "Replaying '$h'\n";
-    ExecuteLineList (read_file($h));
+    ExecuteLineList (map { chomp; $_ } <$fh>);
   }
 } else {
   load_history();
@@ -196,8 +206,8 @@ sub load_history { ## without executing it
   }
 ##print $OUT "reading from $xtmhistory\n";
   eval {
-    use File::Slurp;
-    my @l = read_file ($xtmhistory);
+    my $fh = new IO::File $xtmhistory || warn "Could not open '$xtmhistory'";
+    my @l = <$fh>;
     my $l = scalar @l >= 100 ? 100 : scalar @l;  ## only last 100, otherwise eternal growth, a net schlecht
     foreach my $l (@l[-$l..-1]) {
       chomp $l;
@@ -207,7 +217,7 @@ sub load_history { ## without executing it
 }
 
 sub save_history {
-##print $OUT "chceking $ENV{HOME}..." ;
+##print $OUT "checking $ENV{HOME}..." ;
   my $xtmhistory;
   if (-d $ENV{HOME}."/.xtm/") {
     $xtmhistory = $ENV{HOME}."/.xtm/history";
@@ -215,11 +225,12 @@ sub save_history {
     $xtmhistory = $ENV{HOME}."/.xtmhistory";
   } else {
     $xtmhistory = ".xtmhistory";
-    }
+  }
 ##print $OUT "writing to $mqlhistory" ;
   eval {
-    use File::Slurp;
-    append_file ($xtmhistory, map { $_."\n" } $term->GetHistory ());
+    my $fh = new IO::File ">>$xtmhistory" || warn "XTM::Log: Cannot open logfile '$xtmhistory'";
+
+    print $fh map { $_."\n" } $term->GetHistory ();
   }; print $OUT $@ ? "Exception: $@" : "";
 }
 
@@ -255,11 +266,13 @@ sub ExecuteCommand {
 ##-- history --in out -----------------------------------------
   } elsif (/^history\s*(([<>])\s*(.*))?/) {
     eval {
-      use File::Slurp;
+
       if ($2 eq '>') {
-	write_file ($3, join ("\n",  grep (!/^history/, $term->GetHistory ()))."\n");
+	my $fh = new IO::File ">$3" || warn "Cannot open '$3' for writing";
+	print $fh map { $_."\n" } grep (!/^history/, $term->GetHistory ());
       } elsif ($2 eq '<') {
-	ExecuteLineList (read_file($3));
+	my $fh = new IO::File $3 || warn "Could not open '$3' for reading";
+	ExecuteLineList (map { chomp; $_ } (<$fh>));
       } else {
 	print $OUT join ("\n",  $term->GetHistory ()), "\n";
       }
@@ -337,7 +350,10 @@ sub ExecuteCommand {
 
   } elsif (/^help/ || /\?/ || /^command/) {
     print $OUT "
-load  <url>                          loading the topic map from the <url>
+Following commands are currently available:
+
+load  <url>                          loading the topic map from the <url> [ Note: files have
+                                                                            to be loaded with file:... ]
 topic <topic-id>                     shows some information about a particular topic
 assoc <assoc-id>                     shows some information about a particular association
 find topic  <query>                  finds all topics according to <query> (see XTM::Memory)
@@ -363,6 +379,8 @@ loglevel  n                          set logging level to n
 
 exit                                 yes, exit
 quit                                 ditto
+
+You can use command line editing (emacs style) and cursor up/down to browse the history.
 
 ";
 
