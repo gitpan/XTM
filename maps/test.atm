@@ -24,6 +24,7 @@ in (tt-description): any text will do
 t-topic4
 bn: Topic4
 oc (tt-website): http://www.somemoreexample.com.au/
+oc (tt-secure-website): https://www.somemoreexample.com.au/
 
 (at-is-associated-with)
 tt-brother : t-topic3
@@ -36,4 +37,11 @@ tt-sister : t-topic4
 (at-is-associated-with)
 tt-sister : t-topic2
 tt-brother : t-topic1
+
+(at-is-associated-with)
+tt-sister : http://www.uno.count/
+tt-brother : t-topic1
+
+3_t3-topic5
+bn: Topic5
 

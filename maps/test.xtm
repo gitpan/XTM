@@ -10,14 +10,18 @@
 -->
 
 <topic id="tt-type1">
-   <baseName>
-      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#en"/></scope>
-      <baseNameString>The Type</baseNameString>
+  <baseName>
+     <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#en"/></scope>
+     <baseNameString>The Type</baseNameString>
+  </baseName>
+  <baseName>
+     <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#de"/></scope>
+     <baseNameString>der Typ</baseNameString>
    </baseName>
-   <baseName>
-      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#de"/></scope>
-      <baseNameString>der Typ</baseNameString>
-   </baseName>
+  <occurrence>
+     <instanceOf><topicRef xlink:href="#tt-website"/></instanceOf>
+     <resourceRef xlink:href="http://www.someexample.com.au/path?xxx=yyy&amp;aaa=bbb"/> 
+  </occurrence>
 </topic>
 
 <topic id="tt-type2">

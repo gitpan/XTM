@@ -1,4 +1,9 @@
 Revision history for Perl extension XTM.
+0.24  Sat Oct 20 18:46:32 EST 2001
+	- fixed bug of not escaping & in XTM::ATM for occurrences
+	- fixed bug of not checking for all URI schemes in XTM::ATM
+	- fixed too restrictive pattern in XTM::ATM to allow valid XML ids as topic ids
+
 0.23  Sat Oct 13 12:32:11 EST 2001
 	- added XTM::ATM support, documentation in docs/astma.html
 	- fixed hickup in pod in XTM::Virtual

@@ -13,7 +13,7 @@ my $tm = new XTM (tie => new XTM::XML (url => "file:maps/test.xtm"));
 #print Dumper $tm;
 
 ok (@{$tm->topics()},       8);
-ok (@{$tm->topics('occurrence regexps /example/')},       2);
+ok (@{$tm->topics('occurrence regexps /example/')},       3);
 ok (@{$tm->topics('text       regexps /any text/')},      1);
 ok (@{$tm->topics('assocs with t-topic4')},               2);
 ok (@{$tm->topics('assocs with t-topic2')},               3);

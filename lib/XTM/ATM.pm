@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
 @EXPORT_OK = qw( atm2xtm xtm2atm );
-$VERSION = '0.04';
+$VERSION = '0.06';
 
 use Carp;
 use XTM::Log ('elog');
@@ -118,6 +118,7 @@ sub atm2xtm {
       chomp;
     }
     &{$options{err}} ( ">$_<\n") if $log_level > 0;
+
     if (/^\s*\#(.+)/) {
       (my $c = $1);# =~ s/-->/- - >/g;  # you never know
       $comment .= ($comment ? "\n     " : "") .$c;
@@ -242,7 +243,10 @@ if ($options{auto_complete}) {
 foreach (sort keys %mentioned) {
   my $t = e($_, \%abbrs);
   next if $defined{$t};
-  next if $t =~ /http:/ || $t =~ /urn:/;
+  # check to see whether this is relative or absolute
+  use URI;
+  my $u = new URI ($t);
+  next if $u->scheme;
   
   &{$options{err}} ("'", $_, "'\n") if $log_level > 1;
   if ($options{auto_complete}) {
@@ -259,14 +263,22 @@ if ($options{auto_complete}) {
 }
 
 sub ex {
-  my $l = e(shift, shift);
-  return ($l =~ /^http:/ || $l =~ /^urn:/) ? $l : "#$l";  ## cheap test
+  use URI;
+  my $u = new URI (shift);
+  return ($u->scheme ? '' : '#' ) . e(scalar $u, shift); # making it relative
 }
 
 sub e {
   my $s = shift;
   my $abbrs = shift;
   for (; $s =~ /&(.+?);/ && $abbrs->{$1}; $s =~ s/&(.+?);/$abbrs->{$1}/e) {};
+
+  $s =~ s/\015\012?/\012/g;
+  $s =~ s/&(?!(?:[a-zA-Z0-9]+|\#\d+);)/&amp;/g;
+  $s =~ s/</&lt;/g;
+  $s =~ s/>/&gt;/g;
+  $s =~ s/\"/&quot;/g;
+  $s =~ s/\'/&apos;/g;
   return $s;
 }
 
@@ -283,6 +295,10 @@ sub xmlify_topic {
 
   use Data::Dumper;
   &{$options{err}} (Dumper $topic) if $options{log_level} > 2;
+
+  warn "topic id '".$topic->{id}."' is invalid in an XML context" unless $topic->{id} =~ /^[\w_:][\w\d-\.]*/ && 
+                                                                         $topic->{id} !~ /^xml/i;  # Professional XML, page 33
+
   &{$options{out}} (qq|
 
   <topic id="$topic->{id}">|);

@@ -10,33 +10,28 @@
     <h1>AsTMa, Asymptotic Topic Map Notation</h1>
 
     <p>
-      v0.999, 2001-07-25<br>
+      v0.999, 2001-11-1<br>
       <blink>Draft</blink>
     <p>
       <a href="mailto:rho@bond.edu.au-spam.no">Robert (\rho) Barta</a><br>
       <A HREF="http://www.bond.edu.au/">Bond University</A><br>
     </p>
 
+    <h2>Changes</h2>
+
+    <ul>
+    <li>relative to v0.99: association types HAVE to be in () s now
+    </ul>
+
     <h2>Contents</h2>
 
     <ul>
-    <li><a href="#changes">Changes</a></li>
     <li><a href="#introduction">Introduction</a></li>
     <li><a href="#tutorial">Tutorial</a></li>
     <li><a href="#language-definition">Language Definition<a/></li>
     <li><a href="#conclusions">Conclusions</a></li>
     </ul>
       
-    <h2><a name="changes">0. Changes</a></h2>
-
-    <dl>
-      <!-- one of (dd dt) -->
-      <dt>From 0.99 to 0.999</dt>
-      <dd>Syntax of association changed: Now association types are also in ()'s ---</dd>
-      <dt>From 0.9 to 0.99</dt>
-      <dd>.</dd>
-    </dl>
-
     <h2><a name="introduction">1. Introduction</a></h2>
 
     <p>
@@ -441,7 +436,7 @@ patch:   generic-reiserfs-patch-2.4.x
       For better readability you may want to indent the roles
     </p>
     <pre class="astma">
-(kernel-patch-provides-feature)
+  (kernel-patch-provides-feature)
       feature: reiserfs
       platform: i386
       patch:   generic-reiserfs-patch-2.4.x
