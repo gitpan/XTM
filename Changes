@@ -1,4 +1,9 @@
 Revision history for Perl extension XTM.
+
+0.25  Mon Dec 17 18:06:24 EST 2001
+	- added statistics to info() in XTM
+	- added clusters() in XTM
+
 0.24  Sat Oct 20 18:46:32 EST 2001
 	- fixed bug of not escaping & in XTM::ATM for occurrences
 	- fixed bug of not checking for all URI schemes in XTM::ATM

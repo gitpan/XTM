@@ -12,6 +12,9 @@ my $tm = new XTM (tie => new XTM::ATM (url => "file:maps/test.atm"));
 
 #print Dumper $tm;
 
+#print join (',', @{$tm->topics()});
+#exit;
+
 ok (@{$tm->topics()},       15);
 ok (@{$tm->topics('occurrence regexps /example/')},       2);
 ok (@{$tm->topics('text       regexps /any text/')},      1);

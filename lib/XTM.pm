@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( );
-$VERSION = '0.24';
+$VERSION = '0.25';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -35,6 +35,9 @@ XTM - Topic Map management, single thread class
   print Dumper $tm->memory;
   # basic statistics about a map
   print Dumper $tm->info;
+  # analyze the 'clusters' of a map, see below
+  print Dumper $tm->cluster;
+  
 
 =head1 DESCRIPTION
 
@@ -93,9 +96,9 @@ sub DESTROY {
   return unless defined $self->{id}; # strange calls
   elog ('XTM',3,"in DESTROY $self'".$self->{id}."'");
   return if $self->{id} =~ /^\d+$/;  ## SOAP::Lite hack: using object-by-reference obviously stub objects are bless as 'XTM'
-                                       ## dont want DESTROYs of them here.  
+                                     ## dont want DESTROYs of them here.  
   elog ('XTM',5,"    still in DESTROY ", $self->info());
-## sync out in case
+## TODO: sync out in case!!
 }
 
 =pod
@@ -171,6 +174,14 @@ I<errors>
 This component contains a list reference I<undefined_topics> containing a list of topic identifiers
 of topics not defined in the map. 
 
+=item (d)
+
+I<statistics>
+
+This component contains a hash reference to various statistics information, as the number of clusters,
+maximum and minimum size of clusters, number of topics defined and topics mentioned.
+
+
 TODOs:
 
 =over
@@ -187,7 +198,7 @@ You can control via a parameter which information you are interested in:
 
 Example:
 
-   $my_info = $tm->info ('informational', 'warning', 'errors');
+   $my_info = $tm->info ('informational', 'warning', 'errors', 'statistics');
 
 
 =cut
@@ -226,20 +237,34 @@ sub _usage {
   foreach my $tid (@{$self->topics()}) {
     # instanceOfs
     foreach my $i (@{$self->topic($tid)->instanceOfs}) {
-      $usage->{as_instanceOf}->{$1}++ if ($i->reference->href =~ /^\#(.+)/);
+      $usage->{as_instanceOf}->{$1}++ if $i->reference->href =~ /^\#(.+)/;
       $usage->{as_instance}->{$tid}++;
     }
     # scopes
     foreach my $b (@{$self->topic($tid)->baseNames}) { 
       foreach my $s (@{$b->scope->references}) {
-	$usage->{as_scope}->{$1}++ if ($s->href =~ /^\#(.+)/);
+	if ($s->href =~ /^\#(.+)/) {
+	  $usage->{as_scope}->{$1}++;
+	}
       }
+    }
+    foreach my $o (@{$self->topic($tid)->occurrences}) { 
+	if ($o->instanceOf->reference->href =~ /^\#(.+)/) {
+            $usage->{as_instanceOf}->{$1}++;
+	}
+        foreach my $r (@{$o->scope->references}) {
+	    if ($r->href =~ /^\#(.+)/) {
+                $usage->{as_scope}->{$1}++;
+	    }
+	}
     }
   }
   foreach my $aid (@{$self->associations()}) {
     # instanceOfs
     if (my $i = $self->association($aid)->instanceOf) {
-      $usage->{as_instanceOf}->{$1}++ if ($i->reference->href =~ /^\#(.+)/);
+      if ($i->reference->href =~ /^\#(.+)/) {
+	$usage->{as_instanceOf}->{$1}++;
+      }
     }
     foreach my $m (@{$self->association($aid)->members}) {
       # roles
@@ -265,8 +290,6 @@ sub _usage {
 				  ];
     } elsif ($w eq 'errors') {
       $usage = $self->_usage() unless $usage;
-##      use Data::Dumper;
-##      print STDERR Dumper $usage;
       $info->{$w}->{'undefined_topics'} = [
          grep (!$self->is_topic($_), (keys %{$usage->{as_instanceOf}},
 				      keys %{$usage->{as_instance}},
@@ -275,9 +298,153 @@ sub _usage {
 				      keys %{$usage->{as_role}})
 	      )
 					    ];
-    }; # ignore others
+    } elsif ($w eq 'statistics') {
+      $usage       = $self->_usage() unless $usage;
+#use Data::Dumper;
+#print STDERR Dumper ($usage);
+      my $clusters = $self->clusters();
+      my ($tot, $min, $max) = (0, undef, 0);
+      foreach my $c (keys %$clusters) {
+	  $tot += scalar @{$clusters->{$c}};
+	  $min = $min ? ($min > scalar @{$clusters->{$c}} ? scalar @{$clusters->{$c}} : $min) : scalar @{$clusters->{$c}};
+	  $max =         $max < scalar @{$clusters->{$c}} ? scalar @{$clusters->{$c}} : $max;
+      }
+
+      $info->{$w} = {
+		     nr_topics_defined   => scalar @{$self->topics},
+		     nr_assocs           => scalar @{$self->associations},
+		     nr_clusters         => scalar keys %$clusters,
+		     mean_topics_per_cluster => %$clusters ? 1.0 * $tot / scalar keys %$clusters : 1, # empty map => 1 cluster (do not argue with me here)
+		     max_topics_per_cluster  => $max,
+		     min_topics_per_cluster  => $min,
+		     nr_topics_mentioned     => $tot,
+		     };
+    }; # ignore other directives
   }
   return $info;
+}
+
+=pod
+
+=item B<clusters>
+
+computes the 'islands' of topics. It figures out which topics are connected via is-a, scoping
+or other associations and - in case they are - will collate them into clusters. The result is
+a hash reference to a hash containing list references of topic ids organized in a cluster.
+
+Example:
+
+  my $clusters = $tm->clusters();
+  foreach (keys %$clusters) {
+     print "we are connnected: ", join (",", @{$clusters->{$_}});
+  }
+
+=cut
+
+sub _assert_cluster {
+  my $clusters = shift;
+  my $t        = shift;
+
+  unless (defined $clusters->{t2c}->{$t}) {
+#print STDERR "node $t not yet\n c2t: because", Dumper ($clusters);
+      my $n = keys %{$clusters->{c2t}} ? (sort { $b <=> $a } keys (%{$clusters->{c2t}}))[0] + 1 : 0; # find an unused index
+#print STDERR "n is $n";
+    $clusters->{c2t}->{$n} = [ $t ]; # new singleton cluster
+    $clusters->{t2c}->{$t} = $n;     # we make a link, this is for a quicker access later
+  }
+#print STDERR Dumper ("after _assert $t cluster is", $clusters);
+  return $clusters;
+}
+
+sub _merge_clusters {
+  my $clusters = shift;
+  my ($t1, $t2) = @_; # clusters belonging to these topics should be merged
+
+#print STDERR "merge $t1 $t2??\n";
+  my $n1 = $clusters->{t2c}->{$t1};
+  my $n2 = $clusters->{t2c}->{$t2};
+  ($n1, $n2) = ($n2, $n1) if $n1 > $n2; # I want the first be smaller
+  unless ($n1 == $n2) { # merge them unless not already in one boat
+#print STDERR "merge $n1 $n2!!\n", Dumper ($clusters);
+    grep ($clusters->{t2c}->{$_} = $n1, @{$clusters->{c2t}->{$n2}});   # point to t1's cluster
+    push @{$clusters->{c2t}->{$n1}}, @{$clusters->{c2t}->{$n2}};
+    delete $clusters->{c2t}->{$n2};  # get rid of old cluster
+  }
+#print STDERR Dumper ("after _merge $t1, $t2 clusters is", $clusters);
+  return $clusters;
+}
+
+sub clusters {
+  my $self  = shift;
+
+  my $clusters = { c2t => {}, t2c => {}};
+
+  # figure out which topics are used as topicRef (scope, member, role, instanceOf)
+  foreach my $tid (@{$self->topics()}) {
+    $clusters = _assert_cluster ($clusters, $tid);
+    # instanceOfs
+    foreach my $i (@{$self->topic($tid)->instanceOfs}) {
+      if ($i->reference->href =~ /^\#(.+)/) {
+	$clusters = _assert_cluster ($clusters,  $1) ;
+	$clusters = _merge_clusters ($clusters,  $tid, $1);
+      }
+    }
+    # scopes
+    foreach my $b (@{$self->topic($tid)->baseNames}) { 
+      foreach my $s (@{$b->scope->references}) {
+	if ($s->href =~ /^\#(.+)/) {
+	  $clusters = _assert_cluster ($clusters,  $1) ;
+	  $clusters = _merge_clusters ($clusters,  $tid, $1);
+	}
+      }
+    }
+    # occurrences
+    foreach my $o (@{$self->topic($tid)->occurrences}) { 
+#print STDERR Dumper ($o);
+	if ($o->instanceOf->reference->href =~ /^\#(.+)/) {
+	    $clusters = _assert_cluster ($clusters,  $1) ;
+	    $clusters = _merge_clusters ($clusters,  $tid, $1);
+	}
+        foreach my $r (@{$o->scope->references}) {
+#print STDERR "r is: ", Dumper ($r);
+	    if ($r->href =~ /^\#(.+)/) {
+		$clusters = _assert_cluster ($clusters,  $1) ;
+		$clusters = _merge_clusters ($clusters,  $tid, $1);
+	    }
+	}
+      }
+    }
+  
+  foreach my $aid (@{$self->associations()}) {
+    my $ref_t; # reference topic in this association
+    # instanceOfs
+    if (my $i = $self->association($aid)->instanceOf) {
+      if ($i->reference->href =~ /^\#(.+)/) {
+	$ref_t ||= $1;
+	$clusters = _assert_cluster ($clusters,  $1) ;
+	$clusters = _merge_clusters ($clusters,  $ref_t, $1);
+      }
+    }
+    foreach my $m (@{$self->association($aid)->members}) {
+      # roles
+      if ($m->roleSpec) {
+	if ($m->roleSpec->reference->href =~ /^\#(.+)/) {
+	  $ref_t ||= $1;
+	  $clusters = _assert_cluster ($clusters,  $1) ;
+	  $clusters = _merge_clusters ($clusters,  $ref_t, $1);
+	}
+      }
+      # members
+      foreach my $r (@{$m->references}) {
+	if ($r->href =~ /^\#(.+)/) {
+	  $ref_t ||= $1;
+	  $clusters = _assert_cluster ($clusters,  $1) ;
+	  $clusters = _merge_clusters ($clusters,  $ref_t, $1);
+	}
+      }
+    }
+  }
+  return $clusters->{c2t};
 }
 
 =pod

@@ -5,6 +5,8 @@ use XTM::Log ('elog');
 use XML::Grove::AsString;
 use XTM::PSI;
 
+use Data::Dumper;
+
 use strict;
 use vars qw{$AUTOLOAD};
 
@@ -44,7 +46,9 @@ sub visit_document {
     my $self = shift;
     my $grove = shift;
 
+#    $XTM::Log::loglevel = 5;
     $grove->children_accept_name ($self, @_);
+#    $XTM::Log::loglevel = 1;
 }
 
 sub visit_name_topicRef {
@@ -376,9 +380,9 @@ sub visit_name_member {
 #              >
   $element->children_accept_name ($self, [ qw( roleSpec topicRef resourceRef subjectIndicatorRef ) ], $m);
 
-  die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.2\n" if $m->rolesSpec_s > 1;
+  die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.2\n", Dumper($m) if $m->rolesSpec_s > 1;
   $m->add_roleSpec ($m->roleSpec_s);  $m->undefine (qw (roleSpecs));
-  die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.2\n".Dumper $element 
+  die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.2\n", Dumper($m)
     unless $m->topicRef_s + $m->resourceRef_s + $m->subjectIndicatorRef_s > 0;
   $m->add_reference_s ($m->topicRef_s, $m->resourceRef_s, $m->subjectIndicatorRef_s);  $m->undefine (qw (topicRefs resourceRefs subjectIndicatorRefs));
 

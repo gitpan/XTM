@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
 use Test;
-BEGIN { plan tests => 13 }
+BEGIN { plan tests => 19 }
  
 use XTM;
 use XTM::XML;
@@ -9,10 +9,14 @@ use Data::Dumper;
  
 my $tm = new XTM (tie => new XTM::XML (url => "file:maps/test.xtm"));
 
-my @all = ('informational', 'warnings', 'errors');
+my @all = ('informational', 'warnings', 'errors', 'statistics');
 foreach (@all) {
   # do I get what I want
-  ok ($tm->info (  $_  )->{$_});
+  eval {
+    ok ($tm->info (  $_  )->{$_});
+  }; if ($@) {
+    ok (0);
+  }
 }
 # do I not get what I not want
 ok (!($tm->info ( 'warnings' )->{informational}));
@@ -35,5 +39,17 @@ ok (grep (/^t-topic6$/, @{$info->{warnings}->{not_used}}));
 
 ok (grep (/^scope-dope$/, @{$info->{errors}->{undefined_topics}}));
 
-##print Dumper $info;
+# check clustering
+my $clusters = $tm->clusters();
+#print "clusters:\n", Dumper $clusters;
+ok (keys %$clusters == 2);
+
+# check some statistics
+
+ok ($info->{statistics}->{nr_topics_defined}   == @{$tm->topics()});
+ok ($info->{statistics}->{nr_assocs}   == @{$tm->associations()});
+ok ($info->{statistics}->{nr_clusters} == keys %$clusters);
+ok ($info->{statistics}->{mean_topics_per_cluster} == 1.0 * $info->{statistics}->{nr_topics_mentioned} / keys %$clusters);
+
+#print Dumper $info;
 

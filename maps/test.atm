@@ -1,11 +1,13 @@
 test:iso8895-1
 
-tt-type1
-bn @ en: The Type
-bn @ de: der Typ
+# comment
+# tt-type1
+# bn @ en: The Type
+# bn @ de: der Typ
 
-tt-type2
-bn @ en: The Type 2
+#tt-type2
+#bn @ en: The Type 2
+#comment
 
 t-topic1 (tt-type1)
 bn @ en : Topic one

@@ -201,15 +201,15 @@ sub atm2xtm {
 	$map->{id}       = $lhs;
 	$map->{encoding} = $rhs || 'iso-8859-1';
 	$map_done = 1; # one of the few places where you need a flag like this, argh
-      } elsif ($lhs =~ /^bn\s*(@\s*(.+))?/) { # baseName, so sure is topic
+      } elsif ($lhs =~ /^bn\s*(@\s*(.+))?$/) { # baseName, so sure is topic
 	&{$options{err}} ( "found topic bn scoped '$2' with rhs = '$rhs'\n") if $log_level > 0;
 	$topic->{id} ||= $assoc->{type}; undef $assoc; # in case we thought its an assoc
 	push @{$topic->{basenames}}, [ $2, $rhs ];
-      } elsif ($lhs =~ /^oc\s*(@\s*([^\(\s]+))?(\s*\((.+)\))?/) { # occurrence, so sure is topic
+      } elsif ($lhs =~ /^oc\s*(@\s*([^\(\s]+))?(\s*\((.+)\))?$/) { # occurrence, so sure is topic
 	&{$options{err}} ( "found topic oc scoped '$2', $4\n") if $log_level > 0;
 	$topic->{id} ||= $assoc->{type}; undef $assoc; # in case we thought its an assoc
 	push @{$topic->{occurrences}}, [ $2, 'ref', $rhs, $4 ];
-      } elsif ($lhs =~ /^in\s*(@\s*([^\(\s]+))?(\s*\((.+)\))?/) { # occurrence, so sure is topic
+      } elsif ($lhs =~ /^in\s*(@\s*([^\(\s]+))?(\s*\((.+)\))?$/) { # occurrence, so sure is topic
 	&{$options{err}} ( "found topic in scoped '$2', $4\n") if $log_level > 0;
 	$topic->{id} ||= $assoc->{type}; undef $assoc; # in case we thought its an assoc
 	push @{$topic->{occurrences}}, [ $2, 'inline' , $rhs, $4 ];
@@ -297,7 +297,7 @@ sub xmlify_topic {
   &{$options{err}} (Dumper $topic) if $options{log_level} > 2;
 
   warn "topic id '".$topic->{id}."' is invalid in an XML context" unless $topic->{id} =~ /^[\w_:][\w\d-\.]*/ && 
-                                                                         $topic->{id} !~ /^xml/i;  # Professional XML, page 33
+                                                                         $topic->{id} !~ /^xml:/;  # Professional XML, page 33
 
   &{$options{out}} (qq|
 

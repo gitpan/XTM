@@ -190,16 +190,20 @@ sub sync_in {
   }
   use XTM::XML::Latin1Parser;
   my $grove_builder = XTM::XML::Latin1Parser->new;
+  elog ('XTM::XML', 5, '   start parse');
   my $parser = XML::Parser::PerlSAX->new ( Handler => $grove_builder );
   my $grove;
   $grove  = $parser->parse ( Source => { String => $stream,
                                          Encoding => 'ISO-8859-1' } );
+  elog ('XTM::XML', 5, '   end parse');
   use Data::Grove::Visitor;
   my $tm = new XTM::Memory;
   use XTM::XML::Grove2TM;
 # this is to silence Perl in -w context: I use undef values sometimes in expressions and I'm happy with it
   use Carp ();
   local $SIG{__WARN__} = sub {};
+##  $XTM::Log::loglevel = 5;
+  elog ('XTM::XML', 5, '   begin grove: ');
   $grove->accept_name (XTM::XML::Grove2TM->new, $tm);
   elog ('XTM::XML', 5, '   sync in tm: ', $tm);
   return $tm;
