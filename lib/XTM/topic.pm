@@ -30,7 +30,7 @@ use URI;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 =pod
 
@@ -145,6 +145,33 @@ sub default_populate {
 
 =head2 Methods
 
+Following accessor methods are available via L<XTM::generic> (see that package how
+to set/add values):
+
+=over
+
+=item I<baseNames>:
+
+@{ I<$t>->baseNames}
+
+returns list reference of L<XTM::baseName> nodes.
+
+=item I<instanceOfs>:
+
+@{ I<$t>->instanceOfs}
+
+returns list reference of L<XTM::instanceOf> nodes.
+
+=item I<subjectIdentity>:
+
+I<$t>->subjectIdentity
+
+returns a L<XTM::subjectIdentity> node
+
+=back
+
+Other methods are:
+
 =over
 
 =item I<id>:
@@ -229,21 +256,20 @@ Example:
 
 =cut
 
+our %callers;
+
 sub has_instanceOf {
   my $self = shift;
   my $ioid = shift;
 
-  my $u = new URI ($ioid);
-  if ($u->scheme) { # absolute
-    foreach my $i (@{$self->{instanceOfs}}) {
-      return 1 if $i->{reference}->{href} eq $ioid;
-    }
-  } else { # relative
-    foreach my $i (@{$self->{instanceOfs}}) {
-      return 1 if $i->{reference}->{href} eq "#$ioid";
-    }
-  }
-  return 0;
+  $callers{$ioid}->{join ("",caller)}++;
+#  my $u = new URI ($ioid); # too expensive
+#  if ($u->scheme) { # absolute
+
+# TODO: depth parameter
+
+  $ioid = "#$ioid" unless ($ioid =~ /[^\#]\w*:.+/);   #relative, good approximation of URI?
+  return 1 if grep ($_->{reference}->{href} eq $ioid, @{$self->{instanceOfs}});
 }
 
 =pod

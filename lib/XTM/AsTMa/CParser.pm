@@ -4782,7 +4782,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                  'rules' => {
                               'list_of_scope_topic_ids' => bless( {
                                                                     'impcount' => 0,
-                                                                    'line' => '210',
+                                                                    'line' => '207',
                                                                     'prods' => [
                                                                                  bless( {
                                                                                           'dircount' => 0,
@@ -4794,7 +4794,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                           'line' => undef,
                                                                                           'items' => [
                                                                                                        bless( {
-                                                                                                                'line' => '210',
+                                                                                                                'line' => '207',
                                                                                                                 'subrule' => 'list_of_ids',
                                                                                                                 'argcode' => undef,
                                                                                                                 'implicit' => undef,
@@ -4815,7 +4815,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                   }, 'Parse::RecDescent::Rule' ),
                               'topic_definition' => bless( {
                                                              'impcount' => 1,
-                                                             'line' => '10',
+                                                             'line' => '7',
                                                              'prods' => [
                                                                           bless( {
                                                                                    'dircount' => 0,
@@ -4832,13 +4832,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
                                                                                                          'subrule' => '_alternation_1_of_production_1_of_rule_topic_definition',
-                                                                                                         'line' => '10',
+                                                                                                         'line' => '7',
                                                                                                          'expected' => '\'tid\'',
                                                                                                          'max' => 1,
                                                                                                          'repspec' => '?'
                                                                                                        }, 'Parse::RecDescent::Repetition' ),
                                                                                                 bless( {
-                                                                                                         'line' => '10',
+                                                                                                         'line' => '7',
                                                                                                          'subrule' => 'topic_id',
                                                                                                          'argcode' => undef,
                                                                                                          'implicit' => undef,
@@ -4851,7 +4851,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
                                                                                                          'subrule' => 'types',
-                                                                                                         'line' => '10',
+                                                                                                         'line' => '7',
                                                                                                          'expected' => undef,
                                                                                                          'max' => 1,
                                                                                                          'repspec' => '?'
@@ -4862,7 +4862,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
                                                                                                          'subrule' => 'reification',
-                                                                                                         'line' => '10',
+                                                                                                         'line' => '7',
                                                                                                          'expected' => undef,
                                                                                                          'max' => 1,
                                                                                                          'repspec' => '?'
@@ -4873,7 +4873,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
                                                                                                          'subrule' => 'isreification',
-                                                                                                         'line' => '10',
+                                                                                                         'line' => '7',
                                                                                                          'expected' => undef,
                                                                                                          'max' => 100000000,
                                                                                                          'repspec' => 's?'
@@ -4884,13 +4884,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
                                                                                                          'subrule' => 'topic_characteristic',
-                                                                                                         'line' => '10',
+                                                                                                         'line' => '7',
                                                                                                          'expected' => undef,
                                                                                                          'max' => 100000000,
                                                                                                          'repspec' => 's?'
                                                                                                        }, 'Parse::RecDescent::Repetition' ),
                                                                                                 bless( {
-                                                                                                         'line' => '11',
+                                                                                                         'line' => '8',
                                                                                                          'code' => '{
 			 my @components; # here I collect all which I generate here
 
@@ -4985,7 +4985,7 @@ sub _make_reifying_topic {
                                                            }, 'Parse::RecDescent::Rule' ),
                               'section' => bless( {
                                                     'impcount' => 0,
-                                                    'line' => '8',
+                                                    'line' => '5',
                                                     'prods' => [
                                                                  bless( {
                                                                           'dircount' => 0,
@@ -4997,7 +4997,7 @@ sub _make_reifying_topic {
                                                                           'line' => undef,
                                                                           'items' => [
                                                                                        bless( {
-                                                                                                'line' => '8',
+                                                                                                'line' => '5',
                                                                                                 'subrule' => 'topic_definition',
                                                                                                 'argcode' => undef,
                                                                                                 'implicit' => undef,
@@ -5014,10 +5014,10 @@ sub _make_reifying_topic {
                                                                           'strcount' => 0,
                                                                           'number' => 1,
                                                                           'error' => undef,
-                                                                          'line' => '8',
+                                                                          'line' => '5',
                                                                           'items' => [
                                                                                        bless( {
-                                                                                                'line' => '8',
+                                                                                                'line' => '5',
                                                                                                 'subrule' => 'association_definition',
                                                                                                 'argcode' => undef,
                                                                                                 'implicit' => undef,
@@ -5034,10 +5034,10 @@ sub _make_reifying_topic {
                                                                           'strcount' => 0,
                                                                           'number' => 2,
                                                                           'error' => 1,
-                                                                          'line' => '8',
+                                                                          'line' => '5',
                                                                           'items' => [
                                                                                        bless( {
-                                                                                                'line' => '8',
+                                                                                                'line' => '5',
                                                                                                 'commitonly' => '',
                                                                                                 'hashname' => '__DIRECTIVE1__',
                                                                                                 'lookahead' => 0,
@@ -5058,7 +5058,7 @@ sub _make_reifying_topic {
                                                   }, 'Parse::RecDescent::Rule' ),
                               'list_of_type_topic_ids' => bless( {
                                                                    'impcount' => 0,
-                                                                   'line' => '212',
+                                                                   'line' => '209',
                                                                    'prods' => [
                                                                                 bless( {
                                                                                          'dircount' => 0,
@@ -5070,7 +5070,7 @@ sub _make_reifying_topic {
                                                                                          'line' => undef,
                                                                                          'items' => [
                                                                                                       bless( {
-                                                                                                               'line' => '212',
+                                                                                                               'line' => '209',
                                                                                                                'subrule' => 'list_of_ids',
                                                                                                                'argcode' => undef,
                                                                                                                'implicit' => undef,
@@ -5103,7 +5103,7 @@ sub _make_reifying_topic {
                                                                             'line' => undef,
                                                                             'items' => [
                                                                                          bless( {
-                                                                                                  'line' => '6',
+                                                                                                  'line' => '3',
                                                                                                   'subrule' => 'section',
                                                                                                   'argcode' => undef,
                                                                                                   'implicit' => undef,
@@ -5124,7 +5124,7 @@ sub _make_reifying_topic {
                                                     }, 'Parse::RecDescent::Rule' ),
                               'types' => bless( {
                                                   'impcount' => 0,
-                                                  'line' => '139',
+                                                  'line' => '136',
                                                   'prods' => [
                                                                bless( {
                                                                         'dircount' => 0,
@@ -5137,13 +5137,13 @@ sub _make_reifying_topic {
                                                                         'items' => [
                                                                                      bless( {
                                                                                               'description' => '\'(\'',
-                                                                                              'line' => '139',
+                                                                                              'line' => '136',
                                                                                               'pattern' => '(',
                                                                                               'hashname' => '__STRING1__',
                                                                                               'lookahead' => 0
                                                                                             }, 'Parse::RecDescent::Literal' ),
                                                                                      bless( {
-                                                                                              'line' => '139',
+                                                                                              'line' => '136',
                                                                                               'subrule' => 'list_of_type_topic_ids',
                                                                                               'argcode' => undef,
                                                                                               'implicit' => undef,
@@ -5152,13 +5152,13 @@ sub _make_reifying_topic {
                                                                                             }, 'Parse::RecDescent::Subrule' ),
                                                                                      bless( {
                                                                                               'description' => '\')\'',
-                                                                                              'line' => '139',
+                                                                                              'line' => '136',
                                                                                               'pattern' => ')',
                                                                                               'hashname' => '__STRING2__',
                                                                                               'lookahead' => 0
                                                                                             }, 'Parse::RecDescent::Literal' ),
                                                                                      bless( {
-                                                                                              'line' => '139',
+                                                                                              'line' => '136',
                                                                                               'code' => '{ $return = $item{list_of_type_topic_ids}; }',
                                                                                               'hashname' => '__ACTION1__',
                                                                                               'lookahead' => 0
@@ -5177,7 +5177,7 @@ sub _make_reifying_topic {
                                                 }, 'Parse::RecDescent::Rule' ),
                               'type_topic_id' => bless( {
                                                           'impcount' => 0,
-                                                          'line' => '208',
+                                                          'line' => '205',
                                                           'prods' => [
                                                                        bless( {
                                                                                 'dircount' => 0,
@@ -5189,7 +5189,7 @@ sub _make_reifying_topic {
                                                                                 'line' => undef,
                                                                                 'items' => [
                                                                                              bless( {
-                                                                                                      'line' => '208',
+                                                                                                      'line' => '205',
                                                                                                       'subrule' => 'topic_id',
                                                                                                       'argcode' => undef,
                                                                                                       'implicit' => undef,
@@ -5210,7 +5210,7 @@ sub _make_reifying_topic {
                                                         }, 'Parse::RecDescent::Rule' ),
                               'resourceData_characteristic' => bless( {
                                                                         'impcount' => 0,
-                                                                        'line' => '176',
+                                                                        'line' => '173',
                                                                         'prods' => [
                                                                                      bless( {
                                                                                               'dircount' => 0,
@@ -5223,7 +5223,7 @@ sub _make_reifying_topic {
                                                                                               'items' => [
                                                                                                            bless( {
                                                                                                                     'description' => '\'in\'',
-                                                                                                                    'line' => '176',
+                                                                                                                    'line' => '173',
                                                                                                                     'pattern' => 'in',
                                                                                                                     'hashname' => '__STRING1__',
                                                                                                                     'lookahead' => 0
@@ -5234,7 +5234,7 @@ sub _make_reifying_topic {
                                                                                                                     'matchrule' => 0,
                                                                                                                     'lookahead' => 0,
                                                                                                                     'subrule' => 'scopes',
-                                                                                                                    'line' => '176',
+                                                                                                                    'line' => '173',
                                                                                                                     'expected' => undef,
                                                                                                                     'max' => 1,
                                                                                                                     'repspec' => '?'
@@ -5245,20 +5245,20 @@ sub _make_reifying_topic {
                                                                                                                     'matchrule' => 0,
                                                                                                                     'lookahead' => 0,
                                                                                                                     'subrule' => 'type',
-                                                                                                                    'line' => '176',
+                                                                                                                    'line' => '173',
                                                                                                                     'expected' => undef,
                                                                                                                     'max' => 1,
                                                                                                                     'repspec' => '?'
                                                                                                                   }, 'Parse::RecDescent::Repetition' ),
                                                                                                            bless( {
                                                                                                                     'description' => '\':\'',
-                                                                                                                    'line' => '176',
+                                                                                                                    'line' => '173',
                                                                                                                     'pattern' => ':',
                                                                                                                     'hashname' => '__STRING2__',
                                                                                                                     'lookahead' => 0
                                                                                                                   }, 'Parse::RecDescent::Literal' ),
                                                                                                            bless( {
-                                                                                                                    'line' => '176',
+                                                                                                                    'line' => '173',
                                                                                                                     'subrule' => 'string',
                                                                                                                     'argcode' => undef,
                                                                                                                     'implicit' => undef,
@@ -5266,7 +5266,7 @@ sub _make_reifying_topic {
                                                                                                                     'lookahead' => 0
                                                                                                                   }, 'Parse::RecDescent::Subrule' ),
                                                                                                            bless( {
-                                                                                                                    'line' => '177',
+                                                                                                                    'line' => '174',
                                                                                                                     'code' => '{
 			 my $o = new XTM::occurrence ();
 			 $o->add_resource (new XTM::resourceData (data => $item{string}));
@@ -5301,7 +5301,7 @@ sub _make_reifying_topic {
                                                                       }, 'Parse::RecDescent::Rule' ),
                               'reification' => bless( {
                                                         'impcount' => 0,
-                                                        'line' => '84',
+                                                        'line' => '81',
                                                         'prods' => [
                                                                      bless( {
                                                                               'dircount' => 0,
@@ -5314,13 +5314,13 @@ sub _make_reifying_topic {
                                                                               'items' => [
                                                                                            bless( {
                                                                                                     'description' => '\'reifies\'',
-                                                                                                    'line' => '84',
+                                                                                                    'line' => '81',
                                                                                                     'pattern' => 'reifies',
                                                                                                     'hashname' => '__STRING1__',
                                                                                                     'lookahead' => 0
                                                                                                   }, 'Parse::RecDescent::Literal' ),
                                                                                            bless( {
-                                                                                                    'line' => '84',
+                                                                                                    'line' => '81',
                                                                                                     'subrule' => 'uri',
                                                                                                     'argcode' => undef,
                                                                                                     'implicit' => undef,
@@ -5328,7 +5328,7 @@ sub _make_reifying_topic {
                                                                                                     'lookahead' => 0
                                                                                                   }, 'Parse::RecDescent::Subrule' ),
                                                                                            bless( {
-                                                                                                    'line' => '85',
+                                                                                                    'line' => '82',
                                                                                                     'code' => '{
                          # check for relative URI ?
 		         $return = new XTM::resourceRef (href => $item{uri});
@@ -5350,7 +5350,7 @@ sub _make_reifying_topic {
                                                       }, 'Parse::RecDescent::Rule' ),
                               'isreification' => bless( {
                                                           'impcount' => 0,
-                                                          'line' => '90',
+                                                          'line' => '87',
                                                           'prods' => [
                                                                        bless( {
                                                                                 'dircount' => 0,
@@ -5363,13 +5363,13 @@ sub _make_reifying_topic {
                                                                                 'items' => [
                                                                                              bless( {
                                                                                                       'description' => '\'is-reified-by\'',
-                                                                                                      'line' => '90',
+                                                                                                      'line' => '87',
                                                                                                       'pattern' => 'is-reified-by',
                                                                                                       'hashname' => '__STRING1__',
                                                                                                       'lookahead' => 0
                                                                                                     }, 'Parse::RecDescent::Literal' ),
                                                                                              bless( {
-                                                                                                      'line' => '90',
+                                                                                                      'line' => '87',
                                                                                                       'subrule' => 'uri',
                                                                                                       'argcode' => undef,
                                                                                                       'implicit' => undef,
@@ -5377,7 +5377,7 @@ sub _make_reifying_topic {
                                                                                                       'lookahead' => 0
                                                                                                     }, 'Parse::RecDescent::Subrule' ),
                                                                                              bless( {
-                                                                                                      'line' => '91',
+                                                                                                      'line' => '88',
                                                                                                       'code' => '{
 			 $return = $item{uri};
                        }',
@@ -5398,7 +5398,7 @@ sub _make_reifying_topic {
                                                         }, 'Parse::RecDescent::Rule' ),
                               'topic_characteristic' => bless( {
                                                                  'impcount' => 0,
-                                                                 'line' => '141',
+                                                                 'line' => '138',
                                                                  'prods' => [
                                                                               bless( {
                                                                                        'dircount' => 0,
@@ -5410,7 +5410,7 @@ sub _make_reifying_topic {
                                                                                        'line' => undef,
                                                                                        'items' => [
                                                                                                     bless( {
-                                                                                                             'line' => '141',
+                                                                                                             'line' => '138',
                                                                                                              'subrule' => 'basename_characteristic',
                                                                                                              'argcode' => undef,
                                                                                                              'implicit' => undef,
@@ -5427,10 +5427,10 @@ sub _make_reifying_topic {
                                                                                        'strcount' => 0,
                                                                                        'number' => 1,
                                                                                        'error' => undef,
-                                                                                       'line' => '141',
+                                                                                       'line' => '138',
                                                                                        'items' => [
                                                                                                     bless( {
-                                                                                                             'line' => '142',
+                                                                                                             'line' => '139',
                                                                                                              'subrule' => 'resourceRef_characteristic',
                                                                                                              'argcode' => undef,
                                                                                                              'implicit' => undef,
@@ -5447,10 +5447,10 @@ sub _make_reifying_topic {
                                                                                        'strcount' => 0,
                                                                                        'number' => 2,
                                                                                        'error' => undef,
-                                                                                       'line' => '142',
+                                                                                       'line' => '139',
                                                                                        'items' => [
                                                                                                     bless( {
-                                                                                                             'line' => '143',
+                                                                                                             'line' => '140',
                                                                                                              'subrule' => 'resourceData_characteristic',
                                                                                                              'argcode' => undef,
                                                                                                              'implicit' => undef,
@@ -5467,10 +5467,10 @@ sub _make_reifying_topic {
                                                                                        'strcount' => 0,
                                                                                        'number' => 3,
                                                                                        'error' => undef,
-                                                                                       'line' => '143',
+                                                                                       'line' => '140',
                                                                                        'items' => [
                                                                                                     bless( {
-                                                                                                             'line' => '144',
+                                                                                                             'line' => '141',
                                                                                                              'subrule' => 'subject_identity',
                                                                                                              'argcode' => undef,
                                                                                                              'implicit' => undef,
@@ -5494,7 +5494,7 @@ sub _make_reifying_topic {
                                                                }, 'Parse::RecDescent::Rule' ),
                               'association_definition' => bless( {
                                                                    'impcount' => 0,
-                                                                   'line' => '95',
+                                                                   'line' => '92',
                                                                    'prods' => [
                                                                                 bless( {
                                                                                          'dircount' => 0,
@@ -5511,20 +5511,20 @@ sub _make_reifying_topic {
                                                                                                                'matchrule' => 0,
                                                                                                                'lookahead' => 0,
                                                                                                                'subrule' => 'scopes',
-                                                                                                               'line' => '95',
+                                                                                                               'line' => '92',
                                                                                                                'expected' => undef,
                                                                                                                'max' => 1,
                                                                                                                'repspec' => '?'
                                                                                                              }, 'Parse::RecDescent::Repetition' ),
                                                                                                       bless( {
                                                                                                                'description' => '\'(\'',
-                                                                                                               'line' => '95',
+                                                                                                               'line' => '92',
                                                                                                                'pattern' => '(',
                                                                                                                'hashname' => '__STRING1__',
                                                                                                                'lookahead' => 0
                                                                                                              }, 'Parse::RecDescent::Literal' ),
                                                                                                       bless( {
-                                                                                                               'line' => '95',
+                                                                                                               'line' => '92',
                                                                                                                'subrule' => 'type_topic_id',
                                                                                                                'argcode' => undef,
                                                                                                                'implicit' => undef,
@@ -5533,7 +5533,7 @@ sub _make_reifying_topic {
                                                                                                              }, 'Parse::RecDescent::Subrule' ),
                                                                                                       bless( {
                                                                                                                'description' => '\')\'',
-                                                                                                               'line' => '95',
+                                                                                                               'line' => '92',
                                                                                                                'pattern' => ')',
                                                                                                                'hashname' => '__STRING2__',
                                                                                                                'lookahead' => 0
@@ -5544,7 +5544,7 @@ sub _make_reifying_topic {
                                                                                                                'matchrule' => 0,
                                                                                                                'lookahead' => 0,
                                                                                                                'subrule' => 'isreification',
-                                                                                                               'line' => '95',
+                                                                                                               'line' => '92',
                                                                                                                'expected' => undef,
                                                                                                                'max' => 100000000,
                                                                                                                'repspec' => 's?'
@@ -5555,13 +5555,13 @@ sub _make_reifying_topic {
                                                                                                                'matchrule' => 0,
                                                                                                                'lookahead' => 0,
                                                                                                                'subrule' => 'association_member',
-                                                                                                               'line' => '95',
+                                                                                                               'line' => '92',
                                                                                                                'expected' => undef,
                                                                                                                'max' => 100000000,
                                                                                                                'repspec' => 's'
                                                                                                              }, 'Parse::RecDescent::Repetition' ),
                                                                                                       bless( {
-                                                                                                               'line' => '96',
+                                                                                                               'line' => '93',
                                                                                                                'code' => '{
 			   my @components; # here I collect all which I generate here
 
@@ -5608,7 +5608,7 @@ sub _make_reifying_topic {
                                                                  }, 'Parse::RecDescent::Rule' ),
                               'scope' => bless( {
                                                   'impcount' => 0,
-                                                  'line' => '206',
+                                                  'line' => '203',
                                                   'prods' => [
                                                                bless( {
                                                                         'dircount' => 0,
@@ -5621,13 +5621,13 @@ sub _make_reifying_topic {
                                                                         'items' => [
                                                                                      bless( {
                                                                                               'description' => '\'@\'',
-                                                                                              'line' => '206',
+                                                                                              'line' => '203',
                                                                                               'pattern' => '@',
                                                                                               'hashname' => '__STRING1__',
                                                                                               'lookahead' => 0
                                                                                             }, 'Parse::RecDescent::Literal' ),
                                                                                      bless( {
-                                                                                              'line' => '206',
+                                                                                              'line' => '203',
                                                                                               'subrule' => 'topic_id',
                                                                                               'argcode' => undef,
                                                                                               'implicit' => undef,
@@ -5648,7 +5648,7 @@ sub _make_reifying_topic {
                                                 }, 'Parse::RecDescent::Rule' ),
                               'type' => bless( {
                                                  'impcount' => 0,
-                                                 'line' => '202',
+                                                 'line' => '199',
                                                  'prods' => [
                                                               bless( {
                                                                        'dircount' => 0,
@@ -5661,13 +5661,13 @@ sub _make_reifying_topic {
                                                                        'items' => [
                                                                                     bless( {
                                                                                              'description' => '\'(\'',
-                                                                                             'line' => '202',
+                                                                                             'line' => '199',
                                                                                              'pattern' => '(',
                                                                                              'hashname' => '__STRING1__',
                                                                                              'lookahead' => 0
                                                                                            }, 'Parse::RecDescent::Literal' ),
                                                                                     bless( {
-                                                                                             'line' => '202',
+                                                                                             'line' => '199',
                                                                                              'subrule' => 'type_topic_id',
                                                                                              'argcode' => undef,
                                                                                              'implicit' => undef,
@@ -5676,13 +5676,13 @@ sub _make_reifying_topic {
                                                                                            }, 'Parse::RecDescent::Subrule' ),
                                                                                     bless( {
                                                                                              'description' => '\')\'',
-                                                                                             'line' => '202',
+                                                                                             'line' => '199',
                                                                                              'pattern' => ')',
                                                                                              'hashname' => '__STRING2__',
                                                                                              'lookahead' => 0
                                                                                            }, 'Parse::RecDescent::Literal' ),
                                                                                     bless( {
-                                                                                             'line' => '202',
+                                                                                             'line' => '199',
                                                                                              'code' => '{ $return = $item{type_topic_id}; }',
                                                                                              'hashname' => '__ACTION1__',
                                                                                              'lookahead' => 0
@@ -5701,7 +5701,7 @@ sub _make_reifying_topic {
                                                }, 'Parse::RecDescent::Rule' ),
                               'subject_identity' => bless( {
                                                              'impcount' => 0,
-                                                             'line' => '193',
+                                                             'line' => '190',
                                                              'prods' => [
                                                                           bless( {
                                                                                    'dircount' => 0,
@@ -5714,20 +5714,20 @@ sub _make_reifying_topic {
                                                                                    'items' => [
                                                                                                 bless( {
                                                                                                          'description' => '\'sin\'',
-                                                                                                         'line' => '193',
+                                                                                                         'line' => '190',
                                                                                                          'pattern' => 'sin',
                                                                                                          'hashname' => '__STRING1__',
                                                                                                          'lookahead' => 0
                                                                                                        }, 'Parse::RecDescent::Literal' ),
                                                                                                 bless( {
                                                                                                          'description' => '\':\'',
-                                                                                                         'line' => '193',
+                                                                                                         'line' => '190',
                                                                                                          'pattern' => ':',
                                                                                                          'hashname' => '__STRING2__',
                                                                                                          'lookahead' => 0
                                                                                                        }, 'Parse::RecDescent::Literal' ),
                                                                                                 bless( {
-                                                                                                         'line' => '193',
+                                                                                                         'line' => '190',
                                                                                                          'subrule' => 'string',
                                                                                                          'argcode' => undef,
                                                                                                          'implicit' => undef,
@@ -5735,7 +5735,7 @@ sub _make_reifying_topic {
                                                                                                          'lookahead' => 0
                                                                                                        }, 'Parse::RecDescent::Subrule' ),
                                                                                                 bless( {
-                                                                                                         'line' => '194',
+                                                                                                         'line' => '191',
                                                                                                          'code' => '{
 			 use URI;
 			 my $u = URI->new ($item{string});
@@ -5760,7 +5760,7 @@ sub _make_reifying_topic {
                                                            }, 'Parse::RecDescent::Rule' ),
                               'topic_id' => bless( {
                                                      'impcount' => 0,
-                                                     'line' => '218',
+                                                     'line' => '215',
                                                      'prods' => [
                                                                   bless( {
                                                                            'dircount' => 0,
@@ -5772,7 +5772,7 @@ sub _make_reifying_topic {
                                                                            'line' => undef,
                                                                            'items' => [
                                                                                         bless( {
-                                                                                                 'line' => '218',
+                                                                                                 'line' => '215',
                                                                                                  'subrule' => 'id',
                                                                                                  'argcode' => undef,
                                                                                                  'implicit' => undef,
@@ -5793,7 +5793,7 @@ sub _make_reifying_topic {
                                                    }, 'Parse::RecDescent::Rule' ),
                               'association_member' => bless( {
                                                                'impcount' => 0,
-                                                               'line' => '123',
+                                                               'line' => '120',
                                                                'prods' => [
                                                                             bless( {
                                                                                      'dircount' => 0,
@@ -5805,7 +5805,7 @@ sub _make_reifying_topic {
                                                                                      'line' => undef,
                                                                                      'items' => [
                                                                                                   bless( {
-                                                                                                           'line' => '123',
+                                                                                                           'line' => '120',
                                                                                                            'subrule' => 'topic_id',
                                                                                                            'argcode' => undef,
                                                                                                            'implicit' => undef,
@@ -5814,13 +5814,13 @@ sub _make_reifying_topic {
                                                                                                          }, 'Parse::RecDescent::Subrule' ),
                                                                                                   bless( {
                                                                                                            'description' => '\':\'',
-                                                                                                           'line' => '123',
+                                                                                                           'line' => '120',
                                                                                                            'pattern' => ':',
                                                                                                            'hashname' => '__STRING1__',
                                                                                                            'lookahead' => 0
                                                                                                          }, 'Parse::RecDescent::Literal' ),
                                                                                                   bless( {
-                                                                                                           'line' => '123',
+                                                                                                           'line' => '120',
                                                                                                            'subrule' => 'list_of_member_topic_ids',
                                                                                                            'argcode' => undef,
                                                                                                            'implicit' => undef,
@@ -5828,7 +5828,7 @@ sub _make_reifying_topic {
                                                                                                            'lookahead' => 0
                                                                                                          }, 'Parse::RecDescent::Subrule' ),
                                                                                                   bless( {
-                                                                                                           'line' => '124',
+                                                                                                           'line' => '121',
                                                                                                            'code' => '{
 			   my $m = new XTM::member ();
 
@@ -5861,7 +5861,7 @@ sub _make_reifying_topic {
                                                              }, 'Parse::RecDescent::Rule' ),
                               'string' => bless( {
                                                    'impcount' => 0,
-                                                   'line' => '222',
+                                                   'line' => '219',
                                                    'prods' => [
                                                                 bless( {
                                                                          'dircount' => 0,
@@ -5879,7 +5879,7 @@ sub _make_reifying_topic {
                                                                                                'hashname' => '__PATTERN1__',
                                                                                                'lookahead' => 0,
                                                                                                'ldelim' => '/',
-                                                                                               'line' => '222',
+                                                                                               'line' => '219',
                                                                                                'rdelim' => '/'
                                                                                              }, 'Parse::RecDescent::Token' )
                                                                                     ],
@@ -5894,7 +5894,7 @@ sub _make_reifying_topic {
                                                  }, 'Parse::RecDescent::Rule' ),
                               'list_of_ids' => bless( {
                                                         'impcount' => 0,
-                                                        'line' => '216',
+                                                        'line' => '213',
                                                         'prods' => [
                                                                      bless( {
                                                                               'dircount' => 1,
@@ -5906,7 +5906,7 @@ sub _make_reifying_topic {
                                                                               'line' => undef,
                                                                               'items' => [
                                                                                            bless( {
-                                                                                                    'line' => '216',
+                                                                                                    'line' => '213',
                                                                                                     'code' => 'my $oldskip = $skip; $skip=\'[ ]*\'; $oldskip',
                                                                                                     'hashname' => '__DIRECTIVE1__',
                                                                                                     'lookahead' => 0,
@@ -5918,7 +5918,7 @@ sub _make_reifying_topic {
                                                                                                     'matchrule' => 0,
                                                                                                     'lookahead' => 0,
                                                                                                     'subrule' => 'id',
-                                                                                                    'line' => '216',
+                                                                                                    'line' => '213',
                                                                                                     'expected' => undef,
                                                                                                     'max' => 100000000,
                                                                                                     'repspec' => 's'
@@ -5937,7 +5937,7 @@ sub _make_reifying_topic {
                                                       }, 'Parse::RecDescent::Rule' ),
                               '_alternation_1_of_production_1_of_rule_topic_definition' => bless( {
                                                                                                     'impcount' => 0,
-                                                                                                    'line' => '225',
+                                                                                                    'line' => '222',
                                                                                                     'prods' => [
                                                                                                                  bless( {
                                                                                                                           'dircount' => 0,
@@ -5950,14 +5950,14 @@ sub _make_reifying_topic {
                                                                                                                           'items' => [
                                                                                                                                        bless( {
                                                                                                                                                 'description' => '\'tid\'',
-                                                                                                                                                'line' => '225',
+                                                                                                                                                'line' => '222',
                                                                                                                                                 'pattern' => 'tid',
                                                                                                                                                 'hashname' => '__STRING1__',
                                                                                                                                                 'lookahead' => 0
                                                                                                                                               }, 'Parse::RecDescent::Literal' ),
                                                                                                                                        bless( {
                                                                                                                                                 'description' => '\':\'',
-                                                                                                                                                'line' => '225',
+                                                                                                                                                'line' => '222',
                                                                                                                                                 'pattern' => ':',
                                                                                                                                                 'hashname' => '__STRING2__',
                                                                                                                                                 'lookahead' => 0
@@ -5974,7 +5974,7 @@ sub _make_reifying_topic {
                                                                                                   }, 'Parse::RecDescent::Rule' ),
                               'uri' => bless( {
                                                 'impcount' => 0,
-                                                'line' => '224',
+                                                'line' => '221',
                                                 'prods' => [
                                                              bless( {
                                                                       'dircount' => 0,
@@ -5992,7 +5992,7 @@ sub _make_reifying_topic {
                                                                                             'hashname' => '__PATTERN1__',
                                                                                             'lookahead' => 0,
                                                                                             'ldelim' => '/',
-                                                                                            'line' => '224',
+                                                                                            'line' => '221',
                                                                                             'rdelim' => '/'
                                                                                           }, 'Parse::RecDescent::Token' )
                                                                                  ],
@@ -6007,7 +6007,7 @@ sub _make_reifying_topic {
                                               }, 'Parse::RecDescent::Rule' ),
                               'resourceRef_characteristic' => bless( {
                                                                        'impcount' => 0,
-                                                                       'line' => '159',
+                                                                       'line' => '156',
                                                                        'prods' => [
                                                                                     bless( {
                                                                                              'dircount' => 0,
@@ -6020,7 +6020,7 @@ sub _make_reifying_topic {
                                                                                              'items' => [
                                                                                                           bless( {
                                                                                                                    'description' => '\'oc\'',
-                                                                                                                   'line' => '159',
+                                                                                                                   'line' => '156',
                                                                                                                    'pattern' => 'oc',
                                                                                                                    'hashname' => '__STRING1__',
                                                                                                                    'lookahead' => 0
@@ -6031,7 +6031,7 @@ sub _make_reifying_topic {
                                                                                                                    'matchrule' => 0,
                                                                                                                    'lookahead' => 0,
                                                                                                                    'subrule' => 'scopes',
-                                                                                                                   'line' => '159',
+                                                                                                                   'line' => '156',
                                                                                                                    'expected' => undef,
                                                                                                                    'max' => 1,
                                                                                                                    'repspec' => '?'
@@ -6042,20 +6042,20 @@ sub _make_reifying_topic {
                                                                                                                    'matchrule' => 0,
                                                                                                                    'lookahead' => 0,
                                                                                                                    'subrule' => 'type',
-                                                                                                                   'line' => '159',
+                                                                                                                   'line' => '156',
                                                                                                                    'expected' => undef,
                                                                                                                    'max' => 1,
                                                                                                                    'repspec' => '?'
                                                                                                                  }, 'Parse::RecDescent::Repetition' ),
                                                                                                           bless( {
                                                                                                                    'description' => '\':\'',
-                                                                                                                   'line' => '159',
+                                                                                                                   'line' => '156',
                                                                                                                    'pattern' => ':',
                                                                                                                    'hashname' => '__STRING2__',
                                                                                                                    'lookahead' => 0
                                                                                                                  }, 'Parse::RecDescent::Literal' ),
                                                                                                           bless( {
-                                                                                                                   'line' => '159',
+                                                                                                                   'line' => '156',
                                                                                                                    'subrule' => 'string',
                                                                                                                    'argcode' => undef,
                                                                                                                    'implicit' => undef,
@@ -6063,7 +6063,7 @@ sub _make_reifying_topic {
                                                                                                                    'lookahead' => 0
                                                                                                                  }, 'Parse::RecDescent::Subrule' ),
                                                                                                           bless( {
-                                                                                                                   'line' => '160',
+                                                                                                                   'line' => '157',
                                                                                                                    'code' => '{
 			 my $o = new XTM::occurrence ();
 			 $o->add_resource (new XTM::resourceRef (href => $item{string}));
@@ -6098,7 +6098,7 @@ sub _make_reifying_topic {
                                                                      }, 'Parse::RecDescent::Rule' ),
                               'id' => bless( {
                                                'impcount' => 0,
-                                               'line' => '220',
+                                               'line' => '217',
                                                'prods' => [
                                                             bless( {
                                                                      'dircount' => 0,
@@ -6116,7 +6116,7 @@ sub _make_reifying_topic {
                                                                                            'hashname' => '__PATTERN1__',
                                                                                            'lookahead' => 0,
                                                                                            'ldelim' => '/',
-                                                                                           'line' => '220',
+                                                                                           'line' => '217',
                                                                                            'rdelim' => '/'
                                                                                          }, 'Parse::RecDescent::Token' )
                                                                                 ],
@@ -6131,7 +6131,7 @@ sub _make_reifying_topic {
                                              }, 'Parse::RecDescent::Rule' ),
                               'list_of_member_topic_ids' => bless( {
                                                                      'impcount' => 0,
-                                                                     'line' => '214',
+                                                                     'line' => '211',
                                                                      'prods' => [
                                                                                   bless( {
                                                                                            'dircount' => 0,
@@ -6143,7 +6143,7 @@ sub _make_reifying_topic {
                                                                                            'line' => undef,
                                                                                            'items' => [
                                                                                                         bless( {
-                                                                                                                 'line' => '214',
+                                                                                                                 'line' => '211',
                                                                                                                  'subrule' => 'list_of_ids',
                                                                                                                  'argcode' => undef,
                                                                                                                  'implicit' => undef,
@@ -6164,7 +6164,7 @@ sub _make_reifying_topic {
                                                                    }, 'Parse::RecDescent::Rule' ),
                               'basename_characteristic' => bless( {
                                                                     'impcount' => 0,
-                                                                    'line' => '146',
+                                                                    'line' => '143',
                                                                     'prods' => [
                                                                                  bless( {
                                                                                           'dircount' => 0,
@@ -6177,7 +6177,7 @@ sub _make_reifying_topic {
                                                                                           'items' => [
                                                                                                        bless( {
                                                                                                                 'description' => '\'bn\'',
-                                                                                                                'line' => '146',
+                                                                                                                'line' => '143',
                                                                                                                 'pattern' => 'bn',
                                                                                                                 'hashname' => '__STRING1__',
                                                                                                                 'lookahead' => 0
@@ -6188,20 +6188,20 @@ sub _make_reifying_topic {
                                                                                                                 'matchrule' => 0,
                                                                                                                 'lookahead' => 0,
                                                                                                                 'subrule' => 'scopes',
-                                                                                                                'line' => '146',
+                                                                                                                'line' => '143',
                                                                                                                 'expected' => undef,
                                                                                                                 'max' => 1,
                                                                                                                 'repspec' => '?'
                                                                                                               }, 'Parse::RecDescent::Repetition' ),
                                                                                                        bless( {
                                                                                                                 'description' => '\':\'',
-                                                                                                                'line' => '146',
+                                                                                                                'line' => '143',
                                                                                                                 'pattern' => ':',
                                                                                                                 'hashname' => '__STRING2__',
                                                                                                                 'lookahead' => 0
                                                                                                               }, 'Parse::RecDescent::Literal' ),
                                                                                                        bless( {
-                                                                                                                'line' => '146',
+                                                                                                                'line' => '143',
                                                                                                                 'subrule' => 'string',
                                                                                                                 'argcode' => undef,
                                                                                                                 'implicit' => undef,
@@ -6209,7 +6209,7 @@ sub _make_reifying_topic {
                                                                                                                 'lookahead' => 0
                                                                                                               }, 'Parse::RecDescent::Subrule' ),
                                                                                                        bless( {
-                                                                                                                'line' => '147',
+                                                                                                                'line' => '144',
                                                                                                                 'code' => '{
 			 my $b = new XTM::baseName ();
 			 $b->add_baseNameString (new XTM::baseNameString (string => $item{string}));
@@ -6239,7 +6239,7 @@ sub _make_reifying_topic {
                                                                   }, 'Parse::RecDescent::Rule' ),
                               'scopes' => bless( {
                                                    'impcount' => 0,
-                                                   'line' => '204',
+                                                   'line' => '201',
                                                    'prods' => [
                                                                 bless( {
                                                                          'dircount' => 0,
@@ -6252,13 +6252,13 @@ sub _make_reifying_topic {
                                                                          'items' => [
                                                                                       bless( {
                                                                                                'description' => '\'@\'',
-                                                                                               'line' => '204',
+                                                                                               'line' => '201',
                                                                                                'pattern' => '@',
                                                                                                'hashname' => '__STRING1__',
                                                                                                'lookahead' => 0
                                                                                              }, 'Parse::RecDescent::Literal' ),
                                                                                       bless( {
-                                                                                               'line' => '204',
+                                                                                               'line' => '201',
                                                                                                'subrule' => 'list_of_scope_topic_ids',
                                                                                                'argcode' => undef,
                                                                                                'implicit' => undef,

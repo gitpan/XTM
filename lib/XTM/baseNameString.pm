@@ -10,7 +10,7 @@ use XTM::generic;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 =pod
 
@@ -24,7 +24,22 @@ XTM::baseNameString - trivial class definition
 
 =head1 DESCRIPTION
 
-Generic container for accessor functions.
+Class covering a baseNameString
+
+=head2 Methods
+
+Following accessor methods are available via L<XTM::generic> (see that package how
+to set/add values):
+
+=over
+
+=item I<string>:
+
+@{ I<$bns>->string}
+
+returns a scalar
+
+=back
 
 =cut
 
@@ -43,7 +58,7 @@ L<XTM>
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 200[1-2], Robert Barta <rho@telecoma.net>, All rights reserved.
 
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

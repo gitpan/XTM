@@ -7,8 +7,7 @@ WriteMakefile(
 	      'NAME'	      => 'XTM',
 	      'VERSION_FROM'  => 'lib/XTM/base.pm', # finds $VERSION
 	      'EXE_FILES'     => [ 'bin/xtm.pl', 'bin/astma2xtm.pl', 'bin/prettifyxtm.pl' ],
-	      'depend' =>
-	      {'cparser' => 'lib/XTM/AsTMa/CParser.pm'},
+#	      'depend' =>	 {'xcparser' => 'cparser'},
 	      'NOECHO'        => '@',
 	      'PREREQ_PM'     => { 
 				  'Data::Dumper' => 2.102,
@@ -56,3 +55,4 @@ lib/XTM/Path/CParser.pm: lib/XTM/Path.pm
 
 MAKE
 }
+

@@ -14,7 +14,7 @@ use XTM::resourceData;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 =pod
 
@@ -28,7 +28,35 @@ XTM::occurrence - trivial class definition
 
 =head1 DESCRIPTION
 
-Generic container for accessor functions.
+Class covering occurrences
+
+=head2 Methods
+
+Following accessor methods are available via L<XTM::generic> (see that package how
+to set/add values):
+
+=over
+
+=item I<instanceOf>:
+
+I<$o>->instanceOf
+
+returns a L<XTM::instanceOf> node
+
+=item I<scope>:
+
+I<$o>->scope
+
+returns a L<XTM::scope> node
+
+=item I<resource>:
+
+I<$o>->resource
+
+returns a L<XTM::resourceRef> or L<XTM::resourceData> node
+
+=back
+
 
 =cut
 
@@ -51,7 +79,7 @@ L<XTM>
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 200[1-2], Robert Barta <rho@telecoma.net>, All rights reserved.
 
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

@@ -29,9 +29,6 @@ sub new {
 
 our $astma_grammar = q {
 
-
-
-
 		       startrule : section
 
 		       section : topic_definition | association_definition | <error: Problem parsing near "$text" (line "$thisline", col "$thiscolumn")>

@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw(  );
 @EXPORT_OK = qw( );
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 
 =pod
@@ -39,7 +39,10 @@ use vars qw(%xtm %priv);
 	universal_scope => 'http://www.topicmaps.org/xtm/1.0/#psi-universal-scope',
 	topic           => 'http://www.topicmaps.org/xtm/1.0/#psi-topic',
 	association     => 'http://www.topicmaps.org/xtm/1.0/#psi-association',
-	occurrence      => 'http://www.topicmaps.org/xtm/1.0/#psi-occurrence'
+	occurrence      => 'http://www.topicmaps.org/xtm/1.0/#psi-occurrence',
+	'class-instance'  => 'http://www.topicmaps.org/xtm/core.xtm#class-instance',
+	'class'           => 'http://www.topicmaps.org/xtm/core.xtm#class',
+	'instance'        => 'http://www.topicmaps.org/xtm/core.xtm#instance',
        );
 
 %priv = (

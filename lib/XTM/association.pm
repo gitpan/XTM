@@ -20,7 +20,7 @@ use XTM::Log ('elog');
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 my $assoc_cntr = 0;
 
@@ -49,6 +49,33 @@ XTM::association - trivial class definition
 Generic container for accessor functions.
 
 =head2 Methods
+
+Following accessor methods are available via L<XTM::generic> (see that package how
+to set/add values):
+
+=over
+
+=item I<members>:
+
+@{ I<$a>->members}
+
+returns list reference of L<XTM::member> nodes.
+
+=item I<instanceOf>:
+
+I<$a>->instanceOf
+
+returns an L<XTM::instanceOf> node.
+
+=item I<scope>:
+
+I<$a>->scope
+
+returns a L<XTM::scope> node
+
+=back
+
+Other methods:
 
 =over
 

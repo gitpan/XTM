@@ -11,14 +11,15 @@ lib/XTM/AsTMa/CParser.pm
 lib/XTM/LTM.pm
 lib/XTM/LTM/MemoryBuilder.pm
 lib/XTM/LTM/Parser.pm
+lib/XTM/LTM/CParser.pm
 lib/XTM/IO.pm
 lib/XTM/Log.pm
 lib/XTM/Memory.pm
 lib/XTM/Namespaces.pm
 lib/XTM/PSI.pm
 lib/XTM/Path.pm
-lib/XTM/grammar.pm
 lib/XTM/Path/CParser.pm
+lib/XTM/grammar.pm
 lib/XTM/Virtual.pm
 lib/XTM/XML/MemoryBuilder.pm
 lib/XTM/XML.pm

@@ -12,7 +12,7 @@ use UNIVERSAL qw(isa);
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.15';
+$VERSION = '0.16';
 
 use Data::Dumper;
 
@@ -502,50 +502,50 @@ sub _passes_filter {
   my $f    = shift;
   my $memoize = shift;
 
-  elog ('XTM::Memory', 4, "passing filter  '$f'");
+#  elog ('XTM::Memory', 4, "passing filter  '$f'");
   if ($f =~ /^baseName\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
-    elog ('XTM::Memory', 4, "    baseName regexps '$regexp'");
-    foreach my $b (@{$t->baseNames}) {  # only one matches => ok
-      elog ('XTM::Memory', 5, "       baseName", $b);
-      return 1 if $b->baseNameString->string =~ /$regexp/i;
+#    elog ('XTM::Memory', 4, "    baseName regexps '$regexp'");
+    foreach my $b (@{$t->{baseNames}}) {  # only one matches => ok
+#      elog ('XTM::Memory', 5, "       baseName", $b);
+      return 1 if $b->{baseNameString}->{string} =~ /$regexp/i;
     }
   } elsif ($f =~ /^indicates\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
-    if ($t->subjectIdentity) {
-      foreach my $r (@{$t->subjectIdentity->references}) {
-	return 1 if $r->href =~ /$regexp/i;
+    if ($t->{subjectIdentity}) {
+      foreach my $r (@{$t->{subjectIdentity}->{references}}) {
+	return 1 if $r->{href} =~ /$regexp/i;
       }
     }
     return 0;
   } elsif ($f =~ /^reifies\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
     return 
-      $t->subjectIdentity && 
-	$t->subjectIdentity->resourceRef &&
-	  $t->subjectIdentity->resourceRef->href =~ /$regexp/i;
+      $t->{subjectIdentity} && 
+	$t->{subjectIdentity}->{resourceRef} &&
+	  $t->{subjectIdentity}->{resourceRef}->{href} =~ /$regexp/i;
   } elsif ($f =~ /^occurrence\s+regexps\s+\/(.+)\/$/) { # make no distinction between resourceRef and resourceData
     my $regexp = $1;
-    foreach my $o (@{$t->occurrences}) {
+    foreach my $o (@{$t->{occurrences}}) {
 ##      return 1 if $o->baseName && $o->baseName->baseNameString->string =~ /$regexp/i;
-      return 1 if $o->resource->isa ('XTM::resourceRef')  && $o->resource->href =~ /$regexp/i;
-      return 1 if $o->resource->isa ('XTM::resourceData') && $o->resource->data =~ /$regexp/i;
+      return 1 if $o->{resource}->isa ('XTM::resourceRef')  && $o->{resource}->href =~ /$regexp/i;
+      return 1 if $o->{resource}->isa ('XTM::resourceData') && $o->{resource}->data =~ /$regexp/i;
     }
   } elsif ($f =~ /^id\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
     return grep ($_ =~ /$regexp/i, @{$t->ids});
   } elsif ($f =~ /^text\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
-    foreach my $b (@{$t->baseNames}) {  # only one matches => ok
-      return 1 if $b->baseNameString->string =~ /$regexp/i;
+    foreach my $b (@{$t->{baseNames}}) {  # only one matches => ok
+      return 1 if $b->{baseNameString}->{string} =~ /$regexp/i;
     }
-    foreach my $o (@{$t->occurrences}) {
-      return 1 if $o->baseName && $o->baseName->baseNameString->string =~ /$regexp/i;
-      return 1 if $o->resource->isa ('XTM::resourceRef')  && $o->resource->href =~ /$regexp/i;
-      return 1 if $o->resource->isa ('XTM::resourceData') && $o->resource->data =~ /$regexp/i;
+    foreach my $o (@{$t->{occurrences}}) {
+      return 1 if $o->{baseName} && $o->{baseName}->{baseNameString}->{string} =~ /$regexp/i;
+      return 1 if $o->{resource}->isa ('XTM::resourceRef')  && $o->{resource}->href =~ /$regexp/i;
+      return 1 if $o->{resource}->isa ('XTM::resourceData') && $o->{resource}->data =~ /$regexp/i;
     }
   } elsif ($f =~ /^id\s+eq\s+\'(.+)\'$/) {
-    return grep ($_ eq $1, @{$t->ids});
+    return grep ($_ eq $1, @{$t->{ids}});
   } elsif ($f =~ /^assocs(\s+via\s+(\S+))?(\s+as\s+(\S+))?(\s+with\s+(\S+))?(\s+transitively)?$/) {
     my $via   = $1 ? $2 : '';
     my $role  = $3 ? "#$4" : undef;
@@ -553,20 +553,20 @@ sub _passes_filter {
     my $trans = $7 || '';
     my $id    = $t->id;
 
-    elog ('XTM::Memory', 4, "    assocs via '$via' ".($role ? "role '$role'" : "")." with '$with', $trans");
+#    elog ('XTM::Memory', 4, "    assocs via '$via' ".($role ? "role '$role'" : "")." with '$with', $trans");
     my $assocs = $memoize->{"a_instances => $via"} ||
       ($memoize->{"a_instances => $via"} = $via ? $self->associations ("is-a $via") : $self->associations ());
 
     if ($with) { # then we better start from there, performance
       ($id, $with) = ($with, $id);
-      elog ('XTM::Memory', 4, "    assocs via with optimization");
+#      elog ('XTM::Memory', 4, "    assocs via with optimization");
     }
     my $s = $memoize->{$id.$trans} || 
-      ($memoize->{$id.$trans} = $self->_topic_tree ($id, $assocs, undef, undef, 0, $trans ? undef : 1));
-    elog ('XTM::Memory', 5, "        tree", $s);
+      ($memoize->{$id.$trans} = $self->_topic_tree ($id, {}, $assocs, undef, undef, 0, $trans ? undef : 1));
+#    elog ('XTM::Memory', 5, "        tree", $s);
     return 0 if ($via  && !scalar             @{$s->{'children*'}}); # no topics via via reached
     return 0 if (         !grep ($with eq $_, @{$s->{'children*'}}));
-    elog ('XTM::Memory', 4, "       passed via, with");
+#    elog ('XTM::Memory', 4, "       passed via, with");
     return 1;
   } elsif ($f =~ /^is-a\s+(.+)$/) {
     return $t->has_instanceOf ($1);
@@ -582,8 +582,8 @@ sub topics {
   my $from   = shift || 0;
   my $to     = shift || undef;
 
-  elog ('XTM::Memory', 3,"topics");
-  elog ('XTM::Memory', 5,"    filter  $filter, $from -> ", defined $to ? $to : undef);
+#  elog ('XTM::Memory', 3,"topics");
+#  elog ('XTM::Memory', 5,"    filter  $filter, $from -> ", defined $to ? $to : undef);
 
   my @ids;
   my $i = 0; # indexes the matches
@@ -593,16 +593,17 @@ sub topics {
   my @filters = split (/\s+and\s+/i, $filter); # poor man's parsing, only ANDed clauses, no brackets
 
   my %memoize;  # optimization
-  my $p = 0; # only used for the uniq sort below
+  my %seen; # only used for the uniq sort below
  TOPICS:
-  foreach my $t ( grep ($_ != $p && ($p = $_), sort values  %{$self->{topics}} )) {
+#  foreach my $t ( grep ($_ != $p && ($p = $_), sort values  %{$self->{topics}} )) {
+  foreach my $t ( grep (!$seen{$_}++, values  %{$self->{topics}} )) {
     last TOPICS if defined $to && $i > $to;
-    elog ('XTM::Memory', 4, "  working on ".$t->id);
+#    elog ('XTM::Memory', 4, "  working on ".$t->id);
 
     foreach my $f ( @filters ) { # only ANDed clauses, yet
-      elog ('XTM::Memory', 4, "     checking $f, as $i. for from $from to ".(defined $to ? $to : ''));
+#      elog ('XTM::Memory', 4, "     checking $f, as $i. for from $from to ".(defined $to ? $to : ''));
       next TOPICS unless $self->_passes_filter ($t, $f, \%memoize);
-      elog ('XTM::Memory', 4, "        passed");
+#      elog ('XTM::Memory', 4, "        passed");
     }
     push @ids, $t->id if ($from <= $i++);
   }
@@ -816,17 +817,20 @@ sub baseNames {
 sub _topic_tree {
   my $self    = shift;
   my $topic   = shift;
+  my $visited = shift;
   my $aids    = shift;
   my ($a, $b) = (shift, shift);
   my ($currdepth, $maxdepth) = (shift, shift);
   
-  elog ('XTM::Memory', 3, "_topic_tree ".
-	defined $a ? $a : 'no a'.", ".
-	defined $b ? $b : 'no b'.
-	" with node $topic type ?? ($currdepth, ".
-	defined $maxdepth ? $maxdepth : '-'.")");
-  elog ('XTM::Memory', 5, "    assocs: ", $aids);
+#  elog ('XTM::Memory', 3, "_topic_tree ".
+#	defined $a ? $a : 'no a'.", ".
+#	defined $b ? $b : 'no b'.
+#	" with node $topic type ?? ($currdepth, ".
+#	defined $maxdepth ? $maxdepth : '-'.")");
+#  elog ('XTM::Memory', 5, "    assocs: ", $aids);
   
+  return $visited->{$topic} if $visited->{$topic}; # been there, done that
+
   my $n = { tid         => $topic,
 	    children    => [],# contains direct children
 	    'children*' => [] # contains also indirect one
@@ -839,23 +843,24 @@ sub _topic_tree {
       # look whether $a has an instance here
       foreach my $m ( @{$ar->members} ) {
 	next unless $m->roleSpec; # give up if there is no role
-	elog ('XTM::Memory', 4,"    checking for role ", $m->roleSpec->reference->href);
+#	elog ('XTM::Memory', 4,"    checking for role ", $m->roleSpec->reference->href);
 	next if defined $a && $a ne $m->roleSpec->reference->href;
-	elog ('XTM::Memory', 4,"      still there because of child");
+#	elog ('XTM::Memory', 4,"      still there because of child");
 	foreach my $lr (@{$m->references}) {
-	  elog ('XTM::Memory', 4,"  checking out reference ".$lr->href);
+#	  elog ('XTM::Memory', 4,"  checking out reference ".$lr->href);
 	  if ($lr->href eq "#$topic") {
-	    elog ('XTM::Memory', 4,"    found $topic playing first role");
+#	    elog ('XTM::Memory', 4,"    found $topic playing first role");
 	    foreach my $m2 ( @{$ar->members} ) { 
-	      elog ('XTM::Memory', 4,"    inner loop for other members");
+#	      elog ('XTM::Memory', 4,"    inner loop for other members");
 	      next unless $m->roleSpec && $m2->roleSpec; # give up if there is no role
 	      if ($m->roleSpec->reference->href ne $m2->roleSpec->reference->href) { # get forward drift
 	        next if defined $b && $b ne $m2->roleSpec->reference->href;
-		elog ('XTM::Memory', 4,"    found other playing second role");
+#		elog ('XTM::Memory', 4,"    found other playing second role");
 		foreach my $ls (@{$m2->references}) {
 		  (my $b_topic = $ls->href) =~ s/^\#//;
-		  elog ('XTM::Memory', 4,"    drill down for $b_topic");
+#		  elog ('XTM::Memory', 4,"    drill down for $b_topic");
 		  my $child = $self->_topic_tree ($b_topic, 
+						  $visited, 
 						  $aids, 
 						  $a, 
 						  $b, 
@@ -866,15 +871,79 @@ sub _topic_tree {
 		}
 	      }
 	    }
-	    last; # I'm only interested in a tree here
+	    last;                                   # I'm only interested in a tree here
 	  }
 	}
       }
     }
   }
+  $visited->{$n->{tid}} = $n;                      # global hash which remembers already built subtrees
   return $n;
 }
 
+
+sub _class_tree {
+  my $self    = shift;
+  my $topic   = shift;
+  my $visited = shift;
+  my ($currdepth, $maxdepth) = (shift, shift);
+
+  return { tid         => $topic,
+	   children    => [],
+	   'children*' => []
+	   } if ($topic =~ /^\w+:/);               # absolute ones
+
+  $topic =~ s/^\#//;                               # continue with relative topics
+
+  return $visited->{$topic} if $visited->{$topic}; # been there, done that
+
+  my $n = { tid         => $topic,
+	    children    => [],
+	    'children*' => []
+	  };
+
+  if (!defined $maxdepth || $currdepth < $maxdepth) {
+    foreach my $href (map { $_->{reference}->{href} } @{$self->{topics}->{$topic}->{instanceOfs}}) {
+      my $child = $self->_class_tree ($href, $visited, $currdepth+1, $maxdepth);
+      push @{$n->{'children'}},  $child;
+      push @{$n->{'children*'}}, $child->{tid}, @{$child->{'children*'}};
+    }
+  }
+
+  $visited->{$n->{tid}} = $n;                      # global hash which remembers already built subtrees
+  return $n;
+}
+
+
+sub _instance_tree {
+  my $self  = shift;
+  my $topic = shift;
+  my $visited = shift;
+  my ($currdepth, $maxdepth) = (shift, shift);
+
+
+  return $visited->{$topic} if $visited->{$topic}; # been there, done that
+
+  my $n = { tid         => $topic,
+	    children    => [],
+	    'children*' => []
+	  };
+
+#warn $maxdepth;
+  if (!defined $maxdepth || $currdepth < $maxdepth) {
+    foreach my $t (values %{$self->{topics}}) {
+#warn "check: ".Dumper $t;
+      if ($t->has_instanceOf ($topic)) {
+	my $child = $self->_instance_tree ($t->{id}, $visited, $currdepth+1, $maxdepth);
+	push @{$n->{'children'}},  $child;
+	push @{$n->{'children*'}}, $child->{tid}, @{$child->{'children*'}};
+      }
+    }
+  }
+
+  $visited->{$n->{tid}} = $n;                      # global hash which remembers already built subtrees
+  return $n;
+}
 
 
 =pod

@@ -1,5 +1,14 @@
 Revision history for Perl extension XTM.
 
+0.34  Sun Aug  4 21:32:45 EST 2002
+	- added LTM/CParser (would not build automatically on some systems?)
+	- more speed improvements in XTM::Memory (topics query)
+	- fixed documentation bug for induced_topic_tree
+	- added class-instance as special association type to induced_topic_tree
+	- added loop support (via shared trees) in induced_topic_tree, pruning reduces runtime
+	- added some PSIs to XTM::PSI
+	- added method descriptions to the most important base classes
+
 0.33  Fri Jul 26 21:35:17 EST 2002
 	- fixed bug which raises exception when XTM::Path creating /topic[@id = '...']
 	- changed simple search syntax in XTM::Memory 'regexp' -> 'regexps'

@@ -394,6 +394,8 @@ sub handle_ltm {
 
   $text =~ s#/\*.*?\*/##gs; # throw away comments
 
+
+  $self->{tm} = new XTM::Memory ();
   $parser->startrule (\$text, 1, $self->{tm});
   die "XTM:LTM: Found unparseable '".substr($text,0,40)."....'"    unless $text =~ /^\s*$/s;
 

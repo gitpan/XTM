@@ -73,7 +73,7 @@ bn: this line is too long, so\
         off white-spaces on its beginning and its end:
 
 	<blockquote>
-	    <i>string</i> --> [ ws* ] { <i>any character</i> } [ ws* ] eol
+	    <i>string</i>   → [ ws* ] { <i>any character</i> } [ ws* ] eol
 	</blockquote>
 	</p>
 
@@ -83,7 +83,7 @@ bn: this line is too long, so\
 	<i>typed</i> non-terminals, like <i>role-topic-id</i> or <i>type-topic-id</i>.
 	</p>
 
-	<hr />
+	
 		<h2>General Semantics</h2>
 	<p>
 	An AsTMa= processor is any program which is capable to parse and process an AsTMa= instance.
@@ -96,18 +96,18 @@ bn: this line is too long, so\
 	</p>
 
 	<p>
-	A AsTMa= processor is free to skip the transformation step and to directly load AsTMa= instances as long
+	An AsTMa= processor is free to skip the transformation step and to directly load AsTMa= instances as long
 	as this results in the same semantics as the virtual XTM instance.
 	</p>
 
-	<hr />
+	
 		<h2>Overall Structure</h2>
 	<p>
 	An AsTMa= instance has the following structure:
     
 	<blockquote>
-	      <i>instance</i> --> { <i>comment</i> } <i>name-encode</i> { <i>section</i> }<br />
-	      <i>section</i> --> <i>comment</i> | <i>topic-definition</i> | <i>association-definition</i>
+	      <i>instance</i> → { <i>comment</i> } <i>name-encode</i> { <i>section</i> }<br />
+	      <i>section</i> → <i>comment</i> | <i>topic-definition</i> | <i>association-definition</i>
 	</blockquote>
 	</p>
 
@@ -124,7 +124,7 @@ bn: this line is too long, so\
 		</li>
 	</ul>
 	</p>
-	<hr />
+	
 		<h2>Naming and Encoding</h2>
 	<p>
 	A particular AsTMa= instance is a character string in a particular character encoding. The
@@ -138,7 +138,7 @@ bn: this line is too long, so\
 	</p>
 	<p>
 	<blockquote>
-	     <i>name-encode</i> --> <i>name</i> [ ':' <i>encoding</i> ] eol
+	     <i>name-encode</i> → <i>name</i> [ ':' <i>encoding</i> ] eol
 	</blockquote>
 	</p>
 
@@ -152,7 +152,7 @@ linux: iso-8859-1
 </pre>
 	</p>
 
-	<hr />
+	
 		<h2>Comments</h2>
 	<p>
 	It is up to an AsTMa= processor how to process comments. When converting into XTM, the processor MAY
@@ -161,7 +161,7 @@ linux: iso-8859-1
 
 	<p>
 	<blockquote>
-	      <i>comment</i> --> { '#' <i>string</i> eol }
+	      <i>comment</i> → { '#' <i>string</i> eol }
 	</blockquote>
 
 
@@ -210,13 +210,13 @@ linux: iso-8859-1
 		
 	</dl>
 	</p>
-	<hr />
+	
 		<h2>Topics</h2>
 	<p>
 	A topic definition section follows the syntax
 
 	<blockquote>
-	      <i>topic-definition</i> --> [ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] [ 'reifies' <i>string</i> ] { 'is-reified-by' uri } eol 
+	      <i>topic-definition</i> → [ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] [ 'reifies' <i>string</i> ] { 'is-reified-by' <i>uri</i> } eol 
               { ws* <i>topic-characteristic</i> eol } 
 	</blockquote>
 	</p>
@@ -233,7 +233,7 @@ linux: iso-8859-1
 	of that topic. The list entries are separated by one (or more) white spaces:
       
 	<blockquote>
-	      <i>list-of-*-topic-ids</i> --> <i>topic-id</i> { ws+ <i>topic-id</i> }
+	      <i>list-of-*-topic-ids</i> → <i>topic-id</i> { ws+ <i>topic-id</i> }
 	</blockquote>
 	</p>
 
@@ -255,7 +255,7 @@ linux (operating-system-technology open-source-software)
 	element</a> with the xlink:href attribute having the value of the type id.
 	</p>
 
-	<hr />
+	
 		<h2>Topic Reification</h2>
 	<p>
 	Optionally, it can be specified that a particular topic <i>reifies</i> a particular addressable
@@ -288,7 +288,7 @@ linux-org (web-site) is-reified-by kernel-org
 </pre>
 	</p>
 
-	<hr />
+	
 		<h2>Topic characteristics</h2>
 	<p>
 	Any topic definition section can include any number of topic characteristics, the order itself is irrelevant. 
@@ -328,7 +328,7 @@ linux (operating-system-technology open-source-software)
 	element of the virtual XTM instance:
 
 	<blockquote>
-	   <i>topic-characteristic</i> --> <i>basename-characteristic</i> | <i>resourceRef-characteristic</i> | <i>resourceData-characteristic</i> | <i>subject-identity</i>
+	   <i>topic-characteristic</i> → <i>basename-characteristic</i> | <i>resourceRef-characteristic</i> | <i>resourceData-characteristic</i> | <i>subject-identity</i>
 	</blockquote>
 
 	<dl>
@@ -336,9 +336,9 @@ linux (operating-system-technology open-source-software)
 		<dt><strong>baseName</strong></dt>
 			<dd>
 			<p>
-			A (scoped) base name can be defined via
+			A (scoped) base name can be defined via:
 			<blockquote>
-			  <i>basename-characteristic</i> --> 'bn' [ '@' <i>list-of-scope-topic-ids</i> ] ':' <i>string</i>
+			  <i>basename-characteristic</i> → 'bn' [ '@' <i>list-of-scope-topic-ids</i> ] ':' <i>string</i>
 			</blockquote>
 			The <i>string</i> will---after being stripped off leading and trailing blanks---be used  
 			for the text content of the 
@@ -359,7 +359,7 @@ linux (operating-system-technology open-source-software)
 			<p>
 			A (scoped and/or typed) resourceRef occurrence is defined with
 			<blockquote>
-			  <i>resourceRef-characteristic</i> --> 'oc' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>uri</i>
+			  <i>resourceRef-characteristic</i> → 'oc' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>uri</i>
 			</blockquote>
 			The <i>uri</i> SHOULD be a valid URI. An AsTMa= processor MAY perform checks on this URL.
 			</p>
@@ -395,7 +395,7 @@ linux (operating-system-technology open-source-software)
 			<p>
 			A (scoped and/or typed) resourceData occurrence is defined with
 			<blockquote>
-			  <i>resourceData-characteristic</i> --> 'in' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>string</i>
+			  <i>resourceData-characteristic</i> → 'in' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>string</i>
 			</blockquote>
 			The <i>string</i> will---after being stripped off leading and trailing blanks---be used as 
 			text inside a
@@ -427,7 +427,7 @@ linux (operating-system-technology open-source-software)
 			<p>
 			A subject identity is defined by
 			<blockquote>
-			  <i>subject-identity</i> --> 'sin' ':' <i>uri</i>
+			  <i>subject-identity</i> → 'sin' ':' <i>uri</i>
 			</blockquote>
 			This <i>uri</i> will be used as subject indicator reference as the value for the 
 			attribute xlink:href for a 
@@ -441,13 +441,13 @@ linux (operating-system-technology open-source-software)
 	</dl>
 	</p>
 
-	<hr />
+	
 		<h2>Associations</h2>
 	<p>
 	An association definition section follows the syntax
 
 	<blockquote>
-	      <i>association-definition</i> --> [ '@' <i>scope-topic-id</i> ] '(' [ <i>association-type-topic-id</i> ] ')' { 'is-reified-by' uri } eol { ws* <i>association-member</i> eol }
+	      <i>association-definition</i> → [ '@' <i>scope-topic-id</i> ] '(' [ <i>association-type-topic-id</i> ] ')' { 'is-reified-by' <i>uri</i> } eol { ws* <i>association-member</i> eol }
 	</blockquote>
 
 	</p>
@@ -481,7 +481,7 @@ linux (operating-system-technology open-source-software)
 	Association members are defined line-by-line according to
 
 	<blockquote>
-	      <i>association-member</i> --> <i>role-topic-id</i> ':' { <i>member-topic-id</i> }
+	      <i>association-member</i> → <i>role-topic-id</i> ':' { <i>member-topic-id</i> }
 	</blockquote>
 	</p>
 
@@ -519,7 +519,7 @@ linux (operating-system-technology open-source-software)
 </pre>
 	</p>
 
-	<hr />
+	
 		<h2>Directives</h2>
 	<p>
 	AsTMa= allows processors to define any number of <i>directives</i>. The only (syntactic)
@@ -538,7 +538,7 @@ linux (operating-system-technology open-source-software)
 	</ul>
 	</p>
 
-	<hr />
+	
 		<h2>Open Issues</h2>
 	<p>
 	Following unresolved issues exist:
@@ -550,7 +550,7 @@ linux (operating-system-technology open-source-software)
 		<li>should there be default roles for association members?</li>
 	</ul>
 	</p>
-	<hr />
+	
 		<h2>Appendix: Changes</h2>
 	<ul>
 		<li>
@@ -600,52 +600,52 @@ linux (operating-system-technology open-source-software)
 		relative to <a href="astma-0.99.html">v0.99</a>: association types HAVE to be in () s now
 		</li>
 	</ul>
-	<hr />
+	
 		<h2>Appendix: Syntax</h2>
 	<table width="100%">
 	<caption>AsTMa= Syntax</caption>
 	<tbody>
 <!--		<row><td colspan="3"></entry><entry>Comment</entry></row> -->
-		<tr><td><i>instance</i></td><td>--></td><td>{ <i>comment</i> } <i>name-encode</i> { <i>section</i> }</td><td></td></tr>
+		<tr><td><i>instance</i></td><td>→</td><td>{ <i>comment</i> } <i>name-encode</i> { <i>section</i> }</td><td></td></tr>
 
-		<tr><td><i>comment</i></td><td>--></td><td>{ '#' <i>string</i> eol }</td><td></td></tr>
+		<tr><td><i>comment</i></td><td>→</td><td>{ '#' <i>string</i> eol } <br /> </td><td></td></tr>
 
-		<tr><td><i>name-encode</i></td><td>--></td><td><i>name</i> [ ':' <i>encoding</i> ] eol</td><td></td></tr>
+		<tr><td><i>name-encode</i></td><td>→</td><td><i>name</i> [ ':' <i>encoding</i> ] eol </td><td></td></tr>
 
-		<tr><td><i>section</i></td><td>--></td><td><i>comment</i> |<br />
+		<tr><td><i>section</i></td><td>→</td><td><i>comment</i> |<br />
 	    <i>topic-definition</i> |<br />
 	    <i>association-definition</i></td><td></td></tr>
 
-		<tr><td><i>topic-definition</i></td><td>--></td><td>[ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] [ 'reifies' <i>string</i> ] eol { ws* <i>topic-characteristic</i> eol } </td><td></td></tr>
+		<tr><td><i>topic-definition</i></td><td>→</td><td>[ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] [ 'reifies' <i>string</i> ] { 'is-reified-by' <i>uri</i> } eol <br /> { ws* <i>topic-characteristic</i> eol }  </td><td></td></tr>
 
-		<tr><td><i>topic-characteristic</i></td><td>--></td><td><i>basename-characteristic</i> |<br />
+		<tr><td><i>topic-characteristic</i></td><td>→</td><td><i>basename-characteristic</i> |<br />
 	    <i>resourceRef-characteristic</i> |<br />
 	    <i>resourceData-characteristic</i> |<br />
 	    <i>subject-identity</i></td><td></td></tr>
 
-		<tr><td><i>basename-characteristic</i></td><td>--></td><td>'bn' [ '@' <i>list-of-scope-topic-ids</i> ] ':' <i>string</i></td><td></td></tr>
+		<tr><td><i>basename-characteristic</i></td><td>→</td><td>'bn' [ '@' <i>list-of-scope-topic-ids</i> ] ':' <i>string</i></td><td></td></tr>
 
-		<tr><td><i>resourceRef-characteristic</i></td><td>--></td><td>'oc' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>string</i></td><td></td></tr>
+		<tr><td><i>resourceRef-characteristic</i></td><td>→</td><td>'oc' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>uri</i></td><td></td></tr>
 
-		<tr><td><i>resourceData-characteristic</i></td><td>--></td><td>'in' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>string</i></td><td></td></tr>
+		<tr><td><i>resourceData-characteristic</i></td><td>→</td><td>'in' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>string</i></td><td></td></tr>
 
-		<tr><td><i>subject-identity</i></td><td>--></td><td>'sin' ':' <i>string</i></td><td>must be a valid URI</td></tr>
+		<tr><td><i>subject-identity</i></td><td>→</td><td>'sin' ':' <i>uri</i></td><td></td></tr>
 
-		<tr><td><i>association-definition</i></td><td>--></td><td>[ '@' <i>scope-topic-id</i> ] '(' [ <i>association-type-topic-id</i> ] ')' eol { ws* <i>association-member</i> eol }</td><td>at least one member</td></tr>
+		<tr><td><i>association-definition</i></td><td>→</td><td>[ '@' <i>scope-topic-id</i> ] '(' [ <i>association-type-topic-id</i> ] ')' { 'is-reified-by' <i>uri</i> } eol <br /> { ws* <i>association-member</i> eol }</td><td>at least one member</td></tr>
 
-		<tr><td><i>association-member</i></td><td>--></td><td><i>role-topic-id</i> ':' { <i>member-topic-id</i> }</td><td>at least one player</td></tr>
+		<tr><td><i>association-member</i></td><td>→</td><td><i>role-topic-id</i> ':' { <i>member-topic-id</i> }</td><td>at least one player</td></tr>
 
-		<tr><td><i>list-of-any-topic-ids</i></td><td>--></td><td><i>topic-id</i> { ws+ <i>topic-id</i> }</td><td></td></tr>
+		<tr><td><i>list-of-any-topic-ids</i></td><td>→</td><td><i>topic-id</i> { ws+ <i>topic-id</i> }</td><td></td></tr>
 
-		<tr><td><i>any-topic-id</i></td><td>--></td><td><i>topic-id</i></td><td></td></tr>
+		<tr><td><i>any-topic-id</i></td><td>→</td><td><i>topic-id</i></td><td></td></tr>
 
-		<tr><td><i>string</i></td><td>--></td><td>[ ws* ] { <i>character</i> } [ ws* ]</td><td>stripped of blanks</td></tr>
+		<tr><td><i>string</i></td><td>→</td><td>[ ws* ] { <i>character</i> } [ ws* ]</td><td>stripped of blanks</td></tr>
 
-		<tr><td><i>name</i></td><td>--></td><td>/\w+/ in regexp</td><td></td></tr>
+		<tr><td><i>name</i></td><td>→</td><td>/\w+/ in regexp</td><td></td></tr>
 	</tbody>
 	</table>
 
-	<hr />
+	
 
 </body>
 </html>

@@ -12,7 +12,7 @@ use XTM::baseNameString;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 =pod
 
@@ -26,17 +26,28 @@ XTM::baseName - trivial class definition
 
 =head1 DESCRIPTION
 
-Generic container for accessor functions.
+Class covering a baseName
 
-=cut
+=head2 Methods
 
-=item B<add>
+Following accessor methods are available via L<XTM::generic> (see that package how
+to set/add values):
 
-I<$t>->add (I<$y>)
+=over
 
-I<add> analyses the type of the data structure to be added and will integrate the
-information accordingly as simple component or as list. An exception will be raised
-if the internal consistency would be broken.
+=item I<baseNameString>:
+
+I<$b>->baseNameString
+
+returns a L<XTM::baseNameString> node
+
+=item I<scope>:
+
+I<$b>->scope
+
+returns a L<XTM::scope> node
+
+=back
 
 =cut
 

@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( );
-$VERSION = '0.29';
+$VERSION = '0.30';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -635,11 +635,12 @@ computes a tree of topics based on a starting topic, an association type
 and two roles. Whenever an association of the given type is found and the given topic appears in the
 role given in this very association, then all topics appearing in the other given role are regarded to be
 children in the result tree. There is also an optional C<depth> parameter. If it is not defined, no limit
-applies. If there are loops implied by this relation, so be it.
+applies. Starting from XTM::base version 0.34 loops are detected and are handled gracefully. The returned
+tree might contain loops then.
 
 Examples:
 
- 
+
   $hierarchy = $tm->induced_assoc_tree (topic      => $start_node,
 					assoc_type => 'at-relation',
 					a_role     => 'tt-parent',
@@ -650,26 +651,75 @@ Examples:
 					a_role     => 'tt-child',
 					depth      => 42 );
 
+B<Note>
+
+Starting from XTM::base version 0.34 you can also use the predefined association
+type C<http://www.topicmaps.org/xtm/core.xtm#class-instance>:
+
+  $types     = $tm->induced_assoc_tree (topic      => $start_node,
+					assoc_type => $XTM::PSI::xtm{'class-instance'},
+					a_role     => $XTM::PSI::xtm{'instance'},
+					b_role     => $XTM::PSI::xtm{'class'},
+					depth      => undef );
+
+or
+
+  $instances = $tm->induced_assoc_tree (topic      => $start_node,
+					assoc_type => $XTM::PSI::xtm{'class-instance'},
+					b_role     => $XTM::PSI::xtm{'instance'},
+					a_role     => $XTM::PSI::xtm{'class'},
+					depth      => undef );
+
+Every output tree node contains following fields:
+
+=over
+
+=item C<tid>: 
+
+the topic id of the node
+
+=item C<children>: 
+
+a list reference of child nodes, there is no specific sort order
+
+=item C<children*>: 
+
+for convenience this list reference contains all children, grand-children,
+grand-grand children.... of this node (this list is neither sorted nor unique out of performance
+considerations).
+
+=back
 
 =cut
 
 sub induced_assoc_tree {
   my $self   = shift;
-  my $topic  = shift;
-  my $params = shift;
- 
-  elog ('XTM', 3, "induced_assoc_tree for '$topic' (depth = ".$params->{depth}.")");
+  my %params  = @_;
 
-  (my $assoc_type  = $params->{assoc_type}) =~ s/^\#//; # if it happens to have a #
-  my $t = $self->memory->_topic_tree ($topic,
-				      # where are the associations which are relevant?
-				      # (do not recompute them over and over, again
-				      $self->associations ("is-a $assoc_type"),
-				      $params->{a_role},
-				      $params->{b_role},
-				      0, 
-				      $params->{depth});
-  return $t;
+#  elog ('XTM', 3, "induced_assoc_tree for '$topic' (depth = ".$params->{depth}.")");
+
+##  (my $assoc_type  = $params->{assoc_type}) =~ s/^\#//; # if it happens to have a #
+  my $assoc_type  = $params{assoc_type};
+
+  if ($assoc_type eq $XTM::PSI::xtm{'class-instance'}) {
+    if ($params{a_role} eq $XTM::PSI::xtm{'class'}) {
+      return $self->{memory}->_instance_tree ($params{topic}, {}, 0, $params{depth});
+    } elsif ($params{a_role} eq $XTM::PSI::xtm{'instance'}) {
+      return $self->{memory}->_class_tree    ($params{topic}, {}, 0, $params{depth});
+    } else {
+      die "XTM: class-instance MUST have class or instance roles";
+    }
+  } else {
+    return $self->{memory}->_topic_tree ($params{topic},
+					 {},
+					 # where are the associations which are relevant?
+					 # (do not recompute them over and over, again
+					 $self->associations ("is-a $assoc_type"),
+					 $params{a_role},
+					 $params{b_role},
+					 0, 
+					 $params{depth});
+  }
 }
 
 =pod

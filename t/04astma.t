@@ -10,6 +10,7 @@ $Data::Dumper::Indent = 1;
 
 my $tm;
 
+##use lib qw(/usr/local/cpan/patches/lib);
 open (STDERR, '>/dev/null'); # do not show warnings...
 
 sub die_ok {
@@ -418,3 +419,32 @@ ok (@{$tm->associations('is-a at-is-associated-with')},   4);
 
 # testing corrupt XTM
 # testing TNC
+
+my $text = '
+
+aaa (bbb)
+bn: AAA
+';
+  foreach my $i (1..100) {
+    $text .= "
+
+aaa$i (bbb)
+bn: AAA$i
+";
+  }
+
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => $text));
+
+warn "Parse RecDescent inclusive: $Parse::RecDescent::totincl";
+warn "Parse RecDescent exclusive: $Parse::RecDescent::totexcl";
+
+#warn "instartrule: $Parse::RecDescent::namespace000001::totincl";
+warn "instartrule: $XTM::AsTMa::Parser::totincl";
+
+#warn "instartrule: $XTM::AsTMa::Parser::totexcl";
+warn "namespace0001 instartrule: $Parse::RecDescent::namespace000001::astma";
+warn "namespace0001 cparserincl: $Parse::RecDescent::namespace000001::cparserincl";
+
+__END__
+
