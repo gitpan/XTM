@@ -29,9 +29,9 @@
    <baseName>
       <baseNameString>test server</baseNameString>
    </baseName>
-  <instanceOf><topicRef xlink:href="#tt-map"/></instanceOf>
+  <instanceOf><topicRef xlink:href="urn:x-tm-map"/></instanceOf>
    <occurrence>
-      <instanceOf><topicRef xlink:href="#tt-knowledge"/></instanceOf>
+      <instanceOf><topicRef xlink:href="urn:x-tm-knowledge"/></instanceOf>
       <resourceRef xlink:href="file:maps/knowledge.xtm"/>
    </occurrence>
 </topic>

@@ -6,6 +6,8 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 require Exporter;
 require AutoLoader;
 
+use XTM::generic;
+
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
 $VERSION = '0.01';

@@ -29,9 +29,9 @@
    <baseName>
       <baseNameString>test map</baseNameString>
    </baseName>
-  <instanceOf><topicRef xlink:href="#tt-map"/></instanceOf>
+  <instanceOf><topicRef xlink:href="urn:x-tm-map"/></instanceOf>
    <occurrence>
-      <instanceOf><topicRef xlink:href="#tt-knowledge"/></instanceOf>
+      <instanceOf><topicRef xlink:href="urn:x-tm-knowledge"/></instanceOf>
       <resourceRef xlink:href="file:maps/test.xtm"/>
    </occurrence>
 </topic>
@@ -40,9 +40,9 @@
    <baseName>
       <baseNameString>test map2</baseNameString>
    </baseName>
-  <instanceOf><topicRef xlink:href="#tt-map"/></instanceOf>
+  <instanceOf><topicRef xlink:href="urn:x-tm-map"/></instanceOf>
    <occurrence>
-      <instanceOf><topicRef xlink:href="#tt-knowledge"/></instanceOf>
+      <instanceOf><topicRef xlink:href="urn:x-tm-knowledge"/></instanceOf>
       <resourceRef xlink:href="file:maps/test2.xtm"/>
    </occurrence>
 </topic>

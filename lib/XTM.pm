@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( );
-$VERSION = '0.21';
+$VERSION = '0.22';
 
 use XTM::Memory;
 use XTM::Log ('elog');

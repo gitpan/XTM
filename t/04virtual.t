@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
 use Test;
-BEGIN { plan tests => 9 }
+BEGIN { plan tests => 11 }
  
 use XTM;
 use XTM::Virtual;

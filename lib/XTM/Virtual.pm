@@ -322,10 +322,8 @@ sub _assert_expr {
     foreach my $e (split /\s*\[\]\s*/, $expr) {
       elog ('XTM::Virtual', 3, "working on '$e'");
       my $tm_to_be_added = _assert_atom ($e);
-      elog ('XTM::Virtual', 3, "  merging new map ".$tm_to_be_added->{id}." to ".$tm->{id});
+      elog ('XTM::Virtual', 4, "  merging new map ".$tm_to_be_added->{id}." to ".$tm->{id});
       $tm->add ($tm_to_be_added->memory);
-      use Data::Dumper;
-print STDERR Dumper $tm;
       push @{$tm->{depends}}, $e; # note, that I'm dependent on others
     }
   }

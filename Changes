@@ -1,5 +1,11 @@
 Revision history for Perl extension XTM.
 
+0.22  Sat Mar 17 10:22:40 EST 2001
+	- fixed test maps which made 'make test' fail
+	- fixed nr of subtests in 04virtual.t
+	- removed debugging output from XTM::Virtual
+	- fixed missing use XTM::generic in XTM::subjectIndicatorRef
+
 0.21  Sat Mar 10 11:24:10 EST 2001
 	- added XTM::Virtual
 	- added virtual map support into xtm.pl
