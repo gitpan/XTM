@@ -150,6 +150,7 @@ use XTM;
 use XTM::Log;
 use XTM::Virtual;
 
+
 my $term = new Term::ReadLine 'XTM Interpreter';
 my $prompt = "xtm> ";
 my $OUT = $batch ? \*STDOUT : $term->OUT || \*STDOUT;

@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
 
-use Test::More tests => 33;
+use Test::More tests => 34;
 
 use XTM;
 use XTM::Memory;
@@ -61,6 +61,15 @@ myname: encoding
 aaa
 '));
 is ($tm->id, 'myname', 'test id');
+
+
+#-----------------------------------------------------------------------
+$tm = new XTM (tie => new XTM::AsTMa (text => '
+topic1
+   
+topic2
+'));
+is (@{$tm->topics()}, 2, 'empty line contains blanks');
 
 
 #-----------------------------------------------------------------------

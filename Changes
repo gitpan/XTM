@@ -1,4 +1,11 @@
 Revision history for Perl extension XTM.
+
+0.28  Wed Jan 16 22:17:57 EST 2002
+	- fixed empty character handling in AsTMa::Parser, added line number for better debugging
+	- added more accurate dependencies
+	- added some explanation to the README
+	- fixed XTM::XML::MemoryBuilder to work with SAX::Expat, LibXML::SAX and PurePerl (still a problem there)
+
 0.27  Mon Jan 14 12:23:41 EST 2002
 	- added missing XTM::AsTMA::MemoryBuilder
 	- fixed test suite bugs which occur at some other Perl installations
@@ -6,7 +13,7 @@ Revision history for Perl extension XTM.
 0.26  Mon Dec 31 21:49:37 EST 2001
 	- add xml output serialization for (most) classes
 	- revamped XML::ATM into XML::AsTMa, XML::ATM is not distributed any more
-	- added astma2xtm.pl into bin/ (converter)
+	- added astma2xtm.pl into bin/ (converter), this obsoletes atm2xtm.pl
 	- fixed some bugs in XTM::XML
 	- added connected methods to topic and association to return all topic refs mentioned there
 	- added test for topic IDs in XTM::topic.pm (experimental), have to be valid XML identifiers

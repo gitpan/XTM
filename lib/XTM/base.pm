@@ -2,7 +2,7 @@ package XTM::base;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.27';
+$VERSION = '0.28';
 
 =pod
 

@@ -56,7 +56,7 @@ my %handlers =
 #                   xml:base        CDATA     #IMPLIED
 #                >
       my %atts = %{$element->{Attributes} || {}};
-      $handler->{tm}->{id} = $atts{'id'}->{Value};
+      $handler->{tm}->{id} = $atts{'{}id'}->{Value} || $atts{'id'}->{Value} ;
       push @{$handler->{parent}}, $handler->{tm};
     },
 #               <!ELEMENT topicMap
@@ -84,7 +84,7 @@ my %handlers =
 #                   id              ID        #REQUIRED
 #                >
       my %atts = %{$element->{Attributes} || {}};
-      push @{$handler->{parent}}, new XTM::topic (id   => $atts{'id'}->{Value});
+      push @{$handler->{parent}}, new XTM::topic (id   => $atts{'{}id'}->{Value} || $atts{'id'}->{Value});
     },
 #               <!ELEMENT topic
 #                   ( instanceOf*, subjectIdentity?, ( baseName | occurrence )* )

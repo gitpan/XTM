@@ -225,30 +225,34 @@ sub handle_astma {
   $self->handle_begin();
 
   my $prev_text_length;
+  my $line = 1;
   while ($prev_text_length = length ($text)) {            # as long as there is something
-    while ($text =~ s/^\s*[\n\r]//s) {};                  # get rid of empty line
+    while ($text =~ s/^\s*[\n\r]//s) { $line++ };         # get rid of empty line
 
     if (!$text) {
       last;
     } elsif($text =~ s/^(\w+)\s*:\s*([\w\-]+)\s*[\n\r]//s) { # find encoding
+      $line++;
       $self->handle_encoding ($1, $2);
     } elsif ($text =~ /^\#/) {                            # collect comments on the way
       my @comments;
       while ($text =~ s/^\#(.*?)[\n\r]//s) {
+	$line++;
 	push @comments, $1;
       };
 
       $self->handle_comment (join ("\n    ", grep (($_ =~ s/-->/-=>/g, $_), @comments))) if @comments;
     } else {                                              # try to parse in topic or association
       my $block;
-      while ($text =~ s/^([^\#\n\r]\s*[\w\-.].*?[\n\r])//s) {
+      while ($text =~ s/^([^\#\n\r][[:blank:]]*[\w\-].*?[\n\r])//s) {
+	$line++;
 	$block .= $1;
       }
       $block =~ s/\\[\n\r]//g; # merge \<cr> lines
       eval {
 	my $c = $parser->startrule (\$block);
-	die "XTM::AsTMa: Found unparseable '$block'" unless $block =~ /^\s*$/s;
-	die "XTM::AsTMa: no component"               unless defined $c;
+	die "XTM::AsTMa: Found unparseable '$block' before line $line"    unless $block =~ /^\s*$/s;
+	die "XTM::AsTMa: no component around '$block' before line $line"  unless defined $c;
 	$self->handle_component ($c);
       }; if ($@) {
 	die $@;
