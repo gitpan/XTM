@@ -3,7 +3,7 @@ package XTM::XML::Grove2TM;
 use XTM;
 use XTM::Log ('elog');
 use XML::Grove::AsString;
-use XTM::XML::PSI;
+use XTM::PSI;
 
 use strict;
 use vars qw{$AUTOLOAD};
@@ -33,12 +33,6 @@ Once you have a grove with parsed XML data, you can iterate over this grove,
 letting the package do the work of creating a L<XTM::Memory> structure.
 
 =cut
-
-sub _massage { # clean out \n's.. damned FreezeThaw...
-  my $s = shift;
-#  $s =~ s/\n/ /g;
-  $s;
-}
 
 sub new {
     my $class = shift;
@@ -178,7 +172,7 @@ sub visit_name_topic {
 
 # if instanceOf not defined, default (3.6.1)
   unless ($t->instanceOfs) {
-    $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::XML::PSI::psi{topic})));
+    $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})));
   }
 
   die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.6.1\n"
@@ -232,7 +226,7 @@ sub visit_name_baseName {
   die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.7.1\n"  if $b->scope_s > 1;
 
   unless ($b->scope_s) {
-    $b->add__s (new XTM::scope ( references => [ new XTM::topicRef (href => $XTM::XML::PSI::psi{universal_scope}) ]));
+    $b->add__s (new XTM::scope ( references => [ new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ]));
   }
 
   $b->add_scope ($b->scope_s);  $b->undefine (qw (scopes));
@@ -255,7 +249,7 @@ sub visit_name_baseNameString {
 #              >
   my %atts = %{$element->{Attributes}};
 #              <!ELEMENT baseNameString  ( #PCDATA ) >
-  my $bs = new XTM::baseNameString (id => $atts{id}, string => _massage($element->as_string));
+  my $bs = new XTM::baseNameString (id => $atts{id}, string => $element->as_string);
   $x->add__s ($bs);
 }
 
@@ -347,14 +341,14 @@ sub visit_name_association {
 
 # if instanceOf not defined, default (3.8.1)
   unless ($a->instanceOf_s) {
-    $a->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::XML::PSI::psi{association})));
+    $a->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{association})));
   }
   die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.1\n" if $a->instanceOf_s > 1;
   $a->add_instanceOf ($a->instanceOf_s);  $a->undefine (qw (instanceOfs));
 
   die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.1\n" if $a->scope_s > 1;
   unless ($a->scope_s) {
-    $a->add__s (new XTM::scope ( references =>  [ new XTM::topicRef (href => $XTM::XML::PSI::psi{universal_scope}) ]));
+    $a->add__s (new XTM::scope ( references =>  [ new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ]));
   }
   $a->add_scope ($a->scope_s);  $a->undefine (qw (scopes));
 
@@ -433,13 +427,13 @@ sub visit_name_occurrence {
 
 # if instanceOf not defined, default (3.9.1)
   unless ($o->instanceOf_s) {
-    $o->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::XML::PSI::psi{occurrence})));
+    $o->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{occurrence})));
   }
   die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.9.1\n" if $o->instanceOf_s > 1;
   $o->add_instanceOf ($o->instanceOf_s);  $o->undefine (qw (instanceOfs));
   die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.9.1\n" if $o->scope_s > 1;
   unless ($o->scope_s) {
-    $o->add__s (new XTM::scope ( references => [ new XTM::topicRef (href => $XTM::XML::PSI::psi{universal_scope}) ]));
+    $o->add__s (new XTM::scope ( references => [ new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ]));
   }
   $o->add_scope ($o->scope_s);  $o->undefine (qw (scopes));
   die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.9.1\n" 
@@ -481,7 +475,7 @@ sub visit_name_resourceData {
 #              >
   my %atts = %{$element->{Attributes}};
 #              <!ELEMENT resourceData  ( #PCDATA ) >
-  my $rd = new XTM::resourceData (id => $atts{id}, data => _massage($element->as_string));
+  my $rd = new XTM::resourceData (id => $atts{id}, data => $element->as_string);
   $x->add__s ($rd);
 }
 

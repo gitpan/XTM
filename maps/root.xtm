@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<topicMap id="root"
+          xmlns       = 'http://www.topicmaps.org/xtm/1.0/'
+          xmlns:xlink = 'http://www.w3.org/1999/xlink'>
+
+<!--
+
+  Test Root knowledge map.
+
+-->
+
+<topic id="tt-map">
+  <baseName><baseNameString>Topic Map</baseNameString></baseName>
+</topic>
+
+<topic id="tt-knowledge">
+  <baseName><baseNameString>Knowledge</baseNameString></baseName>
+</topic>
+
+<topic id="tt-description">
+  <baseName><baseNameString>Description</baseNameString></baseName>
+</topic>
+
+<topic id="tt-server">
+  <baseName><baseNameString>Topic Map Server</baseNameString></baseName>
+</topic>
+
+<topic id="test">
+   <baseName>
+      <baseNameString>test server</baseNameString>
+   </baseName>
+  <instanceOf><topicRef xlink:href="#tt-map"/></instanceOf>
+   <occurrence>
+      <instanceOf><topicRef xlink:href="#tt-knowledge"/></instanceOf>
+      <resourceRef xlink:href="file:maps/knowledge.xtm"/>
+   </occurrence>
+</topic>
+
+</topicMap>

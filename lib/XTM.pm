@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( );
-$VERSION = '0.20';
+$VERSION = '0.21';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -18,7 +18,7 @@ use XTM::Log ('elog');
 
 =head1 NAME
 
-XTM - Topic Map management
+XTM - Topic Map management, single thread class
 
 =head1 SYNOPSIS
 
@@ -36,57 +36,12 @@ XTM - Topic Map management
   # basic statistics about a map
   print Dumper $tm->info;
 
-
 =head1 DESCRIPTION
 
-Topic Maps are a means for layering multidimensional topic spaces on top of
-information assets. The standard covers concepts like topics,
-associations, scopes and occurrences. Topic Maps are
-expected to have a major impact on future information systems (semantic web).
+This class can be used to
 
-See http://www.topicmaps.org/xtm/1.0/ for more information.
-
-Topic maps can be loaded from an XML based resource (local or remote
-via an URL) as prescribed by the XTM standard. There is also a way
-to tie a map to a persistent medium. The latter is especially interesting
-when running this module along with a (web) server.
-
-=head1 PACKAGES
-
-Following package come with this distribution (L<XTM::Server> is in preparation):
-
-      XTM                          this package, toplevel wrapper for (non-threaded) maps
-      XTM::Memory                  in-memory representation of a map
-
-      XTM::XML::PSI                PSI definitions
-      XTM::XML                     XML parser
-      XTM::XML::Latin1Parser       
-      XTM::XML::UTF8
-      XTM::XML::Grove2TM
-
-      XTM::Log                     logging facility will be used by others
-
-      XTM::generic                 accessor functions for all below
-      XTM::topic                   implementation of the 'topic' class
-      XTM::association             implementation of the 'association' class
-
-      XTM::topicRef                generic class definition
-      XTM::baseName                generic class definition
-      XTM::scope                   generic class definition
-      XTM::resourceRef             generic class definition
-      XTM::instanceOf              generic class definition
-      XTM::subjectIdentity         generic class definition
-      XTM::subjectIndicatorRef     generic class definition
-      XTM::variant                 generic class definition
-      XTM::variantName             generic class definition
-      XTM::parameters              generic class definition
-      XTM::roleSpec                generic class definition
-      XTM::member                  generic class definition
-      XTM::mergeMap                generic class definition
-      XTM::resourceData            generic class definition
-      XTM::baseNameString          generic class definition
-      XTM::occurrence              generic class definition
-
+   - construct/manipulate topic maps and to
+   - tie a particular persistent manifestation of a topic map to an in-memory object
 
 =head1 INTERFACE
 
@@ -102,13 +57,6 @@ following fields:
 If you provide a tieable object (L<XTM::XML>, ...), then this object
 is bound to the topic map. 
 
-=item I<staleness>: (not implemented in this public version)
-
-This additional field  lets you specify how strong the relationship
-between the original source (say, XML file) and the map is. Whenever the time difference
-between memory copy and the copy on the tie-ed medium exceeds the I<staleness> given, then 
-a sync (either in or out) will be done.
-
 =back
 
   $tm = new XTM ();
@@ -120,25 +68,15 @@ sub new {
   my $class    = shift;  
   my %options  = @_;
 
-  if ($options{tie}->isa ('XTM::Virtual')) {
-    elog ('XTM', 3, "in new before virtual syncin");
-    return $options{tie}->sync_in();
-  } elsif ($options{tie}->isa ('XTM::Remote')) {
-    die "XTM: Remote forwarding not yet implemented";
-  } elsif ($options{tie}) {
-    my $self = bless {
-		      tie       => $options{tie},
-		      staleness => $options{staleness},
-		      depends   => [],
-		      memory    => $options{tie}->sync_in()
-		     }, $class;
-
-    elog ('XTM', 4, 'before sync in');
-    $self->{last_mod} = $self->{last_syncin} = time;
-    return $self;
-  } else { # unnamed ?
-    return bless { memory => new XTM::Memory }, $class;
-  }
+  my $self =  bless {
+		     tie         => $options{tie},
+		     depends     => [],
+		     memory      => new XTM::Memory,
+		     last_mod    => time,
+		     last_syncin => time,
+		    }, $class;
+  $self->{memory} = $self->{tie}->sync_in() if $self->{tie};
+  return $self;
 }
 
 sub DESTROY {
@@ -215,6 +153,185 @@ sub info {
            id          => $self->{memory} ? $self->{memory}->{id} : undef
            };
 }
+
+=pod
+
+=item I<induced_assoc_tree>
+
+computes a tree of topics based on a starting topic, an association type
+and two roles. Whenever an association of the given type is found and the given topic appears in the
+role given in this very association, then all topics appearing in the other given role are regarded to be
+children in the result tree. There is also an optional C<depth> parameter. If it is not defined, no limit
+applies. If there are loops implied by this relation, so be it.
+
+Examples:
+
+ 
+  $hierachy = $tm->induced_assoc_tree (topic      => $start_node,
+				       assoc_type => 'at-relation',
+				       a_role     => 'tt-parent',
+				       b_role     => 'tt-child' );
+  $yhcareih = $tm->induced_assoc_tree (topic      => $start_node,
+				       assoc_type => 'at-relation',
+				       b_role     => 'tt-parent',
+				       a_role     => 'tt-child',
+				       depth      => 42 );
+
+
+=cut
+
+sub induced_assoc_tree {
+  my $self   = shift;
+  my $topic  = shift;
+  my $params = shift;
+ 
+  elog ('XTM', 3, "induced_assoc_tree for '$topic' (depth = ".$params->{depth}.")");
+
+  (my $assoc_type  = $params->{assoc_type}) =~ s/^\#//; # if it happens to have a #
+  my $t = $self->memory->_topic_tree ($topic, 
+				      # where are the associations which are relevant?
+				      # (do not recompute them over and over, again
+				      $self->associations ("is-a $assoc_type"),
+				      $params->{a_role}, 
+				      $params->{b_role}, 
+				      0, 
+				      $params->{depth});
+  return $t;
+}
+
+=pod
+
+=item I<induced_vortex> 
+
+returns _a lot_ of information about a particular topic. The function expects
+the following parameters:
+
+=over
+
+=item C<topic_id>:
+
+the tid of the topic in question
+
+=item C<what>:
+
+a hash reference describing the extent of the information (see below)
+
+=item C<scopes>:
+
+a list (reference) to scopes (currently NOT honored)
+
+=back
+
+=item
+
+To control _what_ exactly should be returned, the C<what> hash reference can contain following components:
+
+=over
+
+=item C<t_instances>:
+
+fetches all topics which are instances of the vortex
+
+=item C<a_instances>:
+
+fetches all associations which are instances of the vortex, additional integers define the C<from> and C<to>
+value (say to ask for the first twenty, use 0, 20)
+
+=item C<topic>:
+
+fetches the complete topic itself
+
+=item C<roles>:
+
+fetches all associations where the vortex _is_ a role, additional integers define the C<from> and C<to>
+value (say to ask for the first twenty, use 0, 20)
+
+=item C<members>:
+
+fetches all associations where the vortex _plays_ a role, additional integers define the C<from> and C<to>
+value (say to ask for the first twenty, use 0, 20)
+
+=item C<tree>:
+
+tries to build a 'tree-view' from the map induced by particular associations.
+These associations are characterized via a type (instanceOf) and the relevant roles.
+There is also an optional level which allows you to control the depth of the tree.
+If the map contains cycles, they will NOT YET be detected. In other words, the
+function may loop.
+
+=back
+
+=item
+
+The function will determine all of the requested information and will prepare a hash
+reference storing each information into a hash component. Under which name this information
+is stored, the caller can determine with the hash above as the example shows:
+
+Example:
+
+  $vortex = $tm->induced_vortex ('some-topic-id',
+                                 {
+				  't_instances' => [ 't_instances' ],
+				  'a_instances' => [ 'a_instances', 0, 20 ],
+				  'topic'       => [ 'topic' ],
+				  'roles'       => [ 'role', 0, 10 ],
+				  'members'     => [ 'member' ],
+				  'treeup'      => [ 'tree', {assoc_type => '#at-content-relation',
+							      a_role     => '#tt-content-parent',
+							      b_role     => '#tt-content-child',
+							      depth      => 2} ],
+				  'treedown'    => [ 'tree', {assoc_type => '#at-content-relation',
+							      b_role     => '#tt-content-parent',
+							      a_role     => '#tt-content-child',
+							      depth      => 2} ] 
+				 },
+				 [ 'scope1', 'scope2', .... ]
+				);
+
+=cut
+
+sub induced_vortex {
+  my $self   = shift;
+  my $id     = shift;
+  my $what   = shift;
+  my $scopes = shift;
+
+  use Data::Dumper;
+  elog ('XTM', 3, "induced_vortex '$id'");
+  elog ('XTM', 4, "     ", $what);
+  
+  my $t = $self->topic ($id);
+  my $_t; # here all the goodies go
+
+  foreach my $where (keys %{$what}) {
+    my $w     = shift @{$what->{$where}};
+
+    if ($w eq 'topic') {
+      $_t->{$where} = $t;
+      elog ('XTM', 4, "   wish topic");
+    } elsif ($w eq 't_instances') {
+      my $from  = shift @{$what->{$where}} || 0;
+      my $to    = shift @{$what->{$where}} || $from + 10 - 1; # I love hard-coded limits...
+      my @tids  = @{$self->topics ("is-a $id")};
+      $_t->{$where} = [ @tids[ $from .. $to ] ];
+    } elsif ($w eq 'role' || $w eq 'member') {
+      my $from  = shift @{$what->{$where}} || 0;
+      my $to    = shift @{$what->{$where}} || $from + 10 - 1; # I love hard-coded limits...
+      my @aids = @{$self->associations ("has-$w $id")};
+      $_t->{$where} = [ map { $self->association ($_) } @aids[ $from .. $to ] ];
+    } elsif ($w eq 'a_instances') {
+      my $from  = shift @{$what->{$where}} || 0;
+      my $to    = shift @{$what->{$where}} || $from + 10 - 1; # I love hard-coded limits...
+      my @aids = @{$self->associations ("is-a $id")};
+      $_t->{$where} = [ map { $self->association ($_) } @aids[ $from .. $to ] ];
+    } elsif ($w eq 'tree') {
+      my $how = shift @{$what->{$where}}  ;
+      $_t->{$where} = $self->induced_assoc_tree ($id, $how);
+      }
+  }
+  return $_t;
+}
+
 
 =pod
 

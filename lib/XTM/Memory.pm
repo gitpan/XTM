@@ -9,7 +9,7 @@ require AutoLoader;
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.09';
+$VERSION = '0.10';
 
 use Data::Dumper;
 
@@ -17,7 +17,7 @@ use XTM::Log ('elog');
 use XTM::topic;
 use XTM::association;
 use XTM::mergeMap;
-use XTM::XML::PSI;
+use XTM::PSI;
 
 =pod
 
@@ -296,7 +296,7 @@ sub _passes_filter {
     return 0 if (         !grep ($with eq $_, @{$t->{'children*'}}));
     elog ('XTM::Memory', 4, "       passed via, with");
     return 1;
-  } elsif ($f =~ /^is-a\s+(\S+)$/) {
+  } elsif ($f =~ /^is-a\s+(.+)$/) {
     return $self->{topics}->{$id}->has_instanceOf ($1);
   } else {
     die "XTM::Memory: Unimplemented filter '$f'\n";
@@ -385,6 +385,7 @@ sub _assoc_contains_topic_as_member {
   my $a  = shift;
   my $id = shift;
 
+  use Data::Dumper;
   foreach my $m (@{$a->members}) {
     foreach my $r (@{$m->references}) {
       return 1 if $r->href eq "#$id";
@@ -396,15 +397,17 @@ sub _assoc_contains_topic_as_member {
 sub _assoc_has_instanceOf {
   my $a  = shift;
   my $id = shift;
-  return $a->instanceOf && $a->instanceOf->reference->href eq "#$id";
+  
+  return $a->instanceOf && ($id =~ /^urn:/ ? 
+			      $a->instanceOf->reference->href eq $id :
+			      $a->instanceOf->reference->href eq "#$id");
 }
 
 sub associations {
   my $self   = shift;
   my $filter = shift || '';
 
-  elog ('XTM::Memory', 3,"associations");
-  elog ('XTM::Memory', 5,"    filter  $filter", );
+  elog ('XTM::Memory', 3,"associations filter='$filter'");
 
   $filter =~ s/\s+$//;  # strip leading and
   $filter =~ s/^\s+//;  # trailing blanks
@@ -460,29 +463,70 @@ sub association {
 
 =pod
 
-=item C<topic_tree>
+=item C<baseNames>
 
-computes a tree of topics based on a starting topic, an association type
-and two roles. Whenever an association of the given type is found and the given topic appears in the
-role given in this very association, then all topics appearing in the other given role are regarded to be
-children in the result tree. There is also an optional C<depth> parameter. If it is not defined, no limit
-applies. If there are loops implied by this relation, so be it.
+receives a list reference containing topic C<id>s. It returns a hash reference containing
+the baseName for each topic as a value with the topic id the key. The additional parameter is interpreted as
+list reference to scoping topics. If this list is undef, then any basename may be returned. If the list is
+empty ([]), then NO basename will ever be returned. If it is non-empty, then - according to the order in
+this list - the first basename matching will be selected.
 
-Examples:
+Example:
 
- 
-  $hierachy = $tm->topic_tree (topic      => $start_node,
-			       assoc_type => 'at-relation',
-			       a_role     => 'tt-parent',
-			       b_role     => 'tt-child' );
-  $yhcareih = $tm->topic_tree (topic      => $start_node,
-			       assoc_type => 'at-relation',
-			       b_role     => 'tt-parent',
-			       a_role     => 'tt-child',
-			       depth      => 42 );
-
+   $names_ref = $tm->baseNames ([ 't-topic1', 't-topic-2' ], 
+				[ 'http://www.topicmaps.org/xtm/language.xtm#en' ]);
 
 =cut
+
+sub baseNames {
+  my $self   = shift;
+  my $names  = shift;
+  my $scopes = shift;
+
+  push @$scopes, $XTM::PSI::xtm{universal_scope} unless ($scopes && @$scopes); # default scope
+  
+  elog ('XTM::Memory', 3, "baseNames for.... ");
+  elog ('XTM::Memory', 4, "  baseNames for ", $names, $scopes);
+
+  my %dict;
+  foreach my $n (@{$names}) {
+    next if $dict{$n};
+    (my $m = $n) =~ s/^\#//;
+    if ( $self->{topics}->{$m} ) {  # skip ids where there is nothing
+    FIND:
+      foreach my $scope (@$scopes) { # iterate over all scopes and find first matching
+	elog ('XTM::Memory', 5, "     looking for scope ", $scope);
+	foreach my $b (@{$self->{topics}->{$m}->baseNames}) { 
+	  elog ('XTM::Memory', 5, "      in baseName ", $b, "scope", $b->scope->references);
+	  if (grep ($_->href eq $scope, @{$b->scope->references})) { # OK, perfect match
+	    $dict{$n} = $b->baseNameString->string;
+	    elog ('XTM::Memory', 5, "      perfect match: found $dict{$n}");
+	    last FIND;
+	  } elsif (grep ($_->href eq $XTM::PSI::xtm{universal_scope}, @{$b->scope->references})) { 
+            # topic map did not care
+	    $dict{$n} = $b->baseNameString->string;
+	    elog ('XTM::Memory', 5, "      map not care: found $dict{$n}");
+	    last FIND;
+	  } elsif ($scope eq $XTM::PSI::xtm{universal_scope}) { # user did not care
+	    $dict{$n} = $b->baseNameString->string;
+	    elog ('XTM::Memory', 5, "      user not care: found $dict{$n}");
+	    last FIND;
+	  }
+	}
+      }
+    }
+    unless ($dict{$n}) { # silent desperation, leave it up to the app to handle this
+      $dict{$n} = undef;
+    }
+  }
+  elog ('XTM::Memory', 4, "  result ", \%dict);
+  return { %dict };
+}
+
+
+
+##------------------------------------------------------------
+# functions where I am still unsure where they belong to, hmmm.
 
 sub _topic_tree {
   my $self    = shift;
@@ -544,85 +588,7 @@ sub _topic_tree {
   return $n;
 }
 
-sub topic_tree {
-  my $self   = shift;
-  my $topic  = shift;
-  my $params = shift;
- 
-  elog ('XTM::Memory', 3, "topic_tree for '$topic' (depth = ".$params->{depth}.")");
 
-  (my $assoc_type  = $params->{assoc_type}) =~ s/^\#//; # if it happens to have a #
-  my $t = $self->_topic_tree ($topic, 
-			      # where are the associations which are relevant?
-			      # (do not recompute them over and over, again
-			      $self->associations ("is-a $assoc_type"),
-			      $params->{a_role}, 
-			      $params->{b_role}, 
-			      0, 
-			      $params->{depth});
-  return $t;
-}
-
-=pod
-
-=item C<baseNames>
-
-receives a list reference containing topic C<id>s. It returns a hash reference containing
-the baseName for each topic as a value with the topic id the key. The additional parameter is interpreted as
-list reference to scoping topics. If this list is undef, then any basename may be returned. If the list is
-empty ([]), then NO basename will ever be returned. If it is non-empty, then - according to the order in
-this list - the first basename matching will be selected.
-
-Example:
-
-   $names_ref = $tm->baseNames ([ 't-topic1', 't-topic-2' ], 
-				[ 'http://www.topicmaps.org/xtm/language.xtm#en' ]);
-
-=cut
-
-sub baseNames {
-  my $self   = shift;
-  my $names  = shift;
-  my $scopes = shift;
-
-  push @$scopes, $XTM::XML::PSI::psi{universal_scope} unless ($scopes && @$scopes); # default scope
-  
-  elog ('XTM::Memory', 3, "baseNames for.... ");
-  elog ('XTM::Memory', 4, "  baseNames for ", $names, $scopes);
-
-  my %dict;
-  foreach my $n (@{$names}) {
-    next if $dict{$n};
-    (my $m = $n) =~ s/^\#//;
-    if ( $self->{topics}->{$m} ) {  # skip ids where there is nothing
-    FIND:
-      foreach my $scope (@$scopes) { # iterate over all scopes and find first matching
-	elog ('XTM::Memory', 5, "     looking for scope ", $scope);
-	foreach my $b (@{$self->{topics}->{$m}->baseNames}) { 
-	  elog ('XTM::Memory', 5, "      in baseName ", $b, "scope", $b->scope->references);
-	  if (grep ($_->href eq $scope, @{$b->scope->references})) { # OK, perfect match
-	    $dict{$n} = $b->baseNameString->string;
-	    elog ('XTM::Memory', 5, "      perfect match: found $dict{$n}");
-	    last FIND;
-	  } elsif (grep ($_->href eq $XTM::XML::PSI::psi{universal_scope}, @{$b->scope->references})) { 
-            # topic map did not care
-	    $dict{$n} = $b->baseNameString->string;
-	    elog ('XTM::Memory', 5, "      map not care: found $dict{$n}");
-	    last FIND;
-	  } elsif ($scope eq $XTM::XML::PSI::psi{universal_scope}) { # user did not care
-	    $dict{$n} = $b->baseNameString->string;
-	    elog ('XTM::Memory', 5, "      user not care: found $dict{$n}");
-	    last FIND;
-	  }
-	}
-      }
-    }
-    unless ($dict{$n}) { # silent desperation, leave it up to the app to handle this
-      $dict{$n} = undef;
-    }
-  }
-  return { %dict };
-}
 
 =pod
 

@@ -34,7 +34,28 @@ XTM::XML - Topic Map management, syncing with XML data
 =head1 DESCRIPTION
 
 This package provides an abstract class to deal with TMs stored in XML form,
-be it on files or as a string.
+be it on files or as a string. The package honors
+
+   http://www.topicmaps.org/xtm/1.0/xtm1-20010302-2.html
+
+except 
+
+  - ignores all merging related constraints (TNC) given in
+
+       http://www.topicmaps.org/xtm/1.0/#processing
+
+  - only allows ONE SINGLE <topicMap> element in a document violating
+    '4.4 XTM Document Conformance', item 2
+
+
+All elements with no explicit ID element remain anonymous, execept
+
+  - <topic> and
+  - <association>
+
+elements which will get an ID assigned.
+
+  
 
 =head1 INTERFACE
 
@@ -162,7 +183,7 @@ is currently not implemented.
 =cut
 
 sub sync_out {
-  die "XTM::XML: sync_out not yet implemented.";
+  warn "XTM::XML: sync_out not yet implemented.";
 }
 
 =pod

@@ -1,4 +1,4 @@
-package XTM::XML::PSI;
+package XTM::PSI;
 
 use strict;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
@@ -9,19 +9,20 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw(  );
 @EXPORT_OK = qw( );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 
 =pod
 
 =head1 NAME
 
-XTM::XML::PSI - Topic Map management, published subject identifiers
+XTM::PSI - Topic Map management, published subject identifiers
 
 =head1 SYNOPSIS
 
-  use XTM::XML::PSI;
-  print $psi{'universal_scope'};
+  use XTM::PSI;
+  print keys %xtm;
+  print keys %priv;
 
 =head1 DESCRIPTION
 
@@ -29,18 +30,25 @@ This package contains a hash with some PSIs. See
 
   http://www.topicmaps.org/xtm/1.0/psi1.xtm
 
-for an everchanging list.
+for a moving target.
 
 =cut
 
-use vars ('%psi');
-%psi = (
+use vars qw(%xtm %priv);
+%xtm = (
 	universal_scope => 'http://www.topicmaps.org/xtm/1.0/#psi-universal-scope',
 	topic           => 'http://www.topicmaps.org/xtm/1.0/#psi-topic',
 	association     => 'http://www.topicmaps.org/xtm/1.0/#psi-association',
 	occurrence      => 'http://www.topicmaps.org/xtm/1.0/#psi-occurrence'
        );
 
+%priv = (
+	 map            => 'urn:x-tm-map',
+	 desc           => 'urn:x-tm-description',
+	 server         => 'urn:x-tm-server',
+	 knowledge      => 'urn:x-tm-knowledge',
+	 continuation   => 'urn:x-tm-continuation',
+	);
 =pod
 
 =head1 SEE ALSO

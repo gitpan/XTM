@@ -8,6 +8,7 @@ use XTM::XML;
 use Data::Dumper;
  
 my $tm = new XTM (tie => new XTM::XML (url => "file:maps/test.xtm"));
+#my $tm = new XTM (tie => new XTM::XML (url => "file:maps/root.xtm"));
 
 #print Dumper $tm;
 

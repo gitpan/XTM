@@ -1,7 +1,7 @@
-XTM::*
+XTM::base
 ---------
 
-This package contains Perl extension interfaces for Topic Maps
+This base package contains Perl extension interfaces for Topic Maps
 
    http://www.topicmaps.org/xtm/1.0/
 
@@ -14,7 +14,9 @@ make test
 make install
 
 You will need perl version 5.005 or better to install these modules.
-Further documentation is embedded in the individual modules.
+
+You will find an overview in XTM::base, further documentation is embedded 
+in the individual modules.
 
 See
 

@@ -109,7 +109,7 @@ use Term::ReadLine;
 use Data::Dumper;
 use XTM;
 use XTM::Log;
-use XTM::XML;
+use XTM::Virtual;
 
 my $term = new Term::ReadLine 'XTM Interpreter';
 my $prompt = "xtm> ";
@@ -232,9 +232,9 @@ sub ExecuteCommand {
     }
 ##-- loading -------------------------------------------------
   } elsif (/^load\s+(.+?)\s*$/) {
-    my $url = $1;
+    my $expr = $1;
     eval {
-      $tm = new XTM (tie => new XTM::XML (url => $url));
+      $tm = new XTM (tie => new XTM::Virtual (expr => $expr));
     }; if ($@) {
       print $OUT "xtm: Exception: $@\n";
     }

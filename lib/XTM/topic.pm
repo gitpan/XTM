@@ -130,8 +130,14 @@ sub has_instanceOf {
   my $self = shift;
   my $ioid = shift;
 
-  foreach my $i (@{$self->{instanceOfs}}) {
-    return 1 if $i->{reference}->{href} eq "#$ioid";
+  if ($ioid =~ /^urn:/) { # absolute
+    foreach my $i (@{$self->{instanceOfs}}) {
+      return 1 if $i->{reference}->{href} eq $ioid;
+    }
+  } else { # relative
+    foreach my $i (@{$self->{instanceOfs}}) {
+      return 1 if $i->{reference}->{href} eq "#$ioid";
+    }
   }
   return 0;
 }
