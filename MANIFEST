@@ -9,6 +9,8 @@ lib/XTM/Virtual.pm
 lib/XTM/IO.pm
 lib/XTM/XML.pm
 lib/XTM/AsTMa.pm
+lib/XTM/AsTMa/MemoryBuilder.pm
+lib/XTM/AsTMa/Parser.pm
 lib/XTM/Log.pm
 lib/XTM/topic.pm
 lib/XTM/topicRef.pm

@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
 
-use Test::More 'no_plan';   # instead of tests => 32
+use Test::More tests => 33;
 
 use XTM;
 use XTM::Memory;

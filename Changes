@@ -1,4 +1,7 @@
 Revision history for Perl extension XTM.
+0.27  Mon Jan 14 12:23:41 EST 2002
+	- added missing XTM::AsTMA::MemoryBuilder
+	- fixed test suite bugs which occur at some other Perl installations
 
 0.26  Mon Dec 31 21:49:37 EST 2001
 	- add xml output serialization for (most) classes

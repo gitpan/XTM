@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
  
-use Test::More 'no_plan';
+use Test::More tests => 34;
 
 my $die_problem = 1; # XML::LibXML (or my usage of it) has a problem, mask out some tests
 
