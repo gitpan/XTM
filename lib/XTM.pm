@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( );
-$VERSION = '0.26';
+$VERSION = '0.28';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -39,57 +39,201 @@ XTM - Topic Map management, single thread class
   print Dumper $tm->info;
   # analyze the 'clusters' of a map, see below
   print Dumper $tm->cluster;
-  
+
 
 =head1 DESCRIPTION
 
 This class can be used to
 
-=over 
+=over
 
-=item 
+=item
 
-construct/manipulate topic maps and to
+to construct/manipulate topic maps and
 
-=item 
+=item
 
-tie a particular persistent manifestation of a topic map to an in-memory object
+to tie a particular persistent manifestation of a topic map to an in-memory object, and
+
+=item
+
+to compute statistical information about a map.
 
 =back
+
+It can be used as a top-level class to do all topic map related operations.
 
 =head1 INTERFACE
 
 =head2 Constructor
+
+I<$tm> = new XTM ([ tie         => I<some source> ],
+               [ consistency => I<consistency> ]);
+
 
 The constructor expects no mandatory parameters but you can provide a hash with the
 following fields:
 
 =over
 
-=item B<tie>: 
+=item B<tie>:
 
 If you provide a tieable object (L<XTM::XML>, ...), then this object
-is bound to the topic map. 
+is bound to the topic map.
+
+=item B<consistency>:
+
+A consistent map is one which has gone through processing detailled in Annex F of the
+XTM specification. By default an XTM object has consistency set to 'standard' which means
+that all of the above mentioned processing will occur B<at every modification> of that
+with following exception(s):
+
+=over
+
+=item external maps will not be followed automatically (implicit topic map merge, F.5.5).
+This is to protect applications from unintentionally pulling in HUGE
+ontologies from external maps only because of some topicRefs pointing to these
+topics. So this is turned off by default.
 
 =back
 
+
+Alternatively, the user can
+control the extent of 'consistency' by providing a hash reference with the following components:
+
+=over
+
+=item I<merge>: The value is a list reference containing some of the following constants:
+
+=over
+
+=item C<Topic_Naming_Constraint>: see F.5.3
+
+=item C<Subject_based_Merging>: see F.5.2
+
+=item C<Id_based_Merging>: If set, then then two topics with the same id are merged. If not
+set, then one topic will substitute the other. This was the old behaviour.
+
+=item C<Application_based_Merging>: not implemented yet.
+
+=item C<all>: includes all above, default
+
+=back
+
+To achieve backward compatibility, you should set
+
+  merge => []
+
+=item I<duplicate_suppression>: The value is a list reference containing some of the following
+constants:
+
+=over
+
+=item C<Subject_Indicator>: see F.6.1
+
+=item C<Topic_Name>: see F.6.2
+
+=item C<Association>: see F.6.3
+
+=item C<Role_Player>: see F.6.4
+
+=item C<all>: includes all above, default
+
+=back
+
+=item I<follow_maps>: The value is a list reference containing some of the following
+constants:
+
+=over
+
+=item C<explicit>: see F.5.4,
+
+=item C<implicit>: see F.5.5
+
+=item C<all>: includes all above, default
+
+=back
+
+=back
+
+The use of any other constant will raise an exception whenever the map is
+modified for the first time (either by reading it from a tied resource or
+when programmatically changing it).
+
+The package provides the following constants
+
+=over
+
+=item C<default_consistency>: all but implicit follow-up of topic references to other maps
+
+=item C<max_consistency>: all
+
+=item C<backward_consistency>: backward compatible behavior
+
+=back
+
+=cut
+
+our $default_consistency  = {merge                 => [ qw(Topic_Naming_Constraint Subject_based_Merging Id_based_Merging) ],
+                             duplicate_suppression => [ qw(Subject_Indicator Topic_Name Association Role_Player) ],
+                             follow_maps           => [ qw(explicit) ]};
+
+our $max_consistency      = {merge                 => [ qw(Topic_Naming_Constraint Subject_based_Merging Id_based_Merging) ],
+                             duplicate_suppression => [ qw(Subject_Indicator Topic_Name Association Role_Player) ],
+                             follow_maps           => [ qw(explicit implicit) ]};
+
+our $backward_consistency = {merge                 => [ ],
+                             duplicate_suppression => [ ],
+                             follow_maps           => [ qw(explicit) ]};
+
+=pod
+
+
+
+=back
+
+Examples:
+
+  # empty map
   $tm = new XTM ();
-  $tm = new XTM (tie => new XTM::XML (file => 'map.xtm'));
+
+  # map loaded and bound to a particular XTM file, see XTM::XML
+  $tm = new XTM (tie         => new XTM::XML (file => 'map.xtm'));
+
+  # fine tuning merging
+  $tm = new XTM (tie         => new XTM::XML (file => 'map.xtm'),
+                                # TNC is EVIL, EVIL :-)
+		 consistency => { merge => [ 'Subject_based_Merging' ],
+				# but I do not fear external maps
+				  follow_maps => ['all']
+				 });
+
+TODO:
+
+  - allow CODEREFs to give total control to the application
+
+
 
 =cut
 
 sub new {
-  my $class    = shift;  
+  my $class    = shift;
   my %options  = @_;
+
+  $options{consistency} = $default_consistency unless $options{consistency};
+  foreach my $c (qw(merge duplicate_suppression follow_maps)) {
+    $options{consistency}->{$c} = $default_consistency->{$c} unless $options{consistency}->{$c};
+    $options{consistency}->{$c} = $max_consistency->{$c} if grep /^all$/, @{$options{consistency}->{$c}};
+  }
 
   my $self =  bless {
 		     tie         => $options{tie},
 		     depends     => [],
-		     memory      => new XTM::Memory,
+		     memory      => new XTM::Memory (consistency => $options{consistency} || $default_consistency),
 		     last_mod    => time,
 		     last_syncin => time,
 		    }, $class;
-  $self->{memory} = $self->{tie}->sync_in() if $self->{tie};
+  $self->{memory} = $self->{tie}->sync_in($self->{memory}->{consistency}) if $self->{tie};
   return $self;
 }
 
@@ -105,13 +249,14 @@ sub DESTROY {
 
 =pod
 
-=head1 Methods
+=head2 Methods
 
-All, except the methods below, are handed over to the corresponding C<memory> component.
+All, except the methods below, are handed over to the corresponding C<memory> component
+(L<XTM::Memory>).
 
 =cut
 
-use vars qw($AUTOLOAD); 
+use vars qw($AUTOLOAD);
 sub AUTOLOAD {
   my($method) = $AUTOLOAD =~ m/([^:]+)$/;
   return if $method eq 'DESTROY';
@@ -128,10 +273,12 @@ sub AUTOLOAD {
 
 =over
 
-=item B<memory> 
+=item B<memory>
 
-returns/sets the L<XTM::Memory> component. Setting will NOT check the consistency with the
-other components.
+I<$tm>->memory
+
+returns/sets the L<XTM::Memory> component. Changing this value will cause big, big harm
+as there will NOT be a consistency check with the other internal components.
 
 =cut
 
@@ -147,7 +294,25 @@ sub memory {
 
 =pod
 
-=item B<info> 
+=item B<consistency>
+
+I<$hashref> = I<$tm>->consistency
+
+returns the I<consistency> component as hash reference as described in the constructor
+above. Currently, this is a read-only method.
+
+=cut
+
+sub consistency {
+   my $self = shift;
+   return $self->{memory}->{consistency};
+}
+
+=pod
+
+=item B<info>
+
+I<$hashref> = I<$tm>->info (I<list of info items>)
 
 returns some meta/statistical information about the map in form of
 a hash reference containing one or more of the following components (you might
@@ -188,15 +353,15 @@ TODOs:
 
 =over
 
-=item 
+=item
 
-there is a cyclic dependency of topic types
-
-=back
+detect cyclic dependency of topic types
 
 =back
 
-You can control via a parameter which information you are interested in:
+=back
+
+You can control via a parameter in which information you are interested in:
 
 Example:
 
@@ -332,6 +497,8 @@ sub _usage {
 
 =item B<clusters>
 
+I<$hashref> = I<$tm>->clusters
+
 computes the 'islands' of topics. It figures out which topics are connected via is-a, scoping
 or other associations and - in case they are - will collate them into clusters. The result is
 a hash reference to a hash containing list references of topic ids organized in a cluster.
@@ -394,7 +561,7 @@ sub clusters {
       }
     }
     # scopes
-    foreach my $b (@{$self->topic($tid)->baseNames}) { 
+    foreach my $b (@{$self->topic($tid)->baseNames}) {
       foreach my $s (@{$b->scope->references}) {
 	if ($s->href =~ /^\#(.+)/) {
 	  $clusters = _assert_cluster ($clusters,  $1) ;
@@ -403,7 +570,7 @@ sub clusters {
       }
     }
     # occurrences
-    foreach my $o (@{$self->topic($tid)->occurrences}) { 
+    foreach my $o (@{$self->topic($tid)->occurrences}) {
 #print STDERR Dumper ($o);
 	if ($o->instanceOf->reference->href =~ /^\#(.+)/) {
 	    $clusters = _assert_cluster ($clusters,  $1) ;
@@ -455,6 +622,13 @@ sub clusters {
 
 =item B<induced_assoc_tree>
 
+I<$treeref> = I<$tm>->induced_assoc_tree (
+                 [ topic      => I<$start_topic>, ]
+                 [ assoc_type => I<$type_topic>,  ]
+                 [ a_role     => I<$role_topic>,  ]
+                 [ b_role     => I<$role_topic>,  ]
+                 [ depth      => I<integer>       ])
+
 computes a tree of topics based on a starting topic, an association type
 and two roles. Whenever an association of the given type is found and the given topic appears in the
 role given in this very association, then all topics appearing in the other given role are regarded to be
@@ -464,15 +638,15 @@ applies. If there are loops implied by this relation, so be it.
 Examples:
 
  
-  $hierachy = $tm->induced_assoc_tree (topic      => $start_node,
-				       assoc_type => 'at-relation',
-				       a_role     => 'tt-parent',
-				       b_role     => 'tt-child' );
-  $yhcareih = $tm->induced_assoc_tree (topic      => $start_node,
-				       assoc_type => 'at-relation',
-				       b_role     => 'tt-parent',
-				       a_role     => 'tt-child',
-				       depth      => 42 );
+  $hierarchy = $tm->induced_assoc_tree (topic      => $start_node,
+					assoc_type => 'at-relation',
+					a_role     => 'tt-parent',
+					b_role     => 'tt-child' );
+  $yhcrareih = $tm->induced_assoc_tree (topic      => $start_node,
+					assoc_type => 'at-relation',
+					b_role     => 'tt-parent',
+					a_role     => 'tt-child',
+					depth      => 42 );
 
 
 =cut
@@ -485,12 +659,12 @@ sub induced_assoc_tree {
   elog ('XTM', 3, "induced_assoc_tree for '$topic' (depth = ".$params->{depth}.")");
 
   (my $assoc_type  = $params->{assoc_type}) =~ s/^\#//; # if it happens to have a #
-  my $t = $self->memory->_topic_tree ($topic, 
+  my $t = $self->memory->_topic_tree ($topic,
 				      # where are the associations which are relevant?
 				      # (do not recompute them over and over, again
 				      $self->associations ("is-a $assoc_type"),
-				      $params->{a_role}, 
-				      $params->{b_role}, 
+				      $params->{a_role},
+				      $params->{b_role},
 				      0, 
 				      $params->{depth});
   return $t;
@@ -498,16 +672,20 @@ sub induced_assoc_tree {
 
 =pod
 
-=item B<induced_vortex> 
+=item B<induced_vortex>
 
-returns _a lot_ of information about a particular topic. The function expects
+I<$vortex> = I<$tm>->induced_vortex (I<$some_topic>,
+                               I<$what_hashref>,
+                               I<$scope_list_ref> )
+
+returns B<a lot> of information about a particular topic. The function expects
 the following parameters:
 
 =over
 
 =item I<topic_id>:
 
-the tid of the topic in question
+the tid of the topic in question (vortex)
 
 =item I<what>:
 
@@ -518,8 +696,6 @@ a hash reference describing the extent of the information (see below)
 a list (reference) to scopes (currently NOT honored)
 
 =back
-
-=item
 
 To control _what_ exactly should be returned, the C<what> hash reference can contain following components:
 
@@ -561,8 +737,6 @@ If the map contains cycles, they will NOT YET be detected. In other words, the
 function may loop.
 
 =back
-
-=item
 
 The function will determine all of the requested information and will prepare a hash
 reference storing each information into a hash component. Under which name this information
@@ -699,10 +873,6 @@ sub _calc_limits {
       $_t->{$where} = $self->induced_assoc_tree ($id, $how);
       }
   }
-#  my $test =  {
-#	       'scope' =>  [ 'yyy' ]
-#	      };
-#  return { 'aaa' => $test, 'bbb' => $test };
   return $_t;
 }
 
@@ -713,11 +883,11 @@ sub _calc_limits {
 
 =head1 SEE ALSO
 
-L<XTM>
+L<XTM::Memory>, L<XTM::base>
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 200[1-2], Robert Barta <rho@telecoma.net>, All rights reserved.
 
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

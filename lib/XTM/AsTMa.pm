@@ -9,7 +9,7 @@ require AutoLoader;
 use base qw (XTM::IO);
 
 @EXPORT_OK = qw( astma2xtm );
-$VERSION = '0.03';
+$VERSION = '0.05';
 
 use Carp;
 use XTM::Log ('elog');
@@ -50,7 +50,9 @@ Currently, only AsTMa= is supported, with the following constraints/additions:
 
 =over
 
-=item no macro support (deprecated in the language).
+=item no macro support
+
+This feature was experimental and is now deprecated.
 
 =item following directives are supported:
 
@@ -65,9 +67,18 @@ debugging faulty maps. There is an appropriate line written to STDERR.
 
 Writes a line to STDERR reporting the line number and an optional message. Useful for debugging.
 
+=item %name [ name ]
+
+Adds a name attribute to the topic map.
+
+=item %encoding [ encoding ]
+
+Specifies which encoding to use to interpret the text.
+
 =back
 
-A directive can be inserted anywhere in the document. 
+A directive can be inserted anywhere in the document but must be at the start of
+a line.
 
 =back
 
@@ -165,10 +176,14 @@ sub last_mod {
 loads an AsTMa instance and returns a L<XTM::Memory> object. Note that that all undefined
 topics will be defined automatically, unless C<auto_complete> is set to 0.
 
+The only optional parameter is C<consistency>. It will be used when building the map
+while reading the AsTMa instance. See L<XTM> for details.
+
 =cut
 
 sub sync_in {
-  my $self = shift;
+  my $self        = shift;
+  my $consistency = shift || $XTM::default_consistency;
 
   elog ('XTM::AsTMa', 3, 'sync in '.$self->{url});
 
@@ -182,7 +197,7 @@ sub sync_in {
   }
 
   use XTM::AsTMa::MemoryBuilder;
-  my $ap = new XTM::AsTMa::MemoryBuilder(tm => new XTM::Memory);              # will hold/build the Topic Map
+  my $ap = new XTM::AsTMa::MemoryBuilder(tm => new XTM::Memory (consistency => $consistency));
   $ap->handle_astma (text          => $atm_stream,
 #		     log_level     => 2,
 		     auto_complete => $self->{auto_complete});
@@ -211,7 +226,7 @@ L<XTM>
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 200[1-2], Robert Barta <rho@telecoma.net>, All rights reserved.
 
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

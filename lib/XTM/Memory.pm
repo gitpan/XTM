@@ -6,10 +6,11 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
 require Exporter;
 require AutoLoader;
+use UNIVERSAL qw(isa);
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.11';
+$VERSION = '0.14';
 
 use Data::Dumper;
 
@@ -38,7 +39,7 @@ XTM - Topic Map management, in-memory data structure.
    $tm->remove ('t-beatles');
 
    # checking something
-   print "Hurray" if 
+   print "Hurray" if
     $tm->is_topic ('t-john-lennon') ||
     $tm->is_association ('a-played-in');
 
@@ -63,6 +64,8 @@ be found in the XTM::server package distributed seperately.
 
 =head2 Constructor
 
+I<$mem> = new XTM::Memory ( [ id => I<$id> ] )
+
 The constructor expects only one optional parameter, C<id>. If not provided, the C<id> will remain
 undefined.
 
@@ -81,13 +84,16 @@ undefined.
 =end man
 
 =cut
-  
+
 sub new {
-  my $class    = shift;  
+  my $class   = shift;
   my %options  = @_;
   my $self = bless {id           => $options{id},
 		    topics       => {}, # topics ALL have an id
 		    associations => {}, # assocs ALL have an id, I love ids....
+		    subjects     => {}, # this hash records all subjectIdentifiers and the topics for it
+		    merged       => {}, # hash, topic-id -> topic-id, after merging this will be set
+		    consistency  => $options{consistency},
 		   }, $class;
   return $self;
 }
@@ -98,38 +104,38 @@ sub new {
 
 =over
 
-=item I<id>
+=item B<id>
 
-Returns the id of the topic map. This can be empty it it has never been provided.
+I<$id> = I<$mem>->id ( [ I<$id> ] )
+
+Returns the id of the topic map. This can be empty if it has never been provided. If a parameter is provided, that scalar will be the new value for the id.
 
 =cut
 
 sub id {
   my $self = shift;
-  return $self->{id};
+  my $id   = shift;
+  return defined $id ? $self->{id} = $id : $self->{id};
 }
 
 =pod
 
-=item I<add> 
+=item B<add_topic>
 
-Adds a (list of) topics, associations and/or maps to the map object with the following rules:
+I<$mem>->add_topic ( I<$topic> )
 
-=over
+Adds/merge a single topic to the map.
 
+=item B<add>
 
-=item 1
+I<$mem>->add ( I<$topic>, ... )
 
-If a particular topic/association C<id> does already exist in the map object, the corresponding topic 
-will simply be B<overwritten>. This also happens when another map with such a topic/association is merged.
+I<$mem>->add ( I<$association>, ... )
 
+I<$mem>->add ( I<$tm>, ... )
 
-=item 2
-
-No topic merging will (yet) occur.
-
-
-=back
+Adds a (list of) topic(s), associations and/or maps. There is a small overhead
+involved determining the kind of object to be added. See L<XTM> for the merging rules.
 
 Examples:
 
@@ -149,20 +155,197 @@ If a parameter is neither a topic nor an association nor a topic map, an excepti
 
 =cut
 
+sub __do_merge {
+  my $self = shift;
+  my $t    = shift;   # topic to which everything will be merged into
+  my $s    = shift;   # topic which has to be merged, that one will die afterwards (except the tid)
+  my $reason = shift; # for some particular reason
+
+#  warn "merging ", $t->id, " and " , $s->id, " ", $reason, "\n";
+
+  # merging instanceOfs is list management
+  $t->add__s ($s->instanceOf_s);
+  $t->add__s ($s->baseName_s);
+  $t->add__s ($s->occurrence_s);
+  { # merging Identities, I love complicated if statements
+    my $ti = $t->subjectIdentity;
+    my $si = $s->subjectIdentity;
+    if ($ti && !$si) {                # ignore, nothing new
+    } elsif (!$ti && $si) {           # $t did not have, gets one now
+      $t->add_ ($s->subjectIdentity);
+    } elsif (!$ti && !$si) {          # none where here
+    } else {                          # both have something
+      my $trr = $ti->resourceRef ? $ti->resourceRef->href : undef;
+      my $srr = $si->resourceRef ? $si->resourceRef->href : undef;
+      use URI;
+      if (defined $trr and defined $srr) { # both resourceRefs defined? then the URI must match
+	my $u1 = URI->new($trr);
+	my $u2 = URI->new($srr);
+	warn "XTM::Memory: incompatible resourceRefs encountered on merging '".$t->id."' and '".$s->id."'"
+	  unless URI::eq ($u1, $u2);
+	                                   # but we leave it as it is
+      } elsif (defined $trr) {             # $srr undefined, leave that
+      } elsif (defined $srr) {             # $trr undefined, we have something new
+	$t->subjectIdentity->add_resourceRef ($si->resourceRef);
+      } else {                             # both undefined
+      }
+      $ti->add_reference_s (@{$si->references}) if $si->references;
+    }
+  }
+  # merging variants is list management
+  $t->add__s ($s->variant_s);
+
+#  unless ($t->id eq $s->id) {                # if we were dealing with different topic ids
+#    $self->{merged}->{$s->id} = $t->id;      # note that a merge has happened
+#  }                                          # Haensel & Gretel mechanism
+
+  $self->__update_subjects ($t->subjectIdentity, $t->id); # tell the world for which subjects we stand
+
+  foreach my $sid (@{$s->ids}) {
+    $self->{topics}->{$sid} = $t;             # get rid of old topic, add the merged results
+    $t->add_id_s ($sid);                      # merged topic receives all ids of s
+  }
+#warn "s sids are ", @{$s->ids};
+#warn "t afterwards has ", Dumper $t;
+#warn "after merge: ", Dumper $self;
+
+  # we are done now with s
+
+#warn "followup merge check for ", $t->id;
+  $self->__check_for_merge ($t->id);          # check whether this merge will trigger a followup merge
+#warn "completed merge check for ", $t->id;
+}
+
+sub __check_for_merge {
+  my $self = shift;
+  my $tid  = shift;                                               # new arrived/created/merged topic, might have to merged ...
+  my $t    = $self->{topics}->{$tid};                             # ... with something we have already have
+
+#print "_check ", $tid, Dumper $t;
+
+  # now we canonicalize the topic
+  $t->canonicalize();
+
+  if (grep ($_ eq 'Subject_based_Merging', @{$self->{consistency}->{merge}})) {
+    # check F.5.2.1 (share both the same resourceRef)
+    my ($href, $href2);
+    if ($t->subjectIdentity && $t->subjectIdentity->resourceRef && ($href = $t->subjectIdentity->resourceRef->href)) {
+      foreach my $t2 (grep ($_ != $t, values %{$self->{topics}})) {
+#warn "checking sub for ", $t2->id;
+	use URI;
+	if ($t2->subjectIdentity &&                               # we have identity
+	    $t2->subjectIdentity->resourceRef &&                  # and it has an addressable resource
+	    ($href2 = $t2->subjectIdentity->resourceRef->href) && # get the href
+	    URI::eq ($href, $href2) ) {                           # compare it with the other
+#warn "resource ref equal";
+	  $self->__do_merge ($t2, $t, "merge share both the same resourceRef");
+	  return; # no need to do more with this topic
+	}
+      }
+    }
+    # check F.5.2.2 (new one pointing subjectIndicator to existing)
+    foreach my $r ($t->subjectIdentity &&
+		   $t->subjectIdentity->references ?
+		   @{$t->subjectIdentity->references}: ()) {
+#	print "afound reference for ", Dumper $r, "\n";
+      if (isa($r, 'XTM::topicRef')) {
+#	  print "xfound reference for ", Dumper $r, "\n";
+	my $t2; eval { $t2 = $self->topic ($r->href) };              # try to find this topic in local map
+	if ($t2) {
+	  # get rid of this topicRef, it is useless now
+	  $t->subjectIdentity->references ( [ grep ($_ != $r, @{$t->subjectIdentity->references}) ] );
+	  $self->__do_merge ($t2, $t, "new one pointing subjectIndicator to existing");
+	  return; # no need to do more with this topic
+	}
+      }
+    }
+    # check F.5.2.2 (existing one pointing subjectIndicator to new)
+    {
+      my $tid2;
+#warn "topic in focus ", $t->id, Dumper $t;
+#warn "subjects ", Dumper $self->{subjects};
+#warn "our own ids " , Dumper $t->ids;
+      if (($tid2 = $self->{subjects}->{$t->id}) && (!grep ($tid2 eq $_, @{$t->ids}))) { # this particular topic is topicRef'd by something
+#warn "short before merging";
+	my $t2 = $self->topic ($tid2);
+	$t2->subjectIdentity->references ( [ grep ($_->href ne $t->id, @{$t2->subjectIdentity->references}) ] );
+	$self->__do_merge ($t2, $t, "existing one pointing subjectIndicator to new");
+	return;
+      }
+    }
+    # check F.5.2.3 (share at least on URI in references)
+    foreach my $r ($t->subjectIdentity && $t->subjectIdentity->references ?
+		   @{$t->subjectIdentity->references} : ()) {
+      my $uri = URI->new($r->href)->canonical->as_string;            # canonical is better
+#warn "checking for ", Dumper( $t), "sharing", $uri;
+      my $tid2;
+#warn "comparing with subjects " , Dumper $self->{subjects};
+      if (($tid2 = $self->{subjects}->{$uri}) && (!grep ($tid2 eq $_, @{$t->ids}))) {# yes we share a subjectIndicator with ourselves, ..
+	my $t2 = $self->topic ($tid2);                               # but that is not the point
+	$self->__do_merge ($t2, $t, "sharing a subjectIndicator");
+	return;
+      }
+    }
+  }
+  if (grep ($_ eq 'Topic_Naming_Constraint', @{$self->{consistency}->{merge}})) {
+    # F.5.3, same baseName in same scope
+    foreach my $t2 (grep ($_ != $t, values %{$self->{topics}})) {
+      foreach my $bn2 (@{$t2->baseNames}) {
+	foreach my $bn (@{$t->baseNames}) {
+	  next unless $bn->baseNameString->string eq $bn2->baseNameString->string;
+	  next unless XTM::scope::scope_eq ($bn->scope->references, $bn2->scope->references);
+	  $self->__do_merge ($t2, $t, "TNC");
+	  return;
+	}
+      }
+    }
+  }
+  $self->__update_subjects ($t->subjectIdentity, $t->id); # tell the world for which subjects we stand
+#  warn "no merge for $tid\n";
+}
+
+sub __update_subjects {
+  my $self = shift;
+  my $si   = shift;
+  my $tid  = shift;
+
+  return unless $si;
+  $self->{subjects}->{$si->resourceRef->href} = $tid if $si->resourceRef;
+  foreach my $r ($si->references ? @{$si->references} : ()) {
+    my $uri = URI->new($r->href)->canonical->as_string;
+    $self->{subjects}->{$uri} = $tid;
+  }
+}
+
+sub add_topic {
+  my $self = shift;
+  my $t    = shift;
+
+  if ($self->{topics}->{$t->id}) {                                      # there exists already a topic with this id
+    if (grep ($_ eq 'Id_based_Merging', @{$self->{consistency}->{merge}}))  { # allow merging based on id
+      $self->__do_merge ($self->{topics}->{$t->id}, $t, "same id");
+    } else {                                                            # there can only be one and we overwrite
+      $self->{topics}->{$t->id} = $t;
+    }
+  } else {                                                              # we see a new id
+    $self->{topics}->{$t->id} = $t;
+  }
+  $self->__check_for_merge ($t->id);                                    # here various merging checks are performed
+}
+
 sub add {
   my $self = shift;
-  my @ats  = @_;
 
   elog ('XTM::Memory', 4, "add ".ref ($_[0])."....");
 
-  foreach my $at (@ats) {
+  foreach my $at (@_) {
     if ($at->isa ('XTM::topic')) {
-      $self->{topics}->{$at->id} = $at;
+      $self->add_topic ($at);
     } elsif ($at->isa ('XTM::association')) {
       $self->{associations}->{$at->id} = $at;
     } elsif ($at->isa ('XTM::Memory')) {
       foreach my $t (values %{$at->{topics}}) {
-	$self->{topics}->{$t->id} = $t;
+	$self->add_topic ($t);
       }
       foreach my $a (values %{$at->{associations}}) {
 	$self->{associations}->{$a->id} = $a;
@@ -177,17 +360,19 @@ sub add {
 =pod
 
 
-=item I<remove>
+=item B<remove>
+
+I<$listref> = I<$mem>->remove ( I<@list_of_topic_ids> )
 
 removes particular topics and associations specified by their C<id>.
 You can provide a list here. The method will return a list references of object (references), which were
-removed from the map during this operation. C<id>s not identifying any topic or association
-in the map, are ignored.
+removed from the map during this operation. Topic ids not identifying any topic or association
+in the map, are silently ignored.
 
 Examples:
 
   # get rid of a particular topic
-  $tm->remove ('t-portishead'); 
+  $tm->remove ('t-portishead');
 
 =cut
 
@@ -205,12 +390,17 @@ sub remove {
     }
   }
   return [ @removed ] ;
-}                                                                                                                                            
+}
+
 =pod
 
-=item I<is_topic>, I<is_association>
+=item B<is_topic>, B<is_association>
 
-check whether a particular topic/association with a given C<id> exists in the map. 
+I<$boolean> = I<$mem>->is_topic       ( I<$topic_id> )
+
+I<$boolean> = I<$mem>->is_association ( I<$association_id> )
+
+check whether a particular topic/association with a given C<id> exists in the map.
 Returns 1 in that case, C<undef> otherwise.
 
 Examples:
@@ -234,7 +424,9 @@ sub is_association {
 
 =pod
 
-=item I<topics>
+=item B<topics>
+
+I<$list_ref> = I<$mem>->topics ( [ I<$query> ] )
 
 returns a list reference of topic ids for this given map. An optional filter
 specification can filter only relevant topics:
@@ -248,7 +440,7 @@ Example:
 
 The filter specifications follow the syntax:
 
-  filter        -> clause { 'AND' clause } 
+  filter        -> clause { 'AND' clause }
   clause        -> 'baseName'   'regexps' regexp_string                               |
                    'occurrence' 'regexps' regexp_string                               |
                    'text'       'regexps' regexp_string                               | # any text within the topic
@@ -256,6 +448,8 @@ The filter specifications follow the syntax:
                    'id'         'eq'      ''' string '''                              |
                    'assocs' [ 'via' topic_id ] [ 'with' topic_id ] [ 'transitively' ] |
                    'is-a'  topic_id                                                   |
+                   'reifies'    'regexp'  regexp_string                               |
+                   'indicates'  'regexp'  regexp_string                               |
 ##                 'instanceOfs' ( '<=' | '==' | '>=' )  set_of_topic_ids | NOT IMPLEMENTED
 ##                 'scoped_by' topic_id   ## NOT IMPLEMENTED
   regexp_string -> '/' regexp '/'
@@ -263,11 +457,14 @@ The filter specifications follow the syntax:
   topic_id      -> <id of a topic>
   string        -> <any string with no \' in it>
 
+The regexps are all interpreted as //i, i.e. case-insensitive matching.
+
+
 =cut
 
 sub _passes_filter {
   my $self = shift;
-  my $id   = shift;
+  my $t    = shift;
   my $f    = shift;
   my $memoize = shift;
 
@@ -275,37 +472,53 @@ sub _passes_filter {
   if ($f =~ /^baseName\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
     elog ('XTM::Memory', 4, "    baseName regexps '$regexp'");
-    foreach my $b (@{$self->{topics}->{$id}->baseNames}) {  # only one matches => ok
+    foreach my $b (@{$t->baseNames}) {  # only one matches => ok
       elog ('XTM::Memory', 5, "       baseName", $b);
       return 1 if $b->baseNameString->string =~ /$regexp/i;
     }
+  } elsif ($f =~ /^indicates\s+regexp\s+\/(.+)\/$/) {
+    my $regexp = $1;
+    if ($t->subjectIdentity) {
+      foreach my $r (@{$t->subjectIdentity->references}) {
+	return 1 if $r->href =~ /$regexp/i;
+      }
+    }
+    return 0;
+  } elsif ($f =~ /^reifies\s+regexp\s+\/(.+)\/$/) {
+    my $regexp = $1;
+    return 
+      $t->subjectIdentity && 
+	$t->subjectIdentity->resourceRef &&
+	  $t->subjectIdentity->resourceRef->href =~ /$regexp/i;
   } elsif ($f =~ /^occurrence\s+regexps\s+\/(.+)\/$/) { # make no distinction between resourceRef and resourceData
     my $regexp = $1;
-    foreach my $o (@{$self->{topics}->{$id}->occurrences}) {
-      return 1 if $o->baseName && $o->baseName->baseNameString->string =~ /$regexp/i;
+    foreach my $o (@{$t->occurrences}) {
+##      return 1 if $o->baseName && $o->baseName->baseNameString->string =~ /$regexp/i;
       return 1 if $o->resource->isa ('XTM::resourceRef')  && $o->resource->href =~ /$regexp/i;
       return 1 if $o->resource->isa ('XTM::resourceData') && $o->resource->data =~ /$regexp/i;
     }
   } elsif ($f =~ /^id\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
-    return $id =~ /$regexp/i;
+    return grep ($_ =~ /$regexp/i, @{$t->ids});
   } elsif ($f =~ /^text\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
-    foreach my $b (@{$self->{topics}->{$id}->baseNames}) {  # only one matches => ok
+    foreach my $b (@{$t->baseNames}) {  # only one matches => ok
       return 1 if $b->baseNameString->string =~ /$regexp/i;
     }
-    foreach my $o (@{$self->{topics}->{$id}->occurrences}) {
+    foreach my $o (@{$t->occurrences}) {
       return 1 if $o->baseName && $o->baseName->baseNameString->string =~ /$regexp/i;
       return 1 if $o->resource->isa ('XTM::resourceRef')  && $o->resource->href =~ /$regexp/i;
       return 1 if $o->resource->isa ('XTM::resourceData') && $o->resource->data =~ /$regexp/i;
     }
   } elsif ($f =~ /^id\s+eq\s+\'(.+)\'$/) {
-    return $id eq $1;
+    return grep ($_ eq $1, @{$t->ids});
   } elsif ($f =~ /^assocs(\s+via\s+(\S+))?(\s+as\s+(\S+))?(\s+with\s+(\S+))?(\s+transitively)?$/) {
     my $via   = $1 ? $2 : '';
     my $role  = $3 ? "#$4" : undef;
     my $with  = $5 ? $6 : '';
     my $trans = $7 || '';
+    my $id    = $t->id;
+
     elog ('XTM::Memory', 4, "    assocs via '$via' ".($role ? "role '$role'" : "")." with '$with', $trans");
     my $assocs = $memoize->{"a_instances => $via"} ||
       ($memoize->{"a_instances => $via"} = $via ? $self->associations ("is-a $via") : $self->associations ());
@@ -314,15 +527,15 @@ sub _passes_filter {
       ($id, $with) = ($with, $id);
       elog ('XTM::Memory', 4, "    assocs via with optimization");
     }
-    my $t = $memoize->{$id.$trans} || 
+    my $s = $memoize->{$id.$trans} || 
       ($memoize->{$id.$trans} = $self->_topic_tree ($id, $assocs, undef, undef, 0, $trans ? undef : 1));
-    elog ('XTM::Memory', 5, "        tree", $t);
-    return 0 if ($via  && !scalar             @{$t->{'children*'}}); # no topics via via reached
-    return 0 if (         !grep ($with eq $_, @{$t->{'children*'}}));
+    elog ('XTM::Memory', 5, "        tree", $s);
+    return 0 if ($via  && !scalar             @{$s->{'children*'}}); # no topics via via reached
+    return 0 if (         !grep ($with eq $_, @{$s->{'children*'}}));
     elog ('XTM::Memory', 4, "       passed via, with");
     return 1;
   } elsif ($f =~ /^is-a\s+(.+)$/) {
-    return $self->{topics}->{$id}->has_instanceOf ($1);
+    return $t->has_instanceOf ($1);
   } else {
     die "XTM::Memory: Unimplemented filter '$f'\n";
   }
@@ -346,24 +559,27 @@ sub topics {
   my @filters = split (/\s+and\s+/i, $filter); # poor man's parsing, only ANDed clauses, no brackets
 
   my %memoize;  # optimization
+  my $p = 0; # only used for the uniq sort below
  TOPICS:
-  foreach my $id ( keys %{$self->{topics}} ) {
+  foreach my $t ( grep ($_ != $p && ($p = $_), sort values  %{$self->{topics}} )) {
     last TOPICS if defined $to && $i > $to;
-    elog ('XTM::Memory', 4, "  working on $id");
+    elog ('XTM::Memory', 4, "  working on ".$t->id);
 
     foreach my $f ( @filters ) { # only ANDed clauses, yet
       elog ('XTM::Memory', 4, "     checking $f, as $i. for from $from to ".(defined $to ? $to : ''));
-      next TOPICS unless _passes_filter ($self, $id, $f, \%memoize);
+      next TOPICS unless $self->_passes_filter ($t, $f, \%memoize);
       elog ('XTM::Memory', 4, "        passed");
     }
-    push @ids, $id if ($from <= $i++);
+    push @ids, $t->id if ($from <= $i++);
   }
   return [ @ids ];
 }
 
 =pod
 
-=item I<associations>
+=item B<associations>
+
+I<$list_ref> = I<$mem>->associations ( [ I<$query> ] )
 
 returns the C<id>s of associations. An optional filter specification can filter only relevant associations:
 
@@ -464,7 +680,11 @@ sub associations {
 
 =pod
 
-=item I<topic>, I<association>
+=item B<topic>, B<association>
+
+I<$topic_ref>       = I<$mem>->topic       ( I<$topic_id> )
+
+I<$association_ref> = I<$mem>->association ( I<$association_id> )
 
 return a topic/association object (reference) for a given C<id>. If there is no such id, an exception will be raised.
 
@@ -475,8 +695,11 @@ return a topic/association object (reference) for a given C<id>. If there is no 
 sub topic {
   my $self = shift;
   my $id   = shift;
+#  while ($self->{merged}->{$id}) { # dereference merged indirection
+#    $id = $self->{merged}->{$id}
+#  };
   return $self->{topics}->{$id} if $self->{topics}->{$id};
-  die "XTM::Memory: topic: No such topic '$id'";
+  die "XTM::Memory: topic: No such topic '$id'", caller;
 }
 
 sub association {
@@ -488,7 +711,10 @@ sub association {
 
 =pod
 
-=item I<baseNames>
+=item B<baseNames>
+
+I<$hash_ref> = I<$mem>->baseNames ( I<$topic_id_list_ref>,
+                              I<$scope_list_ref> )
 
 receives a list reference containing topic C<id>s. It returns a hash reference containing
 the baseName for each topic as a value with the topic id the key. The additional parameter is interpreted as
@@ -625,7 +851,7 @@ L<XTM>
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 200[1-2], Robert Barta <rho@telecoma.net>, All rights reserved.
 
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

@@ -1,4 +1,18 @@
 Revision history for Perl extension XTM.
+0.32  Sun Jun 30 20:36:01 EST 2002
+	- added XTM::grammar, a package to hold element dependencies and nesting (internal mainly)
+	- added XTM::Path, XPath-like navigation through XTM::base data structures
+	- XTM::Memory::id: setting of id added
+	- XTM::topic, doc corrections
+	- using a precompiled version of the Parse::Recdescent (considerable AsTMa= speedup)
+	- fixed potential problems in XTM::generic
+	- added merging code to XTM::Memory, is controlled via a hash in XTM constructor (BACKWARD COMPATIBILITY?)
+	- fixed docu/code mismatch in XTM::topic (occurrences)
+	- added scope_eq to XTM::scope
+	- added canonicalize to XTM::topic (removes duplicates, sorts things)
+	- added more query clauses for the simple query language in XTM::Memory
+	- more directives for XTM::AsTMa (naming, encoding). Use with care.
+
 0.31  Thu May 16 16:56:40 EST 2002
 	- got rid of XTM::XML::ParseError and used XML::SAX::Exception instead	
 
@@ -18,7 +32,7 @@ Revision history for Perl extension XTM.
 	- added more accurate dependencies
 	- added some explanation to the README
 	- fixed XTM::XML::MemoryBuilder to work with SAX::Expat, LibXML::SAX and PurePerl (still a problem there)
-	- AsTMa parser: added directives %cancel, %warn
+	- AsTMa parser: added directives %cancel, %log
 
 0.27  Mon Jan 14 12:23:41 EST 2002
 	- added missing XTM::AsTMA::MemoryBuilder

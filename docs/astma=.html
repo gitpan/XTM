@@ -1,6 +1,6 @@
 
 
-<html>
+<html><!-- Automatically generated, do not edit -->
 <head>
 	<title>AsTMa= (Asymptotic Topic Map Notation, Authoring)</title>
         <link rel="stylesheet" media="screen"  href="astma-print.css" type="text/css">
@@ -30,7 +30,7 @@
 			This document has no formal status. It is a technical report of <a href="http://www.bond.edu.au/">Bond 
 			University</a>.
 			</p>
-		</p><releaseinfo>v1.0, 2002-05-09, Revision 1.6, Draft</releaseinfo>
+		</p><releaseinfo>v1.0, 2002-06-02, Revision 1.7, Draft</releaseinfo>
 
 <hr>
 
@@ -364,6 +364,10 @@
 	</tbody>
 	</table>
 
+	</sect2>
+
+	<sect2>
+		<h3>Types and Scopes</h3>
 	<p>
 	If appropriate, you can also type topic characteristics:
 	</p>
@@ -444,46 +448,6 @@ bn @ deutsch : RedHat Linux f&amp;uuml;r SPARC
 	</tbody>
 	</table>
 
-	<p>
-	In case the subject indicator (a unique identifier for a particular subject) is known, it can
-	be provided:
-
-	<table border="1" width="100%">
-	<tbody>
-	<tr><td>AsTMa=</td><td>XTM</td></tr>
-	<tr>
-		<td>
-		<pre class="astma">
-linux (os)
-bn: Linux kernel
-oc: http://www.kernel.org/
-sin: http://dmoz.org/.../Linux/
-</pre>
-		</td>
-		<td>
-		<pre class="xtm">
-&lt;topic id="linux">
-  &lt;instanceOf>
-    &lt;topicRef xlink:href="#os"/>
-  &lt;/instanceOf>
-  &lt;baseName>
-     &lt;baseNameString>Linux kernel&lt;/baseNameString>
-  &lt;/baseName>
-  &lt;occurrence>
-    &lt;resourceRef xlink:href="http://www.kernel.org/"/>
-  &lt;/occurrence>
-  &lt;subjectIdentity>
-     &lt;subjectIndicatorRef 
-         xlink:href="http://dmoz.org/.../Linux/"/>
-  &lt;/subjectIdentity>
-&lt;/topic>
-</pre>
-		</td>
-	</tr>
-	</tbody>
-	</table>
-
-	</p>
 
 	</sect2>
 
@@ -563,10 +527,149 @@ patch:   generic-reiserfs-patch-2.4.x
 	</sect2>
 
 	<sect2>
+		<h3>Identification and Reification</h3>
+	<p>
+	Topics are said to <i>reify</i> subjects. Either a topic in a topic map is a 
+	<i>representant</i> of the subject if the subject itself is not directly addressable.
+	Or, if it is then the topic can directly and unambiguously the subject via a URI.
+	</p>
+
+	<p>
+	In case a subject indicator (a not necessarily unique identification for a particular subject) is known, it can
+	be provided via <i>sin</i>:
+
+	<table border="1" width="100%">
+	<tbody>
+	<tr><td>AsTMa=</td><td>XTM</td></tr>
+	<tr>
+		<td>
+		<pre class="astma">
+linux (os)
+bn: Linux kernel
+oc: http://www.kernel.org/
+sin: http://dmoz.org/.../Linux/
+</pre>
+		</td>
+		<td>
+		<pre class="xtm">
+&lt;topic id="linux">
+  &lt;instanceOf>
+    &lt;topicRef xlink:href="#os"/>
+  &lt;/instanceOf>
+  &lt;baseName>
+     &lt;baseNameString>Linux kernel&lt;/baseNameString>
+  &lt;/baseName>
+  &lt;occurrence>
+    &lt;resourceRef xlink:href="http://www.kernel.org/"/>
+  &lt;/occurrence>
+  &lt;subjectIdentity>
+     &lt;subjectIndicatorRef 
+         xlink:href="http://dmoz.org/.../Linux/"/>
+  &lt;/subjectIdentity>
+&lt;/topic>
+</pre>
+		</td>
+	</tr>
+	</tbody>
+	</table>
+
+	Several such subject indicators can be provided for a single topic. If the indicator string provided contains
+	a URI scheme, then AsTMa assumes a reference to an (external) subject indicator. Otherwise, AsTMa will assume
+	this to be a reference to a local topic (topicRef):
+
+	<table border="1" width="100%">
+	<tbody>
+	<tr><td>AsTMa=</td><td>XTM</td></tr>
+	<tr>
+		<td>
+		<pre class="astma">
+linux (os)
+bn: Linux kernel
+...
+sin: http://dmoz.org/.../Linux/
+sin: linux-os
+</pre>
+		</td>
+		<td>
+		<pre class="xtm">
+&lt;topic id="linux">
+  &lt;instanceOf>
+    &lt;topicRef xlink:href="#os"/>
+  &lt;/instanceOf>
+  &lt;baseName>
+     &lt;baseNameString>Linux kernel&lt;/baseNameString>
+  &lt;/baseName>
+  ...
+  &lt;subjectIdentity>
+     &lt;subjectIndicatorRef 
+         xlink:href="http://dmoz.org/.../Linux/"/>
+     &lt;topicRef 
+         xlink:href="#linux-os"/>
+  &lt;/subjectIdentity>
+&lt;/topic>
+</pre>
+		</td>
+	</tr>
+	</tbody>
+	</table>
+	It is clear from the syntax that only a single such resource reference can be specified.
+
+	</p>
+
+	<p>
+	In the case where the topic can be unambiguously be linked to the subject in question, we can use
+	AsTMa's <i>reify</i> clause:
+	</p>
+
+	<table border="1" width="100%">
+	<tbody>
+	<tr><td>AsTMa=</td><td>XTM</td></tr>
+	<tr>
+		<td>
+		<pre class="astma">
+linux-kernel-site (web-site) reifies http://www.linux.org/
+bn: Linux kernel Site
+...
+</pre>
+		</td>
+		<td>
+		<pre class="xtm">
+&lt;topic id="linux">
+  &lt;instanceOf>
+    &lt;topicRef xlink:href="#web-site"/>
+  &lt;/instanceOf>
+  &lt;baseName>
+     &lt;baseNameString>Linux kernel Site&lt;/baseNameString>
+  &lt;/baseName>
+  ...
+  &lt;subjectIdentity>
+     &lt;resourceRef 
+         xlink:href="http://www.linux.org/"/>
+  &lt;/subjectIdentity>
+&lt;/topic>
+</pre>
+		</td>
+	</tr>
+	</tbody>
+	</table>
+
+	The subject provided can be external (by providing a full URI) or can also be a local resource, such as another
+	topic or an association.
+	</sect2>
+
+
+	<sect2>
 		<h3>Topic Maps</h3>
 	<p>
-	The <i>very first non-empty line within the document</i> MUST  provide 
-	a name (identifier) of the topic map itself:
+	There is no special format or syntax for a AsTMa Topic Map instance. All text blocks within the
+	document are regarded to be part of the map.
+	</p>
+
+	<p>
+	Optionally you can control the name (id) of the Topic Map. This, though, might have only relevance
+	to your local topic map processor, so there is not counterpart of this in XTM.
+	If so, then the <i>very first non-empty line within the document</i> MUST  provide 
+	this name (identifier) of the topic map itself:
  
 	<table border="1" width="100%">
 	<tbody>
@@ -592,8 +695,13 @@ sparclinux : iso-8859-1
 	</p>
 
 	<p>
-	Optionally, you can specify an particular encoding, like in the example above. If not provided,  the
+	Additionally, you may specify a particular encoding, like in the example above. If not provided, the
 	encoding defaults to iso-8859-1.
+	</p>
+
+	<p>
+	Any local AsTMa implementation may also provide special commands or syntactical forms to control
+	these aspects of your map. Please consult the appropriate documentation.
 	</p>
 
 	</sect2>
@@ -780,7 +888,7 @@ linux: iso-8859-1
 	A topic definition section follows the syntax
 
 	<blockquote>
-	      <i>topic-definition</i> --> [ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] eol { ws* <i>topic-characteristic</i> eol } 
+	      <i>topic-definition</i> --> [ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] [ 'reifies' <i>string</i> ] eol { ws* <i>topic-characteristic</i> eol } 
 	</blockquote>
 	</p>
 
@@ -817,6 +925,14 @@ linux (operating-system-technology open-source-software)
 	For every topic type an <a href="http://www.topicmaps.org/xtm/index.html#elt-instanceOf">instanceOf element</a>
 	will be generated inside this topic containing a <a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef
 	element</a> with the xlink:href attribute having the value of the type id.
+	</p>
+
+	<p>
+	Optionally, it can be specified that a particular topic <i>reifies</i> a particular addressable
+	resource. To unambiguously name this resource after the keyword 'reifies' a URI must be provided. The URI may
+	point to an external resource, but also to another topic in the map. The AsTMa processor will generate a
+	<a href="http://www.topicmaps.org/xtm/index.html#elt-resourceRef">resourceRef element</a> within 
+        the <a href="http://www.topicmaps.org/xtm/index.html#elt-subjectIdentity">subjectIdentity element</a> of that topic.
 	</p>
 	</sect2>
     
@@ -959,11 +1075,17 @@ linux (operating-system-technology open-source-software)
 			<blockquote>
 			  <i>subject-identity</i> --> 'sin' ':' <i>string</i>
 			</blockquote>
-			The <i>string</i> will be used as subject indicator reference as the value for the 
+			If the <i>string</i> follows the syntax of an URI and contains a URI scheme, this
+			<i>string</i> will be used as subject indicator reference as the value for the 
 			attribute xlink:href for a 
 			<a href="http://www.topicmaps.org/xtm/index.html#elt-subjectIndicatorRef">subjectIndicatorRef element</a>
 			inside a <a href="http://www.topicmaps.org/xtm/index.html#elt-subjectIdentity">subjectIdentity element</a> 
 			inside the current topic.
+			</p>
+			<p>
+			Otherwise, AsTMa assumes this string to be a topic reference and will add a 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a> instead creating
+			a relative link with that string.
 			</p>
 			</dd>
 
@@ -1110,6 +1232,7 @@ linux (operating-system-technology open-source-software)
 	Following unresolved issues exist:
     
 	<ul>
+		<li>reification for associations?</li>
 		<li>conformant converter is free to produce any additional topic/assocs appropriate??</li>
 		<li>specifying additional behavior? auto complete, defaults for assocs (types?)</li>
 	</ul>
@@ -1136,6 +1259,13 @@ linux (operating-system-technology open-source-software)
 	<hr />
 		<h2>Appendix: Changes</h2>
 	<ul>
+		<li>
+		relative to <a href="astma=-1.0r1.5.html">v1.0 Rev.1.6</a>:
+		distinguished subject indicators of being either local topicRef or external subjectIndicatorRef,
+		added more text to topic map tutorial,
+		added reifies syntax for topics
+		</li>
+
 		<li>
 		relative to <a href="astma=-1.0r1.5.html">v1.0 Rev.1.5</a>:
 		directives to control modalities of parsing, macros removed, local comments MUST have at least one blank leading
@@ -1182,7 +1312,7 @@ linux (operating-system-technology open-source-software)
 	    <i>topic-definition-section</i> |<br />
 	    <i>association-definition-section</i></td><td></td></tr>
 
-		<tr><td><i>topic-definition</i></td><td>--></td><td>[ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] eol { ws* <i>topic-characteristic</i> eol } </td><td></td></tr>
+		<tr><td><i>topic-definition</i></td><td>--></td><td>[ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] [ 'reifies' <i>string</i> ] eol { ws* <i>topic-characteristic</i> eol } </td><td></td></tr>
 
 		<tr><td><i>topic-characteristic</i></td><td>--></td><td><i>basename-characteristic</i> |<br />
 	    <i>resourceRef-characteristic</i> |<br />

@@ -7,11 +7,15 @@ lib/XTM.pm
 lib/XTM/AsTMa.pm
 lib/XTM/AsTMa/MemoryBuilder.pm
 lib/XTM/AsTMa/Parser.pm
+lib/XTM/AsTMa/CParser.pm
 lib/XTM/IO.pm
 lib/XTM/Log.pm
 lib/XTM/Memory.pm
 lib/XTM/Namespaces.pm
 lib/XTM/PSI.pm
+lib/XTM/Path.pm
+lib/XTM/grammar.pm
+lib/XTM/Path/CParser.pm
 lib/XTM/Virtual.pm
 lib/XTM/XML/MemoryBuilder.pm
 lib/XTM/XML.pm
@@ -40,7 +44,9 @@ t/01log.t
 t/02memory.t
 t/03xml.t
 t/04astma.t
+t/05merge.t
 t/06info.t
+t/07path.t
 bin/xtm.pl
 bin/astma2xtm.pl
 bin/prettifyxtm.pl

@@ -7,10 +7,11 @@ require Exporter;
 require AutoLoader;
 
 use XTM::generic;
+use XTM::Namespaces;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.02';
+$VERSION = '0.04';
 
 =pod
 

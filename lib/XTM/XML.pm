@@ -8,7 +8,7 @@ require AutoLoader;
 
 use base qw (XTM::IO);
 
-$VERSION = '0.04';
+$VERSION = '0.06';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -56,9 +56,9 @@ that it ignores all merging related constraints (TNC) given in
 =item
 
 it only allows ONE SINGLE <topicMap> element in a document violating
-    '4.4 XTM Document Conformance', item 2. The reasoning for this is
-    that loading multiple maps implicitely means that some merging has
-    to occur.
+'4.4 XTM Document Conformance', item 2. The reasoning for this is
+that loading multiple maps implicitely means that some merging has
+to occur. This should NOT be happening implicitly.
 
 =item
 
@@ -76,7 +76,7 @@ All elements with no explicit ID element remain anonymous, except
 
 =back
 
-elements which will get an ID assigned automatically.
+elements which will get an ID assigned automatically if none is provided in the XTM instance.
 
 =back
 
@@ -85,15 +85,18 @@ elements which will get an ID assigned automatically.
 
 =head2 Constructor
 
+I<$xmlhandle> = new XTM::XML (I<url_file_or_text> => I<$source>,
+                           [ auto_complete => I<1_or_0> ])
+
 The constructor expects a hash as parameter containing one of the following fields:
 
 =over
 
-=item I<url>: 
+=item I<url>:
 
 If given then the XML data will be read/written from/to this url.
 
-=item I<file>: 
+=item I<file>:
 
 If given then the XML data will be read/written from/to this file (This
 is just a convenience function as it will be mapped to I<url>).
@@ -148,7 +151,9 @@ the abstract class L<XTM::IO>
 
 =over
 
-=item I<last_mod> 
+=item I<last_mod>
+
+I<$unix_time> = I<$xmlhandle>->last_mod
 
 returns the UNIX time when the resource has been modified last. C<undef> is
 returned if the result cannot be determined.
@@ -176,7 +181,13 @@ sub last_mod {
 
 =item I<sync_in>
 
+I<$xmlhandle>->sync_in ([ I<$consistency> ]);
+
 actually loads an XTM resource and returns a L<XTM::Memory> object.
+
+The optional parameter specifies the I<consistency> (as defined in L<XTM>)
+with which the map will be built. The default consistency will be used if
+the parameter is missing.
 
 
 =cut
@@ -186,6 +197,7 @@ use XML::SAX::ParserFactory;
 
 sub sync_in {
   my $self = shift;
+  my $consistency = shift || $XTM::default_consistency;
 
   elog ('XTM::XML', 3, 'sync in '.$self->{url});
   my $stream;
@@ -197,7 +209,7 @@ sub sync_in {
     elog ('XTM::XML', 5, "synced in stream", \$stream);
   }
 
-  my $builder = new XTM::XML::MemoryBuilder (tm            => new XTM::Memory,
+  my $builder = new XTM::XML::MemoryBuilder (tm            => new XTM::Memory (consistency => $consistency),
 #					     auto_complete => $self->{auto_complete}
 					    );
   my $parser  = XML::SAX::ParserFactory->parser(Handler          => $builder,
@@ -243,6 +255,8 @@ sub sync_in {
 =pod
 
 =item I<sync_out>
+
+I<$xmlhandle>->sync_out
 
 is currently not implemented.
 

@@ -9,6 +9,9 @@ XML SAX parsing:
 	XML::SAX::PurePerl:
 		It is slow but it works.
 
+XTM Syntax:
+	xml:base is not yet honored (have to figure out what it does)
+
 xtm.pl: 
 	If a (AsTMa or XTM) topic map has changed in the file system, a "load" will still
 	use the old version (cached in XTM::Virtual)

@@ -204,7 +204,7 @@ my %handlers =
       push @{$handler->{parent}}, new XTM::instanceOf ();
 
     },
-#                <!ELEMENT instanceOf  ( topicRef | subjectIndicatorRef ) > 
+#                <!ELEMENT instanceOf  ( topicRef | subjectIndicatorRef ) >
     'allowed_elements' => [ qw(topicRef subjectIndicatorRef) ],
     'end' =>
     sub {
@@ -212,9 +212,9 @@ my %handlers =
       my $element = shift;
 
       my $i = pop @{$handler->{parent}};
-      die "XTM::XML::MemoryBuilder, conformance error in '$element->{Name}': see XTM standard, 3.4.1\n" 
+      die "XTM::XML::MemoryBuilder, conformance error in '$element->{Name}': see XTM standard, 3.4.1\n"
 	unless $i->topicRef_s + $i->subjectIndicatorRef_s == 1;
-      
+
       $i->add_reference ($i->topicRef_s, $i->subjectIndicatorRef_s);  $i->undefine (qw (topicRefs subjectIndicatorRefs));
       $handler->{parent}->[-1]->add__s ($i);
     },
@@ -246,7 +246,7 @@ my %handlers =
       die "XTM::XML::MemoryBuilder, conformance error in '$element->{Name}': see XTM standard, 3.6.2\n"  if $s->resourceRef_s > 1;
       $s->add_resourceRef ($s->resourceRef_s);  $s->undefine (qw (resourceRefs));
 
-      $s->add_references ($s->topicRef_s, $s->subjectIndicatorRef_s);  $s->undefine (qw (topicRefs subjectIndicatorRefs));
+      $s->add_reference_s ($s->topicRef_s, $s->subjectIndicatorRef_s);  $s->undefine (qw (topicRefs subjectIndicatorRefs));
       $handler->{parent}->[-1]->add__s ($s);
     },
    },
@@ -399,7 +399,7 @@ my %handlers =
       $handler->xtm_error ( "XTM::XML::MemoryBuilder, conformance error in '$element->{Name}': see XTM standard, 3.7.5\n" )
 	if $ps->topicRef_s + $ps->subjectIndicatorRef_s == 0;
 
-      $ps->add_references ($ps->topicRef_s, $ps->subjectIndicatorRef_s);  $ps->undefine (qw (topicRefs subjectIndicatorRefs));
+      $ps->add_reference_s ($ps->topicRef_s, $ps->subjectIndicatorRef_s);  $ps->undefine (qw (topicRefs subjectIndicatorRefs));
       $handler->{parent}->[-1]->add__s ($ps);
     },
    },
@@ -441,10 +441,10 @@ my %handlers =
 	$a->add__s (new XTM::scope ( references =>  [ new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ]));
       }
       $a->add_scope ($a->scope_s);  $a->undefine (qw (scopes));
-      
+
       $handler->xtm_error ( "XTM::XML::MemoryBuilder, conformance error in '$element->{Name}': see XTM standard, 3.8.1\n" )
 	if $a->member_s == 0;
-      
+
       $handler->{parent}->[-1]->add ($a);
     },
    },
@@ -552,7 +552,7 @@ my %handlers =
       $handler->xtm_error ( "XTM::XML::MemoryBuilder, conformance error in '$element->{Name}': see XTM standard, 3.9.1\n" )
 	unless $o->resourceRef_s + $o->resourceData_s == 1;
       $o->add_resource ($o->resourceRef_s, $o->resourceData_s);  $o->undefine (qw (resourceRefs resourceDatas));
-      
+
       $handler->{parent}->[-1]->add__s ($o);
     },
    },

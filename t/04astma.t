@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
-
-use Test::More tests => 38;
+use warnings 'all';
+use Test::More tests => 42;
 
 use XTM;
 use XTM::Memory;
@@ -17,6 +17,7 @@ sub die_ok {
     is($tm = new XTM (tie => new XTM::AsTMa (text => $_[0])), $_[1], $_[2]);
     fail ($_[2].": did not die -> not good");
   }; if ($@) {
+print "died because of $@\n";
     pass ($_[2].": died -> good!");
   }
 }
@@ -24,14 +25,10 @@ sub die_ok {
 
 require_ok( 'XTM::AsTMa' );
 
-
-
-
-
-
 die_ok ('ttt (bbb)
 in: 
 ', 1, 'empty in');
+
 
 die_ok ('(aaa)
 aaa :
@@ -43,14 +40,15 @@ $tm = new XTM (tie => new XTM::AsTMa (text => '
 rrr : ttt
 qqq : sss
 '));
-is (scalar @{$tm->topics}, 0, 'duplicate encodings');
 
+is (scalar @{$tm->topics}, 0, 'duplicate encodings');
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
 test
 in: bookstore/(book|image)
 '));
 is (scalar @{$tm->topics}, 1, 'XPath expression in in (had problems in the past)');
+
 
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
@@ -60,7 +58,9 @@ myname: encoding
 
 aaa
 '));
+
 is ($tm->id, 'myname', 'test id');
+#exit;
 
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
@@ -241,6 +241,53 @@ is (@{($tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
   platform: sparc
   patch:    freeswan-patch-2.4.x
 ")))->topics()}, 0, "test assoc without auto complete");
+
+is (@{($tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+aaa (xxxx) reifies http://www.remsti.com/
+ bn: rumsti
+ sin: http://ramsti.com/
+ sin: http://romsti.com/
+
+bbb (xxxx) reifies http://www.remsti.com/
+ bn: ramsti
+")))->topics('reifies regexp /remsti/')}, 1, "test topic with reification");
+
+is (@{($tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+aaa (xxxx)
+ bn: rumsti
+ sin: http://ramsti.com/
+ sin: http://romsti.com/
+
+bbb (xxxx)
+ bn: ramsti
+")))->topics('indicates regexp /ramsti/')}, 1, "test topic with subjectIndicator");
+
+# test directives
+
+is (@{($tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+aaa (xxxx)
+ bn: rumsti
+ sin: http://ramsti.com/
+ sin: http://romsti.com/
+
+%cancel
+
+bbb (xxxx)
+ bn: ramsti
+")))->topics()}, 1, "test %cancel");
+
+is (@{($tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+aaa (xxxx)
+ bn: rumsti
+ sin: http://ramsti.com/
+ sin: http://romsti.com/
+
+%log xxx
+
+bbb (xxxx)
+ bn: ramsti
+")))->topics()}, 2, "test %log");
+
 
 
 #print Dumper $tm;

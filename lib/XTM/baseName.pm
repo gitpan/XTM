@@ -30,6 +30,16 @@ Generic container for accessor functions.
 
 =cut
 
+=item B<add>
+
+I<$t>->add (I<$y>)
+
+I<add> analyses the type of the data structure to be added and will integrate the
+information accordingly as simple component or as list. An exception will be raised
+if the internal consistency would be broken.
+
+=cut
+
 sub xml {
   my $self   = shift;
   my $writer = shift;

@@ -8,6 +8,8 @@ WriteMakefile(
 	      'VERSION_FROM'  => 'lib/XTM/base.pm', # finds $VERSION
 	      'INSTALLBIN'    => '/usr/local/topicmaps/bin',
 	      'EXE_FILES'     => [ 'bin/xtm.pl', 'bin/astma2xtm.pl', 'bin/prettifyxtm.pl' ],
+	      'depend' =>
+	      {'cparser' => 'lib/XTM/AsTMa/CParser.pm'},
 	      'NOECHO'        => '@',
 	      'PREREQ_PM'     => { 
 				  'Data::Dumper' => 2.102,
@@ -30,5 +32,22 @@ WriteMakefile(
 	      'NORECURS'       => 1,
 	     );
 
+package MY;
 
+sub depend {
+    return <<MAKE
 
+cparser: lib/XTM/AsTMa/CParser.pm lib/XTM/Path/CParser.pm
+
+lib/XTM/AsTMa/CParser.pm: lib/XTM/AsTMa/Parser.pm
+	perl -Ilib -MXTM::AsTMa::Parser -e 'print \$\$XTM::AsTMa::Parser::astma_grammar' > /tmp/grammar
+	perl -MParse::RecDescent - /tmp/grammar XTM::AsTMa::CParser
+	mv CParser.pm lib/XTM/AsTMa/
+
+lib/XTM/Path/CParser.pm: lib/XTM/Path.pm
+	perl -Ilib -MXTM::Path -e 'print \$\$XTM::Path::xtmpath_grammar' > /tmp/grammar
+	perl -MParse::RecDescent - /tmp/grammar XTM::Path::CParser
+	mv CParser.pm lib/XTM/Path/
+
+MAKE
+}

@@ -9,19 +9,28 @@ require AutoLoader;
 use base qw (XTM::AsTMa::Parser);
 
 @EXPORT = qw( );
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 sub handle_encoding {
   my $self     = shift;
-  my $name     = shift;
   my $encoding = shift;
 
-  if ($self->{name} || $self->{encoding}) {
-    warn "XTM::AsTMa::MemoryBuilder: Duplicate encoding $name : $encoding ignored";
+  if ($self->{encoding}) {
+    warn "XTM::AsTMa::MemoryBuilder: Duplicate encoding '$encoding' ignored";
     return;
   }
-  ($self->{name}, $self->{encoding}) = ($name, $encoding);
-  $self->{tm}->{id} = $self->{name};
+  $self->{encoding} = $encoding;
+}
+
+sub handle_naming {
+  my $self     = shift;
+  my $name     = shift;
+
+  if ($self->{name}) {
+    warn "XTM::AsTMa::MemoryBuilder: Duplicate naming '$name' ignored";
+    return;
+  }
+  $self->{tm}->{id} = $self->{name} = $name;
 }
 
 sub handle_component {

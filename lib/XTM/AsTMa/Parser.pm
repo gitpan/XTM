@@ -8,10 +8,14 @@ require AutoLoader;
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.04';
+$VERSION = '0.06';
 
 use Data::Dumper;
 use Parse::RecDescent;
+
+use XTM;
+use XTM::topic;
+use XTM::association;
 
 sub new {
   my $class = shift;
@@ -21,12 +25,12 @@ sub new {
 }
 
 
-my $astma_grammar = q {
+our $astma_grammar = q {
 		       startrule : section
 
 		       section : topic_definition | association_definition | <error: Problem parsing near "$text" (line "$thisline", col "$thiscolumn")>
 
-		       topic_definition : ( 'tid' ':' )(?) topic_id types(?) topic_characteristic(s?)
+		       topic_definition : ( 'tid' ':' )(?) topic_id types(?) reification(?) topic_characteristic(s?)
 		       {
 			 my $t = new XTM::topic (id => $item{topic_id});
 			 foreach (@{$item{types}->[0]}) {
@@ -35,9 +39,22 @@ my $astma_grammar = q {
 			 $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})))
 			   unless $t->instanceOfs && @{$t->instanceOfs};
 
+			 my $s = new XTM::subjectIdentity (); # maybe we need it
 			 foreach (@{$item{topic_characteristic}}) {
-			   $t->add__s ($_);
+			   if (ref($_) eq 'XTM::subjectIndicatorRef') {
+			     $s->add_reference_s ($_);
+			   } elsif (ref($_) eq 'XTM::topicRef') {
+			     $s->add_reference_s ($_);
+			   } else {
+			     $t->add__s ($_);
+			   }
 			 }
+			 if (ref($item{reification}) eq 'ARRAY' && @{$item{reification}}) {
+			   $s->add_ ( $item{reification}->[0] );
+			 }
+			 $t->add_subjectIdentity ($s) if $s->references || $s->resourceRef; # only add it if we found at least one reference
+
+
 			 # provide default basename, universally scoped
 			 unless ($t->baseNames && @{$t->baseNames}) {
 			   my $name = $item{topic_id};
@@ -50,6 +67,12 @@ my $astma_grammar = q {
 			 }
 			 $return = $t;
 		       }
+
+		       reification : 'reifies' string
+                       {
+                         # check for URI ?
+		         $return = new XTM::resourceRef (href => $item{string});
+                       }
 
 		       association_definition : scope(?) '(' type_topic_id ')' association_member(s)
 			 {
@@ -89,7 +112,7 @@ my $astma_grammar = q {
 					      subject_identity
 
 		       basename_characteristic : 'bn' scopes(?) ':' string
-		       { 
+		       {
 			 my $b = new XTM::baseName ();
 			 $b->add_baseNameString (new XTM::baseNameString (string => $item{string}));
 			 $b->add_scope          (new XTM::scope());
@@ -120,7 +143,7 @@ my $astma_grammar = q {
 		       }
 
 		       resourceData_characteristic : 'in' scopes(?) type(?) ':' string
-		       { 
+		       {
 			 my $o = new XTM::occurrence ();
 			 $o->add_resource (new XTM::resourceData (data => $item{string}));
 			 $o->add_scope    (new XTM::scope());
@@ -138,10 +161,13 @@ my $astma_grammar = q {
 		       }
 
 		       subject_identity : 'sin' ':' string
-		       { 
-			 my $s = new XTM::subjectIdentity ();
-			 $s->add_resourceRef (new XTM::resourceRef (href => $item{string}));
-			 $return = $s;
+		       {
+			 use URI;
+			 my $u = URI->new ($item{string});
+			 use Data::Dumper;
+			 $return = ref ($u) eq 'URI::_generic' ? 
+			   new XTM::topicRef (href => $item{string}) :
+			     new XTM::subjectIndicatorRef (href => $item{string});
 		       }
 
 		       type : '(' type_topic_id ')'  { $return = $item{type_topic_id}; }
@@ -180,8 +206,12 @@ sub handle_comment {
 
 sub handle_encoding {
   my $self = shift;
-  my $name = shift;
   my $encoding = shift;
+}
+
+sub handle_naming {
+  my $self = shift;
+  my $name = shift;
 }
 
 sub handle_component {
@@ -220,7 +250,14 @@ sub handle_astma {
 
   $options{err}  ||= sub { print STDERR @_; };
   
-  my $parser = new Parse::RecDescent ($astma_grammar) or die "XTM::AsTMa: Problem in grammar";
+  my $parser;
+  eval {
+    require XTM::AsTMa::CParser;
+    $parser = XTM::AsTMa::CParser->new();
+  }; if ($@) {
+    warn "could not find CParser ($@)";
+    $parser = new Parse::RecDescent ($astma_grammar) or die "XTM::AsTMa: Problem in grammar";
+  };
   
   $self->handle_begin();
 
@@ -234,13 +271,20 @@ sub handle_astma {
     } elsif ($text =~ s/^%log\s*(.*?)[\n\r]//s) {
 	$line++;
 	warn "XTM::AsTMa: Log at line $line". ($1 ? " $1" : '');
+    } elsif ($text =~ s/^%name\s*(.*?)[\n\r]//s) {
+	$line++;
+	$self->handle_naming   ($1);
+    } elsif ($text =~ s/^%encoding\s*(.*?)[\n\r]//s) {
+	$line++;
+	$self->handle_encoding ($1);
     } elsif ($text =~ /^%cancel/) {
 	$line++;
 	warn "XTM::AsTMa: Cancelled at line $line";
 	last;
     } elsif($text =~ s/^(\w+)\s*:\s*([\w\-]+)\s*[\n\r]//s) { # find encoding
 	$line++;
-	$self->handle_encoding ($1, $2);
+	$self->handle_naming   ($1);
+	$self->handle_encoding ($2);
     } elsif ($text =~ /^\#/) {                            # collect comments on the way
       my @comments;
       while ($text =~ s/^\#(.*?)[\n\r]//s) {
