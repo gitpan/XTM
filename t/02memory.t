@@ -71,7 +71,7 @@ uuu (yyy)
     is ( scalar @{$tm->induced_assoc_tree (topic      => $test->[0],
 					   assoc_type => $XTM::PSI::xtm{'class-instance'},
 					   a_role     => $XTM::PSI::xtm{'class'},
-					   depth      => $test->[2])
+					   $test->[2] ? ( depth      => $test->[2]) : ())
 		            ->{'children*'}},
 	 $test->[1],
 	 "children of $test->[0] : $test->[1] (depth $test->[2])");
@@ -88,7 +88,7 @@ uuu (yyy)
     is ( scalar @{$tm->induced_assoc_tree (topic      => $test->[0],
 					   assoc_type => $XTM::PSI::xtm{'class-instance'},
 					   a_role     => $XTM::PSI::xtm{'instance'},
-					   depth      => $test->[2])
+					   $test->[2] ? ( depth      => $test->[2]) : ())
 		            ->{'children*'}},
 	 $test->[1],
 	 "children of $test->[0] : $test->[1] (depth $test->[2])");

@@ -59,6 +59,7 @@ bin/astma2xtm.pl
 bin/prettifyxtm.pl
 maps/test.xtm
 maps/test.atm
+maps/test.ltm
 maps/test2.xtm
 maps/root.xtm
 maps/knowledge.xtm
