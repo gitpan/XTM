@@ -1,0 +1,28 @@
+XTM::*
+---------
+
+This package contains Perl extension interfaces for Topic Maps
+
+   http://www.topicmaps.org/xtm/1.0/
+
+To build the extensions, unpack this distribution somewhere, and
+exercise the usual incantation:
+
+perl Makefile.PL
+make
+make test
+make install
+
+You will need perl version 5.005 or better to install these modules.
+Further documentation is embedded in the individual modules.
+
+See
+
+   http://topicmaps.bond.edu.au/
+
+for up-to-date information about the package.
+
+Copyright 2001 Robert Barta
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.

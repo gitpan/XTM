@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<topicMap id="test2"
+          xmlns       = 'http://www.topicmaps.org/xtm/1.0/'
+          xmlns:xlink = 'http://www.w3.org/1999/xlink'>
+
+<!--
+
+ Test map, boring.
+
+-->
+
+<topic id="t-topic5">
+   <baseName>
+      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#en"/></scope>
+      <baseNameString>Topic five</baseNameString>
+   </baseName>
+   <baseName>
+      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#de"/></scope>
+      <baseNameString>Topic fuenf</baseNameString>
+   </baseName>
+</topic>
+
+<association>
+  <member>
+     <roleSpec><topicRef xlink:href="#tt-brother"/></roleSpec>
+     <topicRef xlink:href="#t-topic5"/>
+  </member>
+  <member>
+     <roleSpec><topicRef xlink:href="#tt-sister"/></roleSpec>
+     <topicRef xlink:href="#t-topic2"/>
+  </member>
+</association>
+
+</topicMap>

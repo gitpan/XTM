@@ -1,0 +1,27 @@
+Revision history for Perl extension XTM.
+
+0.20  Sat Feb 24 23:28:45 EST 2001
+	- minor release gap because of completely reorganised package structure
+	- honoring XTM-1.0 http://www.topicmaps.org/xtm/1.0/xtm1-20010223.html (modulo TNC)
+	- consolidated topics and c_topics into some simple query language driven routine
+	- moved all thread code into separate server distribution
+	- added xtm.pl workbench
+
+0.12  Sat Feb 17 10:15:39 EST 2001
+        - fixed memory management which cause loooong hangs on the server at some requests
+	- fixed small bug in xtmctrl which made it complain in interactive mode
+        - optimized a bit assoc via <topic> with <topic> queries
+	- optimized XTM::Virtual cache management, small reorgs there
+        - introduced config management via additional switch to xtmd.pl
+
+0.11..0.07 not documented, intermediate panic releases
+
+
+0.06  Fri Feb  9 13:49:13 EST 2001
+        - fixed daemonization
+        - optimized XTM::Memory::_topic_tree handling a bit
+	- XTM December version of the standard implemented, not fully complete
+
+0.04  Sun Dec 31 14:18:45 2000
+	- original version; created by h2xs 1.19
+        - cloned from inofficial TM-0.04 version

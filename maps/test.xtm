@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<topicMap id="test"
+          xmlns       = 'http://www.topicmaps.org/xtm/1.0/'
+          xmlns:xlink = 'http://www.w3.org/1999/xlink'>
+
+<!--
+
+ Test map, boring.
+
+-->
+
+<topic id="tt-type1">
+   <baseName>
+      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#en"/></scope>
+      <baseNameString>The Type</baseNameString>
+   </baseName>
+   <baseName>
+      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#de"/></scope>
+      <baseNameString>der Typ</baseNameString>
+   </baseName>
+</topic>
+
+<topic id="tt-type2">
+   <baseName>
+      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#en"/></scope>
+      <baseNameString>The Type 2</baseNameString>
+   </baseName>
+</topic>
+
+<topic id="t-topic1">
+  <instanceOf><topicRef xlink:href="#tt-type1"/></instanceOf>
+   <baseName>
+      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#en"/></scope>
+      <baseNameString>Topic one</baseNameString>
+   </baseName>
+   <baseName>
+      <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#de"/></scope>
+      <baseNameString>Topic eins</baseNameString>
+   </baseName>
+</topic>
+
+<topic id="t-topic2">
+  <instanceOf><topicRef xlink:href="#tt-type1"/></instanceOf>
+  <baseName>
+     <baseNameString>Topic2</baseNameString>
+  </baseName>
+  <baseName>
+     <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#en"/></scope>
+     <baseNameString>Topic two</baseNameString>
+  </baseName>
+</topic>
+
+
+<topic id="t-topic3">
+  <instanceOf><topicRef xlink:href="#tt-type1"/></instanceOf>
+  <instanceOf><topicRef xlink:href="#tt-type2"/></instanceOf>
+  <baseName>
+     <baseNameString>Topic3</baseNameString>
+  </baseName>
+  <baseName>
+     <scope><topicRef xlink:href="http://www.topicmaps.org/xtm/language.xtm#de"/></scope>
+     <baseNameString>Topic drei</baseNameString>
+  </baseName>
+  <occurrence>
+     <instanceOf><topicRef xlink:href="#tt-website"/></instanceOf>
+     <resourceRef xlink:href="http://www.someexample.com.au/"/> 
+  </occurrence>
+   <occurrence>
+      <instanceOf><topicRef xlink:href="#tt-description"/></instanceOf>
+      <resourceData>any text will do</resourceData>
+   </occurrence>
+</topic>
+
+<topic id="t-topic4">
+  <baseName>
+     <baseNameString>Topic4</baseNameString>
+  </baseName>
+  <occurrence>
+     <instanceOf><topicRef xlink:href="#tt-website"/></instanceOf>
+     <resourceRef xlink:href="http://www.somemoreexample.com.au/"/> 
+  </occurrence>
+</topic>
+
+<association>
+  <instanceOf>
+    <topicRef xlink:href="#at-is-associated-with"/>
+  </instanceOf>
+  <member>
+     <roleSpec><topicRef xlink:href="#tt-brother"/></roleSpec>
+     <topicRef xlink:href="#t-topic3"/>
+  </member>
+  <member>
+     <roleSpec><topicRef xlink:href="#tt-sister"/></roleSpec>
+     <topicRef xlink:href="#t-topic4"/>
+  </member>
+</association>
+
+<association>
+  <instanceOf>
+    <topicRef xlink:href="#at-is-associated-with"/>
+  </instanceOf>
+  <member>
+     <roleSpec><topicRef xlink:href="#tt-brother"/></roleSpec>
+     <topicRef xlink:href="#t-topic2"/>
+  </member>
+  <member>
+     <roleSpec><topicRef xlink:href="#tt-sister"/></roleSpec>
+     <topicRef xlink:href="#t-topic4"/>
+  </member>
+</association>
+
+<association>
+  <member>
+     <roleSpec><topicRef xlink:href="#tt-brother"/></roleSpec>
+     <topicRef xlink:href="#t-topic1"/>
+  </member>
+  <member>
+     <roleSpec><topicRef xlink:href="#tt-sister"/></roleSpec>
+     <topicRef xlink:href="#t-topic2"/>
+  </member>
+</association>
+
+<mergeMap xlink:href="file:maps/test2.xtm">
+  <topicRef xlink:href="#scope-dope"/>
+</mergeMap>
+
+</topicMap>
