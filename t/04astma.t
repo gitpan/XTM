@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
 use warnings 'all';
-use Test::More tests => 59;
+use Test::More tests => 58;
 
 use XTM;
 use XTM::Memory;
@@ -10,7 +10,6 @@ $Data::Dumper::Indent = 1;
 
 my $tm;
 
-##use lib qw(/usr/local/cpan/patches/lib);
 open (STDERR, '>/dev/null'); # do not show warnings...
 
 sub die_ok {
@@ -22,7 +21,6 @@ sub die_ok {
     pass ($_[2].": died -> good!");
   }
 }
-
 
 require_ok( 'XTM::AsTMa' );
 
@@ -41,7 +39,7 @@ topic
 in: Ich chan Glaas ässe, das tuet mir nöd weeh
 
 "));
-is (@{$tm->topics('occurrence regexps /\x{C3A4}sse/')}, 1, 'single encoding');
+is (@{$tm->topics('occurrence regexps /\x{C3}\x{A4}sse/')}, 1, 'single encoding');
 
 $tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
 %encoding iso8859-1
@@ -55,13 +53,10 @@ topic2
 in: Mohu jíst sklo, neublí?í mi
 
 "));
-is (@{$tm->topics('occurrence regexps /\x{C3A4}sse/')}, 1, 'double encoding1');
+is (@{$tm->topics('occurrence regexps /\x{C3}\x{A4}sse/')}, 1, 'double encoding1');
 is (@{$tm->topics('occurrence regexps /Mohu/')},        1, 'double encoding2');
-is (@{$tm->topics('occurrence regexps /\x{C3AD}st/')},  1, 'double encoding3');
+is (@{$tm->topics('occurrence regexps /\x{C3}\x{AD}st/')},  1, 'double encoding3');
 
-#print Dumper $tm;
-
-#__END__
 
 $tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
 aaa (xxx)
@@ -86,8 +81,6 @@ $tm = new XTM (tie => new XTM::AsTMa (auto_complete => 1, text => "
 aaa (xxx)
 "));
 is (@{$tm->topics()}, 2, 'auto compl on, and directive');
-
-#__END__
 
 $tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
 aaa (xxx) reifies http://aaa.com/ is-reified-by ooo is-reified-by ppp
@@ -145,7 +138,6 @@ aaa
 '));
 
 is ($tm->id, 'myname', 'test id');
-#exit;
 
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
@@ -213,18 +205,6 @@ is (@{$tm->topics ('occurrence regexps /rumsti/')}, 1, 'test topic 5');
 is (@{$tm->topics ('occurrence regexps /bla/')},    1, 'test topic 6');
 is (@{$tm->topics ('occurrence regexps /123 456/')},1, 'test topic 7');
 is (@{$tm->associations()},                         0, 'test topic 8');
-
-#-----------------------------------------------------------------------
-# test topic (comment inline)
-$tm = new XTM (tie => new XTM::AsTMa (text => '
-aaa
-bn: AAA  # comment
-bn: AAA# no-comment
-oc: http://rumsti#no-comment'));
-is (@{$tm->topics ('baseName regexps /AAA$/')},          1, 'test comment in baseName');
-is (@{$tm->topics ('baseName regexps /comment$/')},      1, 'test comment in baseName 2');
-is (@{$tm->topics ('occurrence regexps /rumsti/')},      1, 'test comment in occurrence');
-is (@{$tm->topics ('occurrence regexps /^comment/')},    0, 'test comment in occurrence 2');
 
 #-----------------------------------------------------------------------
 # test topic (scope)
@@ -390,61 +370,15 @@ bbb (xxxx)
  bn: ramsti
 ")))->topics()}, 2, "test %log");
 
+# check here doc
+$tm = new XTM (tie => new XTM::AsTMa (url => "file:maps/heredoc.atm"));
+
+like (${@{$tm->topic('testtopic')->occurrences}}[0]->resource->data, qr/\n/, 'heredoc newlines');
+like (${@{$tm->topic('testtopic')->occurrences}}[0]->resource->data, qr/\t/, 'heredoc spaces');
+
+unlike (${@{$tm->topic('othertopic')->occurrences}}[1]->resource->data, qr/[\n\\]/, 'line continuation');
 
 
-#print Dumper $tm;
-#exit;
-
-#print Dumper $tm->topics ('id regexps /aa/');
-
-#print Dumper $aaa;
-__END__
-
-my $tm = new XTM (tie => new XTM::AsTMa (url => "file:maps/test3.atm"));
-
-__END__
-
-#print join (',', @{$tm->topics()});
-#exit;
-
-ok (@{$tm->topics()},       15);
-ok (@{$tm->topics('occurrence regexps /example/')},       2);
-ok (@{$tm->topics('text       regexps /any text/')},      1);
-ok (@{$tm->topics('assocs with t-topic4')},               2);
-ok (@{$tm->topics('assocs with t-topic2')},               2);
-ok (@{$tm->topics('is-a tt-type1')},                      3);
-ok (@{$tm->topics('is-a tt-type2')},                      1);
-ok (@{$tm->associations()},                               4);
-ok (@{$tm->associations('is-a at-is-associated-with')},   4);
-
-# testing corrupt XTM
-# testing TNC
-
-my $text = '
-
-aaa (bbb)
-bn: AAA
-';
-  foreach my $i (1..100) {
-    $text .= "
-
-aaa$i (bbb)
-bn: AAA$i
-";
-  }
 
 
-$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => $text));
-
-warn "Parse RecDescent inclusive: $Parse::RecDescent::totincl";
-warn "Parse RecDescent exclusive: $Parse::RecDescent::totexcl";
-
-#warn "instartrule: $Parse::RecDescent::namespace000001::totincl";
-warn "instartrule: $XTM::AsTMa::Parser::totincl";
-
-#warn "instartrule: $XTM::AsTMa::Parser::totexcl";
-warn "namespace0001 instartrule: $Parse::RecDescent::namespace000001::astma";
-warn "namespace0001 cparserincl: $Parse::RecDescent::namespace000001::cparserincl";
-
-__END__
 

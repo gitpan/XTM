@@ -1,0 +1,21 @@
+heredoctestmap:iso-8859-1
+
+testtopic
+in: \endit
+here goes this thing
+	with a tab in front
+ with space
+ and &mpersands and @s
+and that's it
+\endit
+oc: http://bla.bla
+
+othertopic
+in: no special stuff
+in: but a line that \
+spreads \
+over \
+many \
+lines
+oc: james.bond.edu.au
+

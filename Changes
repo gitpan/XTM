@@ -1,5 +1,14 @@
 Revision history for Perl extension XTM.
 
+0.36 rho Wed Mar  9 19:29:21 EST 2005
+	- added patch from Niko Tyni <ntyni@iki.fi> to make it work under Perl 5.8.4 (MUCHAS GRACIAS)
+	- removed situations which created warnings under Perl 5.8
+     az Sun Feb 29 16:22:34 2004
+	- added here-docs to astma: 
+	'in: \token' includes all stuff up to '\token'
+	- added test for here-docs to 04astma
+	- removed inline comments from astma
+
 0.35  Mon Aug  5 21:20:43 EST 2002
 	- added missing maps/test.ltm (need better cpan simulator)
 

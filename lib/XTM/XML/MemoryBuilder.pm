@@ -721,6 +721,14 @@ sub xtm_error {
 				       " [Ln: " . $self->{LineNumber} . ", Col: " . $self->{ColumnNumber} . "]");
 }
 
+sub error {
+  my $self    = shift;
+  my $message = shift;
+
+  throw XML::SAX::Exception (Message => $message.
+			    " [Ln: " . $self->{LineNumber} . ", Col: " . $self->{ColumnNumber} . "]");
+}
+
 =pod
 
 =head1 AUTHOR INFORMATION

@@ -27,6 +27,7 @@ WriteMakefile(
 				  'XML::SAX::ParserFactory' => 1.01,
 				  'XML::Twig' => 3.01,
 				  'XML::Writer' => 0.4,
+				  'File::Slurp' => undef,
 				 },
 	      'NORECURS'       => 1,
 	     );

@@ -4,6 +4,10 @@ This base package contains Perl extension interfaces for Topic Maps
 
    http://www.topicmaps.org/xtm/1.0/
 
+!!!
+!!! NOTE: THIS PACKAGE IS NO LONGER ACTIVELY MAINTAINED. We are working on
+!!! a completely new distribution.
+
 With it you can
 
   - read/write XTM files

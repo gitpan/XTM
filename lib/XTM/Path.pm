@@ -362,7 +362,7 @@ our $xtmpath_grammar = q {
 
 			 path : step(s)
 			 {
-			  $return = $item{step};
+			  $return = $item{'step(s)'};
 			 }
 
 			 step : axis(?) relative_path
@@ -377,7 +377,7 @@ our $xtmpath_grammar = q {
 			 {
 			   $return = { %{$item{'XTM_thing'}},
 				       predicates => []};
-			   foreach (@{$item{predicate}}) {
+			   foreach (@{$item{'predicate(s?)'}}) {
 			     push @{$return->{predicates}}, $_;
 			   }
 
@@ -423,8 +423,8 @@ our $xtmpath_grammar = q {
 			 simple_expr : path op_value(?)
 			 {
 			   $return = [ $item{path} ];
-			   if ($item{op_value} && $item{op_value}->[0]) {
-			     push @$return, @{$item{op_value}->[0]};
+			   if ($item{'op_value(?)'} && $item{'op_value(?)'}->[0]) {
+			     push @$return, @{$item{'op_value(?)'}->[0]};
 			   }
 			 }
 
@@ -469,7 +469,7 @@ sub __make_parser {
     $parser = XTM::Path::CParser->new();
   }; if ($@) {
     warn "could not find CParser ($@)";
-    use Parse::RecDescent;
+    use Parse::RecDescent 1.90;
     $parser = new Parse::RecDescent ($xtmpath_grammar) or die "XTM::Path: Problem in grammar";
   };
   return $parser;
@@ -871,8 +871,27 @@ sub __create {
 #      warn "found paths: ".join (",", Dumper $paths);
       if (scalar @$paths == 1) {                                     # not immediate parent, but there is only one path
 #	warn "found EXACTLY ONE path: ".join (",", @$paths);
+	my $parent;
+	if (scalar @$parents == 1) {
+		$parent = $parents->[0];
+	} else {
+		# several possible parents
+		# pick the one that's mentioned in the path
+		my @candidates;
+		for my $p (@$parents) {
+			push @candidates, $p if grep { $_ eq $p } @{$paths->[0]};
+		}
+		if (scalar @candidates == 1) {
+			$parent = $candidates[0];
+		} else { 
+			# several or no parents mentioned in the path 
+			# this shouldn't happen; should we raise an exception?
+			# fall back to the "old behaviour" for now
+			$parent = $parents->[0];
+		}
+	}
 	return __create ($c, $v,
-			 { element    => $parents->[0],              # call recursively with the parent in front of the path
+			 { element    => $parent,              # call recursively with the parent in front of the path
 			   predicates => [] },
 			 $s, 
 			 @p);

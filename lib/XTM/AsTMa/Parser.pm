@@ -11,8 +11,9 @@ require AutoLoader;
 $VERSION = '0.08';
 
 use Data::Dumper;
-use Parse::RecDescent;
+use Parse::RecDescent 1.90;
 use URI;
+use URI::Escape;
 
 use XTM;
 use XTM::topic;
@@ -39,14 +40,14 @@ our $astma_grammar = q {
 
 			 # deal with the topic first
 			 my $t = new XTM::topic (id => $item{topic_id});
-			 foreach (@{$item{types}->[0]}) {
+			 foreach (@{$item{'types(?)'}->[0]}) {
 			   $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$_")));
 			 }
 			 $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})))
 			   unless $t->instanceOfs && @{$t->instanceOfs};
 			 
 			 my $s = new XTM::subjectIdentity (); # maybe we need it
-			 foreach (@{$item{topic_characteristic}}) {
+			 foreach (@{$item{'topic_characteristic(s?)'}}) {
 			   if (ref($_) eq 'XTM::subjectIndicatorRef') {
 			     $s->add_reference_s ($_);
 			   } elsif (ref($_) eq 'XTM::topicRef') {
@@ -55,8 +56,8 @@ our $astma_grammar = q {
 			     $t->add__s ($_);
 			   }
 			 }
-			 if (ref($item{reification}) eq 'ARRAY' && @{$item{reification}}) {
-			   $s->add_ ( $item{reification}->[0] );
+			 if (ref($item{'reification(?)'}) eq 'ARRAY' && @{$item{'reification(?)'}}) {
+			   $s->add_ ( $item{'reification(?)'}->[0] );
 			 }
 			 $t->add_subjectIdentity ($s) if $s->references || $s->resourceRef; # only add it if we found at least one reference
 
@@ -100,7 +101,7 @@ sub _make_reifying_topic {
   return $t;
 }
 
-			 foreach my $uri (@{$item{isreification}}) {
+			 foreach my $uri (@{$item{'isreification(s?)'}}) {
 			   push @components, _make_reifying_topic ($uri, $t->id);
 			 }
 
@@ -125,7 +126,7 @@ sub _make_reifying_topic {
 			   my $a = new XTM::association ();
 			   my $s = new XTM::scope();
 			   $a->add_scope ($s);
-			   foreach (@{$item{scopes}->[0]}) {
+			   foreach (@{$item{'scopes(?)'}->[0]}) {
 			     $s->add_reference_s (new XTM::topicRef (href => "#$_"));
 			   }
 			   $a->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
@@ -133,13 +134,13 @@ sub _make_reifying_topic {
 
 			   $a->add_instanceOf (new XTM::instanceOf (reference => 
 				    new XTM::topicRef (href => "#$item{type_topic_id}")));
-			   foreach (@{$item{association_member}}) {
+			   foreach (@{$item{'association_member(s)'}}) {
 			     $a->add__s ($_);
 			   }
 
 			   push @components, $a;
 
-			   foreach my $uri (@{$item{isreification}}) {
+			   foreach my $uri (@{$item{'isreification(s?)'}}) {
 			     push @components, _make_reifying_topic ($uri, $a->id);
 			   }
 
@@ -174,7 +175,7 @@ sub _make_reifying_topic {
 			 my $b = new XTM::baseName ();
 			 $b->add_baseNameString (new XTM::baseNameString (string => $item{string}));
 			 $b->add_scope          (new XTM::scope());
-			 foreach (@{$item{scopes}->[0]}) {
+			 foreach (@{$item{'scopes(?)'}->[0]}) {
 			   $b->scope->add_reference_s (new XTM::topicRef (href => "#$_"));
 			 }
 			 $b->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
@@ -187,31 +188,32 @@ sub _make_reifying_topic {
 			 my $o = new XTM::occurrence ();
 			 $o->add_resource (new XTM::resourceRef (href => $item{string}));
 			 $o->add_scope    (new XTM::scope());
-			 foreach (@{$item{scopes}->[0]}) {
+			 foreach (@{$item{'scopes(?)'}->[0]}) {
 			   $o->scope->add_reference_s (new XTM::topicRef (href => "#$_"));
 			 }
 			 $o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
 			   unless $o->scope->references;
 
 			 $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => 
-				$item{type} && $item{type}->[0] ?	 "#$item{type}->[0]" : $XTM::PSI::xtm{occurrence}
+				$item{'type(?)'} && $item{'type(?)'}->[0] ?	 "#$item{'type(?)'}->[0]" : $XTM::PSI::xtm{occurrence}
 												  )));
 			 $return = $o;
 		       }
 
-		       resourceData_characteristic : 'in' scopes(?) type(?) ':' string
+		       resourceData_characteristic : 'in' scopes(?) type(?) colon(1..2) string
 		       {
 			 my $o = new XTM::occurrence ();
-			 $o->add_resource (new XTM::resourceData (data => $item{string}));
+# fixme: need better way to figure out whether unescape needed; now looks for %0A at end....
+			 $o->add_resource (new XTM::resourceData (data => (@{$item{'colon(1..2)'}}==2?URI::Escape::uri_unescape($item{string}):$item{string})));
 			 $o->add_scope    (new XTM::scope());
-			 foreach (@{$item{scopes}->[0]}) {
+			 foreach (@{$item{'scopes(?)'}->[0]}) {
 			   $o->scope->add_reference_s (new XTM::topicRef (href => "#$_"));
 			 }
 			 $o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
 			   unless $o->scope->references;
 
 			 $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => 
-				$item{type} && $item{type}->[0] ?	 "#$item{type}->[0]" : $XTM::PSI::xtm{occurrence}
+				$item{'type(?)'} && $item{'type(?)'}->[0] ?	 "#$item{'type(?)'}->[0]" : $XTM::PSI::xtm{occurrence}
 												  )));
 			 $return = $o;
 		       }
@@ -248,6 +250,8 @@ sub _make_reifying_topic {
 		       string : /[^\n\r]+/
 
 		       uri :  /[\w\-\.\/\?\&\:\,\+]+/
+    
+    			colon : ':'
 		      };
 	
 sub handle_begin {
@@ -319,7 +323,7 @@ sub handle_astma {
   $self->handle_begin();
 
   my $prev_text_length;
-  my $line = 0;
+  my $line = 1;
   while ($prev_text_length = length ($text)) {            # as long as there is something
     while ($text =~ s/^\s*?[\n\r]//s) { $line++ };         # get rid of empty line
 
@@ -354,7 +358,7 @@ sub handle_astma {
     } elsif ($text =~ s/^%auto_complete\s*(.*?)[\n\r]//s) {
 	$line++;
 	$auto_complete = $1 =~ /on/i ? 1 : 0;
-    } elsif($text =~ s/^(\w+)\s*:\s*([\w\-]+)\s*[\n\r]//s) { # find encoding
+    } elsif($text =~ s/^(\w+)\s*:\s*([\w\-]+)([ \t]*[\n\r])//) { # find encoding
 	$line++;
 	$self->handle_naming   ($1);
 	$self->handle_encoding ($2);
@@ -365,31 +369,71 @@ sub handle_astma {
 	push @comments, $1;
       };
       $self->handle_comment (join ("\n    ", grep (($_ =~ s/-->/-=>/g, $_), @comments))) if @comments;
-    } else {                                              # try to parse in topic or association
-      my $block;
-      my $start_line = $line;
-      while (1) {
-	last if $text =~ /^[\#\%\n\r]/s; # comment, directives
-	last if $text =~ /^\s*[\n\r]/s;  # lines containing only spaces
-	last unless $text;
-	$text =~ s/^([[:blank:]]*.*?[\n\r])//s;
-	$line++;
-        my $l = $1;
-        $l =~ s/\s+#.*//; # anything which start with <blank>#, all blanks are ignored
-	$block .= $l;
-      }
+    } else 
+    {                                              # try to parse in topic or association
+	my $block;
+	my $start_line = $line;
+	
+	while (1) 
+	{
+	    last if (!$text);
+	    
+	    my $thisline;
+	    $text=~s/^([[:blank:]]*.*?)[\n\r]//
+		and $thisline=$1;
+	    
+	    # \token? make here-doc 
+	    # idea: 
+	    # in: \eofmark
+	    # ...
+	    # ...
+	    # \eofmark
+	    if ($thisline=~s/\\(\S+)$//)
+	    {
+		my $eofmarker=$1;
+		my $heredoc;
+		
+		# tell the generating side of the parser to unescape:
+		# in:: stuff-to-unescape
+		$thisline=~s/:/::/; 
 
-      $block =~ s/\\[\n\r]//g; # merge \<cr> lines
-      eval {
-	my $cs = $parser->startrule (\$block);
-	die "XTM::AsTMa: Found unparseable '$block' between lines [$start_line, $line]"    unless $block =~ /^\s*$/s;
-	die "XTM::AsTMa: no component around '$block' between lines [$start_line, $line]"  unless defined $cs;
-	foreach (@$cs) {
-	  $self->handle_component ($_);
+		# look for matching \token at beginning of line, gobble anything up to there
+		while(1)
+	     {
+		 $line++;
+		 last if (!$text);
+		 
+		 my $subline;
+		 $text=~s/^([[:blank:]]*.*?)[\n\r]//
+		     and $subline=$1;
+		 last if ($subline =~/^\\$eofmarker\s*$/);
+		 $heredoc.=$subline."\n";
+	     }
+		
+		# run heredoc through uri_escape
+		my $safeword=uri_escape($heredoc);
+		# and attach the good stuff to the current line
+		$thisline.=$safeword;
+	    }
+	    
+	    last if $thisline =~ /^[\#\%]/; # comment, directives
+	    last if $thisline =~ /^\s*$/;  # lines containing only spaces
+	    
+	    $line++;
+	    $block .= $thisline."\n";
 	}
-      }; if ($@) {
-	die $@;
-      }
+
+	$block =~ s/\\[\n\r]//g; # merge \<cr> lines
+	eval {
+	    my $cs = $parser->startrule (\$block);
+	    die "XTM::AsTMa: Found unparseable '$block' between lines [$start_line, $line]"    unless $block =~ /^\s*$/s;
+	    die "XTM::AsTMa: no component around '$block' between lines [$start_line, $line]"  unless defined $cs;
+	    foreach (@$cs) {
+		$self->handle_component ($_);
+	    }
+	}; if ($@) {
+	    die $@;
+	}
     }
     die "XTM::AsTMa: Internal parse error, text does not shrink." 
       if length($text) >= $prev_text_length;                       # numeric comparison, there is something wrong internally

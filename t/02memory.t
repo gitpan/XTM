@@ -74,7 +74,7 @@ uuu (yyy)
 					   $test->[2] ? ( depth      => $test->[2]) : ())
 		            ->{'children*'}},
 	 $test->[1],
-	 "children of $test->[0] : $test->[1] (depth $test->[2])");
+	 "children of $test->[0] : $test->[1] (depth ".($test->[2] || '-').")");
   }
 
 
@@ -91,7 +91,7 @@ uuu (yyy)
 					   $test->[2] ? ( depth      => $test->[2]) : ())
 		            ->{'children*'}},
 	 $test->[1],
-	 "children of $test->[0] : $test->[1] (depth $test->[2])");
+	 "children of $test->[0] : $test->[1] (depth ".($test->[2] || '-').")");
   }
 
 }

@@ -1,9 +1,7 @@
 # -*-perl-*-
 use strict;
-use utf8;
 use warnings 'all';
 use Test::More tests => 40;
-
 use XTM;
 use XTM::Memory;
 ##use XTM::Path;
@@ -51,7 +49,7 @@ $tm = new XTM (tie => new XTM::LTM ( text => q{
 
 }));
 
-like ($tm->topic ('ltm')->occurrences->[0]->resource->data, qr/\x{E4}sse/, 'encoding from iso8859-1');
+like ($tm->topic ('ltm')->occurrences->[0]->resource->data, qr/\x{C3}\x{A4}sse/, 'encoding from iso8859-1');
 
 $tm = new XTM (tie => new XTM::LTM ( text => q{
  { ltm , test , "http://rumsti/" }

@@ -63,9 +63,11 @@ maps/test.ltm
 maps/test2.xtm
 maps/root.xtm
 maps/knowledge.xtm
+maps/heredoc.atm
 docs/astma/astma-print.css
 docs/astma/astma=-spec-xtm.html
 docs/astma/astma=-tutorial.html
 docs/ltm/whitepapers.css
 docs/ltm/ltm.html
 docs/ltm/logo.gif
+META.yml                                 Module meta-data (added by MakeMaker)

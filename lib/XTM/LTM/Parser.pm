@@ -12,7 +12,7 @@ require AutoLoader;
 $VERSION = '0.03';
 
 use Data::Dumper;
-use Parse::RecDescent;
+use Parse::RecDescent 1.90;
 use URI;
 
 use XTM;
@@ -37,11 +37,11 @@ our $ltm_grammar = q {
 			my $tm = $arg{tm};
 			my @mentioned;
 
-			foreach my $d (@{$item{directive}}) { # walk over directives, some contain components
-			  push @{$item{component}}, $d->{components} if ($d->{components});
+			foreach my $d (@{$item{'directive(s?)'}}) { # walk over directives, some contain components
+			  push @{$item{'component(s)'}}, $d->{components} if ($d->{components});
 			}
 
-			foreach my $cs (@{$item{component}}) {
+			foreach my $cs (@{$item{'component(s)'}}) {
 			  foreach my $c (@{$cs}) {
 			    if (ref($c) eq 'XTM::topic') {
 			      $tm->add ($c);
@@ -92,13 +92,13 @@ our $ltm_grammar = q {
 
 		      mergemap_directive : '#MERGEMAP' tau_expr tm_format(?)
 		      {
-#			warn "MERGEMAP: $item{tau_expr}, format $item{tm_format}";
+#			warn "MERGEMAP: $item{tau_expr}, format $item{'tm_format(?)'}";
 #			use Data::Dumper;
-#			print Dumper $item{tm_format};
+#			print Dumper $item{'tm_format(?)'};
 
 			my $tm2; # will hold the new map
-			if (scalar @{$item{tm_format}}) {
-			  my $format = $item{tm_format}->[0];
+			if (scalar @{$item{'tm_format(?)'}}) {
+			  my $format = $item{'tm_format(?)'}->[0];
 			  use URI;
 			  my $uri    = new URI ($item{tau_expr});
 			  $uri->scheme ('file') unless $uri->scheme; # default is 'file:'
@@ -134,16 +134,16 @@ our $ltm_grammar = q {
 
 		       my $t = new XTM::topic (id => $item{name});
 
-		       if (ref($item{types})) {
-			 foreach (@{$item{types}->[0]}) {
+		       if (ref($item{'types(?)'})) {
+			 foreach (@{$item{'types(?)'}->[0]}) {
 			   $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$_")));
 			 }
 		       };
 		       $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})))
 		          unless $t->instanceOfs && @{$t->instanceOfs};
 
-		       if (ref($item{topname})) {
-			 foreach my $bn (@{$item{topname}}) {
+		       if (ref($item{'topname(s?)'})) {
+			 foreach my $bn (@{$item{'topname(s?)'}}) {
 			   my $b = new XTM::baseName ();
 			   $b->add_baseNameString (new XTM::baseNameString (string => $bn->{basename}));
 			   $b->add_scope          (new XTM::scope());
@@ -160,15 +160,15 @@ our $ltm_grammar = q {
 
 
 		       #use Data::Dumper;
-		       #print Dumper $item{subject};
+		       #print Dumper $item{'subject(?)'};
 
 		       my $s = new XTM::subjectIdentity (); # maybe we need it
-		       if (ref ($item{subject}) && @{$item{subject}}) {
-			 $s->add_ ( $item{subject}->[0]);
+		       if (ref ($item{'subject(?)'}) && @{$item{'subject(?)'}}) {
+			 $s->add_ ( $item{'subject(?)'}->[0]);
 		       }
 
-		       if (ref($item{indicator})) {
-			 foreach my $sin (@{$item{indicator}}) {
+		       if (ref($item{'indicator(s?)'})) {
+			 foreach my $sin (@{$item{'indicator(s?)'}}) {
 			   $s->add_reference_s ($sin);
 			 }
 		       }
@@ -217,10 +217,10 @@ our $ltm_grammar = q {
 			my $a = new XTM::association;
 
 #			  use Data::Dumper;
-#			  warn "scope : ".Dumper $item{scope};
+#			  warn "scope : ".Dumper $item{'scope(?)'};
 
 			my $s = new XTM::scope;
-			foreach my $scope (@{$item{scope}} ? @{$item{scope}->[0]}: ()) {
+			foreach my $scope (@{$item{'scope(?)'}} ? @{$item{'scope(?)'}->[0]}: ()) {
 			  $s->add_reference_s (new XTM::topicRef (href => "#$scope"));
 			}
 			unless ($s->references) {
@@ -251,9 +251,9 @@ our $ltm_grammar = q {
 		      {
 			my $m = new XTM::member ();
 
-#warn "type is ". Dumper $item{type};
-			if (scalar @{$item{type}}) {
-			  my $t = new XTM::topicRef (href => "#$item{type}->[0]");
+#warn "type is ". Dumper $item{'type(?)'};
+			if (scalar @{$item{'type(?)'}}) {
+			  my $t = new XTM::topicRef (href => "#" . $item{'type(?)'}->[0]);
 			  my $r = new XTM::roleSpec ();
 			  $r->add_reference ($t);
 			  $m->add_roleSpec ($r);
@@ -280,7 +280,7 @@ our $ltm_grammar = q {
 			my $o = new XTM::occurrence ();
 			$o->add_resource ($item{resource});
 			$o->add_scope    (new XTM::scope());
-			foreach (@{$item{scope}->[0]}) {
+			foreach (@{$item{'scope(?)'}->[0]}) {
 			  $o->scope->add_reference_s (new XTM::topicRef (href => "#$_"));
 			}
 			$o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 

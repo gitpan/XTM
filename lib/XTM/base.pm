@@ -1,8 +1,10 @@
 package XTM::base;
 
+# $Id: base.pm,v 1.3 2004/02/29 06:33:20 az Exp $ 
+
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.35';
+$VERSION = '0.36';
 
 =pod
 
