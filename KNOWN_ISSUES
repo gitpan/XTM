@@ -18,3 +18,4 @@ xtm.pl:
 
 astma2xtm.pl:
 	VERSIONs do not show up correctly
+	may not work with more recent versions of AsTMa= (including reification)

@@ -8,7 +8,7 @@ require AutoLoader;
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 =pod
 
@@ -22,7 +22,9 @@ XTM::IO - Topic Map management, abstract class for input/output
 
 =head1 DESCRIPTION
 
-This is the abstract class defining how an IO package should behave.
+This is the abstract class defining how an IO package should behave and may
+thus be inherited by classes which implement external formats (L<XTM::AsTMa>,
+L<XTM::XML>).
 
 =head1 INTERFACE
 
@@ -54,7 +56,7 @@ the abstract class L<XTM::IO>
 
 =over
 
-=item C<last_mod> 
+=item C<last_mod>
 
 returns the UNIX time when the resource has been modified last. C<undef> is
 returned if the result cannot be determined.
@@ -63,7 +65,7 @@ returned if the result cannot be determined.
 =cut
 
 sub last_mod {
-  die "XTM::IO: last_mod not defined.";
+  die "XTM::IO: Do not call this abstract method.";
 }
 
 =pod
@@ -76,7 +78,7 @@ actually loads an XTM resource and returns a L<XTM::Memory> object.
 =cut
 
 sub sync_in {
-  die "XTM::IO: last_mod not defined.";
+  die "XTM::IO: Do not call this abstract method.";
 }
 
 =pod
@@ -88,7 +90,7 @@ is supposed to save the L<XTM::Memory> content onto the resource.
 =cut
 
 sub sync_out {
-  die "XTM::IO: last_mod not defined.";
+  die "XTM::IO: Do not call this abstract method.";
 }
 
 =pod

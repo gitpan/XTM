@@ -1,13 +1,32 @@
 # -*-perl-*-
 use strict;
-use Test::More tests => 171;
+use Test::More tests => 208;
 
 use XTM;
 use Data::Dumper;
+$Data::Dumper::Indent = 1;
 
 require_ok ('XTM::Path');
 
 isa_ok(new XTM::Path, 'XTM::Path');
+
+# Jan bug report
+{
+  my $xtmp = new XTM::Path;
+
+  my $t = $xtmp->create ('topic[occurrence[scope/topicRef/@href = "#xxx"]/resourceData[text() = "0"]]');
+#  my $t = $xtmp->create ('occurrence/resourceData[text() = "0"]');
+#print Dumper $t;
+
+# This seems to create the 0 value to the resource just fine, and a later
+# dump of the memory object reveals the value to be there. When I try to
+# retrieve it later though XPath doesn't seem to want to set the value.
+
+# print join ("--", $xtmp->find ('resourceData/text()', $t))."\n";
+  my ($d) = $xtmp->find ('occurrence[scope/topicRef/@href = "#xxx"]resourceData/text()', $t);
+  is ($d, '0', 'found 0 text');
+}
+
 
 use XTM;
 use XTM::AsTMa;
@@ -28,7 +47,14 @@ oc: http://ramsti
 (uuuu)
  bbbbb: aaa
  zzz:   xxx
+
+
+(vvvv)
+ bbbbb: aaa
+ xxxx:  nnnn
+
 '));
+
 
 eval {
   my $xtmp = new XTM::Path (); # no default
@@ -37,13 +63,156 @@ eval {
 ok ($@ =~ /no context/, 'die ok, no default');
 
 
+
 my $xtmp = new XTM::Path (default => $tm);
 
+
+$xtmp->find ('topic'); # just here to allocate a parser
+
+# speed tests, normally not turned on
+my $nrexperiments = 0;
+
+if ($nrexperiments) {
+  use Benchmark;
+  my $t0 = new Benchmark;	
+  foreach my $i (1..$nrexperiments) {
+    foreach my $name (qw(XXX AAA YYY ZZZ UUU VVV WWW CCC DDD)) {
+#      print ".";
+      my @rs = $xtmp->find ('topic[baseNameString = ?xx]', undef, { xx => $name});
+    }
+  }
+  my $t1 = new Benchmark;
+  my $td = timediff($t1, $t0);
+  warn "time spent with variables: ",timestr($td);
+}
+
+if ($nrexperiments) {
+  use Benchmark;
+  my $t2 = new Benchmark;
+  foreach my $i (1..$nrexperiments) {
+    foreach my $name (qw(XXX AAA YYY ZZZ UUU VVV WWW CCC DDD)) {
+#      print ".";
+      my @rs = $xtmp->find (qq{topic[baseNameString = "$name"]});
+    }
+  }
+  my $t3 = new Benchmark;
+  my $td = timediff($t3, $t2);
+  warn "time spent without variables: ",timestr($td);
+}
+
+
+###print Dumper [ $xtmp->find ('topic[baseNameString = ?xx]', undef, { xx => "XXX"}) ];
+
+if ($nrexperiments) {
+   use Benchmark;
+   my $t0 = new Benchmark;	
+   foreach my $i (1..$nrexperiments) {
+      my @rs = $xtmp->find ('association[member
+                              [roleSpec/topicRef/@href = "#bbbbb"]
+                              [topicRef/@href = "#aaa"]]
+                           [member
+                              [roleSpec/topicRef/@href = "#xxxx"]
+                              [topicRef/@href = "#nnnn"]]');
+      is (scalar @rs, 1, "speed test: $i");
+   }
+   my $t1 = new Benchmark;
+   my $td = timediff($t1, $t0);
+   warn "time spent: ",timestr($td);
+}
+
+#__END__
+
+
+
+
+#__END__
+
+
+#-- sensitive --------------------------------------------------------------------
+my @paths = (
+             [ qw(topic baseNameString) ],
+             [ qw(topic baseName baseNameString) ],
+             [ qw(topic instanceOf topicRef) ],
+             [ qw(topic instanceOf subjectIndicatorRef) ],
+             [ qw(association member roleSpec topicRef) ],
+             [ qw(member topicRef) ],
+             [ qw(topic occurrence resourceData) ],
+             [ qw(topic occurrence resourceRef) ],
+             );
+
+foreach my $p (@paths) {
+  for (my $i = 0; $i <= $#$p; $i++) {
+    my $s = join ("/", @{$p}[0..$i]);
+    my $o = $xtmp->create ($s);
+#    warn "returned: ". Dumper $o;
+    is (ref ($o), "XTM::".@{$p}[0], "$s context sensitive");
+    $s = join ("/", @{$p}[1..$i]);
+    next unless $s;
+    my @r = $xtmp->find ($s, $o);
+    is (scalar @r, 1, "$s found one again");
+  }
+}
+
+
+#__END__
+
+#-- context free -----------------------------------------------------------------
+foreach my $e (qw(topic association baseName)) {
+  is (ref($xtmp->create ($e)), "XTM::$e", "get context free $e");
+}
+
+#__END__
+
+#-- pseudos ----------------------------------------------------------------------
+my %pseudos = (
+               'baseNameString[text() = "xxxx"]'                       => 'text()',
+               'baseName/baseNameString[text() = "xxxx"]'              => 'text()',
+               'baseName[baseNameString/text() = "xxxx"]'              => 'text()',
+               'topic[baseName/baseNameString/text() = "xxx"]'         => 'baseNameString[text() = "xxx"]',
+               'association[member[roleSpec/topicRef/@href = "xxxx"]]' => 'member',
+               'topicRef[@href = "xxxx"]'                              => '@href',
+               'topic[@id = "x123"]'                                   => '@id',
+               'association[member
+                              [roleSpec/topicRef/@href = "#role1"]
+                              [topicRef/@href = "#player1"]]
+                           [member
+                              [roleSpec/topicRef/@href = "#role2"]
+                              [topicRef/@href = "#player2"]]' => 'member[roleSpec/@href = "#role2"]',
+               );
+
+foreach my $p (keys %pseudos) {
+  my $o = $xtmp->create ($p);
+#  use Data::Dumper;
+#  warn Dumper $o;
+  my @r = $xtmp->find ($pseudos{$p}, $o);
+  is (scalar @r, 1, "pseudos: $p found again: ". $pseudos{$p});
+}
+
+
+#-- nested --------------------------------------------------------
+my %nested = ( 
+             'association[member[roleSpec]]' => 2,
+             'association[member[roleSpec/topicRef]]' => 2,
+             'association[member[roleSpec/topicRef/@href]]' => 2,
+             'association[member[roleSpec/topicRef/@href = "#bbbbb"]]' => 2,
+             'association[member[roleSpec/topicRef/@href = "#bbbbb"][topicRef/@href = "#aaa"]]' => 2,
+             'association[member[roleSpec/topicRef/@href = "#zzz"][topicRef/@href = "#xxx"]]' => 1,
+             'baseName[scope/@href = "#english"]' => 2,
+             'occurrence[scope/@href = "#english"]' => 1,
+             );
+foreach my $p (keys %nested) {
+  my @r = $xtmp->find ($p, $tm);
+  is (scalar @r, $nested{$p}, "nested: $p");
+}
 
 my @caputtos = (
                 'baseNameString[text() != "xxxx"]', # wrong op
                 'baseName[text() = "xxxx"]',        # ambiguous
-                 'association[member[roleSpec/@href = "xxxx"]]', # ambiguous
+                'association[member[roleSpec/@href = "xxxx"]]', # ambiguous
+                'association[@id = "xxxx"]',        # not modifiable
+                'text()',                           # no context
+                '@href',                            # no context
+                '@id',                              # no context
                 );
 foreach my $p (@caputtos) {
   eval {
@@ -78,57 +247,6 @@ foreach my $p (keys %indirects) {
   is (scalar @r, 1, "indirect: $p found again: ". $indirects{$p});
 }
 
-my %pseudos = (
-               'baseNameString[text() = "xxxx"]'                       => 'text()',
-               'baseName/baseNameString[text() = "xxxx"]'              => 'text()',
-               'baseName[baseNameString/text() = "xxxx"]'              => 'text()',
-               'topic[baseName/baseNameString/text() = "xxx"]'         => 'baseNameString[text() = "xxx"]',
-               'association[member[roleSpec/topicRef/@href = "xxxx"]]' => 'member',
-               'topicRef[@href = "xxxx"]'                              => '@href',
-               'association[member
-                              [roleSpec/topicRef/@href = "#role1"]
-                              [topicRef/@href = "#player1"]]
-                           [member
-                              [roleSpec/topicRef/@href = "#role2"]
-                              [topicRef/@href = "#player2"]]' => 'member[roleSpec/@href = "#role2"]',
-               );
-
-foreach my $p (keys %pseudos) {
-  my $o = $xtmp->create ($p);
-#  use Data::Dumper;
-#  warn Dumper $o;
-  my @r = $xtmp->find ($pseudos{$p}, $o);
-  is (scalar @r, 1, "pseudos: $p found again: ". $pseudos{$p});
-}
-
-foreach my $e (qw(topic association baseName)) {
-  is (ref($xtmp->create ($e)), "XTM::$e", "get context free $e");
-}
-
-
-my @paths = (
-             [ qw(topic baseNameString) ],
-             [ qw(topic baseName baseNameString) ],
-             [ qw(topic instanceOf topicRef) ],
-             [ qw(topic instanceOf subjectIndicatorRef) ],
-             [ qw(association member roleSpec topicRef) ],
-             [ qw(member topicRef) ],
-             [ qw(topic occurrence resourceData) ],
-             [ qw(topic occurrence resourceRef) ],
-             );
-
-foreach my $p (@paths) {
-  for (my $i = 0; $i <= $#$p; $i++) {
-    my $s = join ("/", @{$p}[0..$i]);
-    my $o = $xtmp->create ($s);
-#    warn "returned: ". Dumper $o;
-    is (ref ($o), "XTM::".@{$p}[0], "$s context sensitive");
-    $s = join ("/", @{$p}[1..$i]);
-    next unless $s;
-    my @r = $xtmp->find ($s, $o);
-    is (scalar @r, 1, "$s found one again");
-  }
-}
 
 
 
@@ -190,7 +308,7 @@ my %tests = (
 	     '/topic[baseName = "AAA"]' => [ 1, 'XTM::topic' ],
 	     '/topic[@id = "aaa"][@href = "xxx"]' => [ 0, 'XTM::topic' ],
 	     '/topic[@id = "aaa"][@href = "http://rumsti"]' => [ 1, 'XTM::topic' ],
-	     '/association' => [ 1, 'XTM::association' ],
+	     '/association' => [ 2, 'XTM::association' ],
 	    );
 
 foreach my $t (keys %tests) {
@@ -229,6 +347,7 @@ foreach my $p (('/text()', '/topic/text()')) {
 # check good paths
 my %good = (
 	    'topic' => 'single element',
+	    'topic   	  ' => 'trailing blanks/tabs',
 	    'topic/baseName' => 'two elements',
 	    'topic/baseName/baseNameString' => 'three elements',
 	    'topic/@id' => 'with attribute in path',
@@ -248,6 +367,7 @@ while (my ($p,$e) = each %good) {
 my %broken = (
 	      'xxxx'   => 'no element',
 	      'topic[]' => 'empty predicate',
+	      'topic[]  xxx' => 'trailing text',
 	      'baseName///baseNameString' => 'invalid axis',
 	      '../baseNameString' => 'invalid axis 2',
 	      '[topic]' => 'missing element',
@@ -266,6 +386,46 @@ while (my ($p,$e) = each %broken) {
 }
 
 
+
+# Jan tests
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0,
+				      text          => '
+cnn (channel)
+
+'));
+
+foreach (1..10) {
+  {
+    my $xtmp = new XTM::Path ();
+    my ($chan) = $xtmp->find ('/topic[instanceOf/@href = "#channel"]', $tm);
+    is (ref($chan), 'XTM::topic', "jan stress test find $_");
+    #print Dumper $chan;
+  }
+  {
+    my $xtmp = new XTM::Path ();
+    my $t = $xtmp->create ('topic[instanceOf/topicRef/@href = "#channel-ontology"]');
+    is (ref($t), 'XTM::topic', "jan stress test create $_");
+    #  print Dumper $t;
+  }
+}
+
+
+
 # check syntactically correct
 
 #is (scalar $xtmp->find ('topic[@id == "aaa"]'), 1, 'topic[@id == "aaa"]') ;
+
+
+__END__
+
+
+#{
+#my $xtmp = new XTM::Path (default => $tm);
+#my $t = $xtmp->create ('topic[instanceOf/topicRef/@href = "#channel-ontology"]');
+#print Dumper $t;
+#}
+
+
+
+__END__
+

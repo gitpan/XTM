@@ -2230,6 +2230,149 @@ sub Parse::RecDescent::namespace000001::step
 }
 
 # ARGS ARE: ($parser, $text; $repeating, $_noactions, \@args)
+sub Parse::RecDescent::namespace000001::variable
+{
+	my $thisparser = $_[0];
+	$ERRORS = 0;
+	my $thisrule = $thisparser->{"rules"}{"variable"};
+	
+	Parse::RecDescent::_trace(q{Trying rule: [variable]},
+				  Parse::RecDescent::_tracefirst($_[1]),
+				  q{variable})
+					if defined $::RD_TRACE;
+
+	
+	my $err_at = @{$thisparser->{errors}};
+
+	my $score;
+	my $score_return;
+	my $_tok;
+	my $return = undef;
+	my $_matched=0;
+	my $commit=0;
+	my @item = ();
+	my %item = ();
+	my $repeating =  defined($_[2]) && $_[2];
+	my $_noactions = defined($_[3]) && $_[3];
+ 	my @arg =        defined $_[4] ? @{ &{$_[4]} } : ();
+	my %arg =        ($#arg & 01) ? @arg : (@arg, undef);
+	my $text;
+	my $lastsep="";
+	my $expectation = new Parse::RecDescent::Expectation($thisrule->expected());
+	$expectation->at($_[1]);
+	
+	my $thisline;
+	tie $thisline, q{Parse::RecDescent::LineCounter}, \$text, $thisparser;
+
+	
+
+	while (!$_matched && !$commit)
+	{
+		
+		Parse::RecDescent::_trace(q{Trying production: [/\\?\\w+/]},
+					  Parse::RecDescent::_tracefirst($_[1]),
+					  q{variable})
+						if defined $::RD_TRACE;
+		my $thisprod = $thisrule->{"prods"}[0];
+		$text = $_[1];
+		my $_savetext;
+		@item = (q{variable});
+		%item = (__RULE__ => q{variable});
+		my $repcount = 0;
+
+
+		Parse::RecDescent::_trace(q{Trying terminal: [/\\?\\w+/]}, Parse::RecDescent::_tracefirst($text),
+					  q{variable})
+						if defined $::RD_TRACE;
+		$lastsep = "";
+		$expectation->is(q{})->at($text);
+		
+
+		unless ($text =~ s/\A($skip)/$lastsep=$1 and ""/e and   $text =~ s/\A(?:\?\w+)//)
+		{
+			
+			$expectation->failed();
+			Parse::RecDescent::_trace(q{<<Didn't match terminal>>},
+						  Parse::RecDescent::_tracefirst($text))
+					if defined $::RD_TRACE;
+
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched terminal<< (return value: [}
+						. $& . q{])},
+						  Parse::RecDescent::_tracefirst($text))
+					if defined $::RD_TRACE;
+		push @item, $item{__PATTERN1__}=$&;
+		
+
+		Parse::RecDescent::_trace(q{Trying action},
+					  Parse::RecDescent::_tracefirst($text),
+					  q{variable})
+						if defined $::RD_TRACE;
+		
+
+		$_tok = ($_noactions) ? 0 : do {
+			  $item[1] =~ /\?(.+)/;
+			  $return = { variable => $1 };
+			 };
+		unless (defined $_tok)
+		{
+			Parse::RecDescent::_trace(q{<<Didn't match action>> (return value: [undef])})
+					if defined $::RD_TRACE;
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched action<< (return value: [}
+					  . $_tok . q{])}, $text)
+						if defined $::RD_TRACE;
+		push @item, $_tok;
+		$item{__ACTION1__}=$_tok;
+		
+
+
+		Parse::RecDescent::_trace(q{>>Matched production: [/\\?\\w+/]<<},
+					  Parse::RecDescent::_tracefirst($text),
+					  q{variable})
+						if defined $::RD_TRACE;
+		$_matched = 1;
+		last;
+	}
+
+
+        unless ( $_matched || defined($return) || defined($score) )
+	{
+		
+
+		$_[1] = $text;	# NOT SURE THIS IS NEEDED
+		Parse::RecDescent::_trace(q{<<Didn't match rule>>},
+					 Parse::RecDescent::_tracefirst($_[1]),
+					 q{variable})
+					if defined $::RD_TRACE;
+		return undef;
+	}
+	if (!defined($return) && defined($score))
+	{
+		Parse::RecDescent::_trace(q{>>Accepted scored production<<}, "",
+					  q{variable})
+						if defined $::RD_TRACE;
+		$return = $score_return;
+	}
+	splice @{$thisparser->{errors}}, $err_at;
+	$return = $item[$#item] unless defined $return;
+	if (defined $::RD_TRACE)
+	{
+		Parse::RecDescent::_trace(q{>>Matched rule<< (return value: [} .
+					  $return . q{])}, "",
+					  q{variable});
+		Parse::RecDescent::_trace(q{(consumed: [} .
+					  Parse::RecDescent::_tracemax(substr($_[1],0,-length($text))) . q{])}, 
+					  Parse::RecDescent::_tracefirst($text),
+					  , q{variable})
+	}
+	$_[1] = $text;
+	return $return;
+}
+
+# ARGS ARE: ($parser, $text; $repeating, $_noactions, \@args)
 sub Parse::RecDescent::namespace000001::value
 {
 	my $thisparser = $_[0];
@@ -2362,6 +2505,58 @@ sub Parse::RecDescent::namespace000001::value
 
 
 		Parse::RecDescent::_trace(q{>>Matched production: [path_string]<<},
+					  Parse::RecDescent::_tracefirst($text),
+					  q{value})
+						if defined $::RD_TRACE;
+		$_matched = 1;
+		last;
+	}
+
+
+	while (!$_matched && !$commit)
+	{
+		
+		Parse::RecDescent::_trace(q{Trying production: [variable]},
+					  Parse::RecDescent::_tracefirst($_[1]),
+					  q{value})
+						if defined $::RD_TRACE;
+		my $thisprod = $thisrule->{"prods"}[2];
+		$text = $_[1];
+		my $_savetext;
+		@item = (q{value});
+		%item = (__RULE__ => q{value});
+		my $repcount = 0;
+
+
+		Parse::RecDescent::_trace(q{Trying subrule: [variable]},
+				  Parse::RecDescent::_tracefirst($text),
+				  q{value})
+					if defined $::RD_TRACE;
+		if (1) { no strict qw{refs};
+		$expectation->is(q{})->at($text);
+		unless (defined ($_tok = Parse::RecDescent::namespace000001::variable($thisparser,$text,$repeating,$_noactions,undef)))
+		{
+			
+			Parse::RecDescent::_trace(q{<<Didn't match subrule: [variable]>>},
+						  Parse::RecDescent::_tracefirst($text),
+						  q{value})
+							if defined $::RD_TRACE;
+			$expectation->failed();
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched subrule: [variable]<< (return value: [}
+					. $_tok . q{]},
+					  
+					  Parse::RecDescent::_tracefirst($text),
+					  q{value})
+						if defined $::RD_TRACE;
+		$item{q{variable}} = $_tok;
+		push @item, $_tok;
+		
+		}
+
+
+		Parse::RecDescent::_trace(q{>>Matched production: [variable]<<},
 					  Parse::RecDescent::_tracefirst($text),
 					  q{value})
 						if defined $::RD_TRACE;
@@ -4488,7 +4683,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                       }, 'Parse::RecDescent::Rule' ),
                               '_alternation_1_of_production_1_of_rule_XTM_attribute' => bless( {
                                                                                                  'impcount' => 0,
-                                                                                                 'line' => '97',
+                                                                                                 'line' => '103',
                                                                                                  'prods' => [
                                                                                                               bless( {
                                                                                                                        'dircount' => 0,
@@ -4501,7 +4696,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                        'items' => [
                                                                                                                                     bless( {
                                                                                                                                              'description' => '\'href\'',
-                                                                                                                                             'line' => '97',
+                                                                                                                                             'line' => '103',
                                                                                                                                              'pattern' => 'href',
                                                                                                                                              'hashname' => '__STRING1__',
                                                                                                                                              'lookahead' => 0
@@ -4516,11 +4711,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                        'strcount' => 1,
                                                                                                                        'number' => 1,
                                                                                                                        'error' => undef,
-                                                                                                                       'line' => '97',
+                                                                                                                       'line' => '103',
                                                                                                                        'items' => [
                                                                                                                                     bless( {
                                                                                                                                              'description' => '\'id\'',
-                                                                                                                                             'line' => '97',
+                                                                                                                                             'line' => '103',
                                                                                                                                              'pattern' => 'id',
                                                                                                                                              'hashname' => '__STRING1__',
                                                                                                                                              'lookahead' => 0
@@ -4806,7 +5001,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                         }, 'Parse::RecDescent::Rule' ),
                               '_alternation_1_of_production_1_of_rule_XTM_thing' => bless( {
                                                                                              'impcount' => 0,
-                                                                                             'line' => '97',
+                                                                                             'line' => '103',
                                                                                              'prods' => [
                                                                                                           bless( {
                                                                                                                    'dircount' => 0,
@@ -4818,7 +5013,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                    'line' => undef,
                                                                                                                    'items' => [
                                                                                                                                 bless( {
-                                                                                                                                         'line' => '97',
+                                                                                                                                         'line' => '103',
                                                                                                                                          'subrule' => 'XTM_element',
                                                                                                                                          'argcode' => undef,
                                                                                                                                          'implicit' => undef,
@@ -4835,10 +5030,10 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                    'strcount' => 0,
                                                                                                                    'number' => 1,
                                                                                                                    'error' => undef,
-                                                                                                                   'line' => '97',
+                                                                                                                   'line' => '103',
                                                                                                                    'items' => [
                                                                                                                                 bless( {
-                                                                                                                                         'line' => '97',
+                                                                                                                                         'line' => '103',
                                                                                                                                          'subrule' => 'XTM_attribute',
                                                                                                                                          'argcode' => undef,
                                                                                                                                          'implicit' => undef,
@@ -4855,10 +5050,10 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                    'strcount' => 0,
                                                                                                                    'number' => 2,
                                                                                                                    'error' => undef,
-                                                                                                                   'line' => '97',
+                                                                                                                   'line' => '103',
                                                                                                                    'items' => [
                                                                                                                                 bless( {
-                                                                                                                                         'line' => '97',
+                                                                                                                                         'line' => '103',
                                                                                                                                          'subrule' => 'XTM_data',
                                                                                                                                          'argcode' => undef,
                                                                                                                                          'implicit' => undef,
@@ -4881,7 +5076,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                            }, 'Parse::RecDescent::Rule' ),
                               'path_string' => bless( {
                                                         'impcount' => 0,
-                                                        'line' => '93',
+                                                        'line' => '99',
                                                         'prods' => [
                                                                      bless( {
                                                                               'dircount' => 0,
@@ -4894,7 +5089,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                               'items' => [
                                                                                            bless( {
                                                                                                     'description' => '\'"\'',
-                                                                                                    'line' => '93',
+                                                                                                    'line' => '99',
                                                                                                     'pattern' => '"',
                                                                                                     'hashname' => '__STRING1__',
                                                                                                     'lookahead' => 0
@@ -4906,18 +5101,18 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                     'hashname' => '__PATTERN1__',
                                                                                                     'lookahead' => 0,
                                                                                                     'ldelim' => '/',
-                                                                                                    'line' => '93',
+                                                                                                    'line' => '99',
                                                                                                     'rdelim' => '/'
                                                                                                   }, 'Parse::RecDescent::Token' ),
                                                                                            bless( {
                                                                                                     'description' => '\'"\'',
-                                                                                                    'line' => '93',
+                                                                                                    'line' => '99',
                                                                                                     'pattern' => '"',
                                                                                                     'hashname' => '__STRING2__',
                                                                                                     'lookahead' => 0
                                                                                                   }, 'Parse::RecDescent::Literal' ),
                                                                                            bless( {
-                                                                                                    'line' => '94',
+                                                                                                    'line' => '100',
                                                                                                     'code' => '{
 			  $return = $item[2];
 			 }',
@@ -5099,6 +5294,48 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                  'vars' => '',
                                                  'name' => 'step'
                                                }, 'Parse::RecDescent::Rule' ),
+                              'variable' => bless( {
+                                                     'impcount' => 0,
+                                                     'line' => '91',
+                                                     'prods' => [
+                                                                  bless( {
+                                                                           'dircount' => 0,
+                                                                           'uncommit' => undef,
+                                                                           'patcount' => 1,
+                                                                           'strcount' => 0,
+                                                                           'number' => 0,
+                                                                           'error' => undef,
+                                                                           'line' => undef,
+                                                                           'items' => [
+                                                                                        bless( {
+                                                                                                 'description' => '/\\\\?\\\\w+/',
+                                                                                                 'pattern' => '\\?\\w+',
+                                                                                                 'mod' => '',
+                                                                                                 'hashname' => '__PATTERN1__',
+                                                                                                 'lookahead' => 0,
+                                                                                                 'ldelim' => '/',
+                                                                                                 'line' => '91',
+                                                                                                 'rdelim' => '/'
+                                                                                               }, 'Parse::RecDescent::Token' ),
+                                                                                        bless( {
+                                                                                                 'line' => '92',
+                                                                                                 'code' => '{
+			  $item[1] =~ /\\?(.+)/;
+			  $return = { variable => $1 };
+			 }',
+                                                                                                 'hashname' => '__ACTION1__',
+                                                                                                 'lookahead' => 0
+                                                                                               }, 'Parse::RecDescent::Action' )
+                                                                                      ],
+                                                                           'actcount' => 1
+                                                                         }, 'Parse::RecDescent::Production' )
+                                                                ],
+                                                     'calls' => [],
+                                                     'opcount' => 0,
+                                                     'changed' => 0,
+                                                     'vars' => '',
+                                                     'name' => 'variable'
+                                                   }, 'Parse::RecDescent::Rule' ),
                               'value' => bless( {
                                                   'impcount' => 0,
                                                   'line' => '89',
@@ -5142,11 +5379,32 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                             }, 'Parse::RecDescent::Subrule' )
                                                                                    ],
                                                                         'actcount' => 0
+                                                                      }, 'Parse::RecDescent::Production' ),
+                                                               bless( {
+                                                                        'dircount' => 0,
+                                                                        'uncommit' => undef,
+                                                                        'patcount' => 0,
+                                                                        'strcount' => 0,
+                                                                        'number' => 2,
+                                                                        'error' => undef,
+                                                                        'line' => '89',
+                                                                        'items' => [
+                                                                                     bless( {
+                                                                                              'line' => '89',
+                                                                                              'subrule' => 'variable',
+                                                                                              'argcode' => undef,
+                                                                                              'implicit' => undef,
+                                                                                              'matchrule' => 0,
+                                                                                              'lookahead' => 0
+                                                                                            }, 'Parse::RecDescent::Subrule' )
+                                                                                   ],
+                                                                        'actcount' => 0
                                                                       }, 'Parse::RecDescent::Production' )
                                                              ],
                                                   'calls' => [
                                                                'path_numeric',
-                                                               'path_string'
+                                                               'path_string',
+                                                               'variable'
                                                              ],
                                                   'opcount' => 0,
                                                   'changed' => 0,
@@ -5245,7 +5503,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                       }, 'Parse::RecDescent::Rule' ),
                               '_alternation_1_of_production_1_of_rule_XTM_element' => bless( {
                                                                                                'impcount' => 0,
-                                                                                               'line' => '84',
+                                                                                               'line' => '90',
                                                                                                'prods' => [
                                                                                                             bless( {
                                                                                                                      'dircount' => 0,
@@ -5258,7 +5516,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'topicRef\'',
-                                                                                                                                           'line' => '84',
+                                                                                                                                           'line' => '90',
                                                                                                                                            'pattern' => 'topicRef',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5273,11 +5531,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 1,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '84',
+                                                                                                                     'line' => '90',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'topic\'',
-                                                                                                                                           'line' => '85',
+                                                                                                                                           'line' => '91',
                                                                                                                                            'pattern' => 'topic',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5292,11 +5550,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 2,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '85',
+                                                                                                                     'line' => '91',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'baseNameString\'',
-                                                                                                                                           'line' => '86',
+                                                                                                                                           'line' => '92',
                                                                                                                                            'pattern' => 'baseNameString',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5311,11 +5569,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 3,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '86',
+                                                                                                                     'line' => '92',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'baseName\'',
-                                                                                                                                           'line' => '87',
+                                                                                                                                           'line' => '93',
                                                                                                                                            'pattern' => 'baseName',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5330,11 +5588,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 4,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '87',
+                                                                                                                     'line' => '93',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'occurrence\'',
-                                                                                                                                           'line' => '88',
+                                                                                                                                           'line' => '94',
                                                                                                                                            'pattern' => 'occurrence',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5349,11 +5607,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 5,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '88',
+                                                                                                                     'line' => '94',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'resourceRef\'',
-                                                                                                                                           'line' => '89',
+                                                                                                                                           'line' => '95',
                                                                                                                                            'pattern' => 'resourceRef',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5368,11 +5626,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 6,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '89',
+                                                                                                                     'line' => '95',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'resourceData\'',
-                                                                                                                                           'line' => '90',
+                                                                                                                                           'line' => '96',
                                                                                                                                            'pattern' => 'resourceData',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5387,11 +5645,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 7,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '90',
+                                                                                                                     'line' => '96',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'instanceOf\'',
-                                                                                                                                           'line' => '91',
+                                                                                                                                           'line' => '97',
                                                                                                                                            'pattern' => 'instanceOf',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5406,11 +5664,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 8,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '91',
+                                                                                                                     'line' => '97',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'subjectIndicatorRef\'',
-                                                                                                                                           'line' => '92',
+                                                                                                                                           'line' => '98',
                                                                                                                                            'pattern' => 'subjectIndicatorRef',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5425,11 +5683,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 9,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '92',
+                                                                                                                     'line' => '98',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'subjectIdentity\'',
-                                                                                                                                           'line' => '93',
+                                                                                                                                           'line' => '99',
                                                                                                                                            'pattern' => 'subjectIdentity',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5444,11 +5702,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 10,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '93',
+                                                                                                                     'line' => '99',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'scope\'',
-                                                                                                                                           'line' => '94',
+                                                                                                                                           'line' => '100',
                                                                                                                                            'pattern' => 'scope',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5463,11 +5721,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 11,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '94',
+                                                                                                                     'line' => '100',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'association\'',
-                                                                                                                                           'line' => '95',
+                                                                                                                                           'line' => '101',
                                                                                                                                            'pattern' => 'association',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5482,11 +5740,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 12,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '95',
+                                                                                                                     'line' => '101',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'member\'',
-                                                                                                                                           'line' => '96',
+                                                                                                                                           'line' => '102',
                                                                                                                                            'pattern' => 'member',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5501,11 +5759,11 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                                      'strcount' => 1,
                                                                                                                      'number' => 13,
                                                                                                                      'error' => undef,
-                                                                                                                     'line' => '96',
+                                                                                                                     'line' => '102',
                                                                                                                      'items' => [
                                                                                                                                   bless( {
                                                                                                                                            'description' => '\'roleSpec\'',
-                                                                                                                                           'line' => '97',
+                                                                                                                                           'line' => '103',
                                                                                                                                            'pattern' => 'roleSpec',
                                                                                                                                            'hashname' => '__STRING1__',
                                                                                                                                            'lookahead' => 0
@@ -5570,7 +5828,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                         }, 'Parse::RecDescent::Rule' ),
                               'path_numeric' => bless( {
                                                          'impcount' => 0,
-                                                         'line' => '91',
+                                                         'line' => '97',
                                                          'prods' => [
                                                                       bless( {
                                                                                'dircount' => 0,
@@ -5588,7 +5846,7 @@ package XTM::Path::CParser; sub new { my $self = bless( {
                                                                                                      'hashname' => '__PATTERN1__',
                                                                                                      'lookahead' => 0,
                                                                                                      'ldelim' => '/',
-                                                                                                     'line' => '91',
+                                                                                                     'line' => '97',
                                                                                                      'rdelim' => '/'
                                                                                                    }, 'Parse::RecDescent::Token' )
                                                                                           ],

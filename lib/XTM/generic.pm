@@ -8,44 +8,19 @@ require AutoLoader;
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( AUTOLOAD );
-$VERSION = '0.05';
+$VERSION = '0.06';
 
 use XTM::Log;
 use XTM::Namespaces;
 
-# upwards parentship of elements (and pseudo elements)
-#our $ISIN = {
-#	    'association'         => [ 'topicMap' ],
-#	    'baseName'            => [ 'topic' ],
-#	    'baseNameString'      => [ 'baseName' ],
-#	    'instanceOf'          => [ 'topic', 'association' ],
-#	    'member'              => [ 'association' ],
-#	    'mergeMap'            => [ 'topicMap' ],
-#	    'occurrence'          => [ 'topic' ],
-#	    'parameters'          => [ 'variant' ],
-#	    'resourceData'        => [ 'occurrence' ] ,
-#	    'resourceRef'         => [ 'occurrence', 'member', 'scope', 'subjectIdentity' ],
-#	    'roleSpec'            => [ 'member' ],
-#	    'scope'               => [ 'baseName', 'occurrence', 'association' ],
-#	    'subjectIdentity'     => [ 'topic' ],
-#	    'subjectIndicatorRef' => [ 'instanceOf', 'member', 'roleSpec', 'scope', 'subjectIdentity' ],
-#	    'topic'               => [ 'topicMap' ],
-#	    'topicRef'            => [ 'instanceOf', 'member', 'roleSpec', 'scope', 'subjectIdentity' ],
-#	    'variant'             => [ 'baseName' ],
-#	    'variantName'         => [ 'variant' ],
-#
-#	    '@href'               => [ 'topicRef', 'subjectIndicatorRef', 'resourceRef' ],
-#	    '@id'                 => [ 'topic', 'association' ],
-#	    'text()'              => [ 'baseNameString', 'resourceData' ]
-#	   };
-
-
-# downwards parentship
+# downwards parentship + add actions
 our $NISI = {
 	     'association'         => {
 				       'instanceOf'           => {'add' => 'single', },
 				       'scope'                => {'add' => 'single', },
 				       'member'               => {'add' => 'multiple',  },
+# no id modification for associations
+#				       '@id'                  => {'add' => sub { $_[0]->id ($_[2]) } },
 				      },
 	     'baseName'            => {
 				       'scope'                => {'add' => 'single', },
@@ -101,9 +76,10 @@ our $NISI = {
 				      },
 	     'topic'               => { 
 				       'instanceOf'           => {'add' => 'multiple', }, 
-				       'subjectIdentity'      => {'add' => 'single', }, 
+				       'subjectIdentity'      => {'add' => 'single',   }, 
 				       'baseName'             => {'add' => 'multiple', }, 
 				       'occurrence'           => {'add' => 'multiple', },
+				       '@id'                  => {'add' => sub { $_[0]->id ($_[2]) } },
 				      },
 	     'topicMap'            => { # should be caught by XTM::Memory
 				       'topic'                => {'add' => sub { $_[0]->add_topic ($_[1]) }, }, 
@@ -229,12 +205,20 @@ class name ('XYZ::rumsti' will result in a component name 'rumsti').
 
 =cut
 
+our %requests;
+our %callers;
+
 use vars qw($AUTOLOAD);
 sub AUTOLOAD {
   my ($method) = $AUTOLOAD =~ m/([^:]+)$/;
   return if $method eq 'DESTROY';
 
+##  print STDERR "AUTOLOAD from: ".join ("\t",  caller)."\n";
   my $self = shift;
+
+  $callers{$method}->{join ("",caller)}++;
+
+
   if ($method =~ /^add_(.*)_s$/) { # list add
     my $component = $1;
     if ($component) {

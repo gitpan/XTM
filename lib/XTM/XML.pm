@@ -8,7 +8,7 @@ require AutoLoader;
 
 use base qw (XTM::IO);
 
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -24,6 +24,7 @@ XTM::XML - Topic Map management, syncing with XML data
   use XTM::XML;
   # reading a topic map description from an XML file
   $xml = new XTM::XML (file => 'mymap.tm');
+  $tm = $xml->sync_in();
 
 =head1 DESCRIPTION
 

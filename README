@@ -7,7 +7,7 @@ This base package contains Perl extension interfaces for Topic Maps
 With it you can
 
   - read/write XTM files
-  - read/write AsTMa resource
+  - read/write AsTMa resources
   - manipulate and query topic maps via an API
 
 See also for xtm.pl, a simple command line driven workbench.
@@ -56,8 +56,6 @@ make install
 
 You will need perl version 5.6.1 or better to install these modules.
 
-You will find an overview in XTM::base, further documentation is embedded 
-in the individual modules.
 
 Documentation
 -------------
@@ -68,7 +66,9 @@ You can learn about Topic Maps in general at
   http://topicmaps.bond.edu.au/ (tutorials, other stuff)
   http://easytopicmaps.com/     (tutorials, lotta links and hints)
 
-Most of the Perl packages come with a POD description.
+You will find an overview in XTM::base, further documentation is embedded 
+in the individual modules. Most of the Perl packages come with a POD 
+description and there is also a docs directory in the distribution.
 
 Support
 -------
@@ -80,7 +80,9 @@ You can either
   - create an bug entry in rt.cpan.org (preferred)
 
 
-Copyright 2001,2002 Robert Barta, rho@telecoma.net
+
+
+Copyright 200[1-2] Robert Barta, rho@telecoma.net
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

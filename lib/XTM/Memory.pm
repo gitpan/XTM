@@ -2,6 +2,8 @@ package XTM::Memory;
 
 use Carp;
 use strict;
+
+#use utf8;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
 require Exporter;
@@ -10,7 +12,7 @@ use UNIVERSAL qw(isa);
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.14';
+$VERSION = '0.15';
 
 use Data::Dumper;
 
@@ -40,8 +42,8 @@ XTM - Topic Map management, in-memory data structure.
 
    # checking something
    print "Hurray" if
-    $tm->is_topic ('t-john-lennon') ||
-    $tm->is_association ('a-played-in');
+   $tm->is_topic ('t-john-lennon') ||
+   $tm->is_association ('a-played-in');
 
    # finding something
    @rumstis = @{$tm->topics ( "baseName regexps /rumsti.*/" )};
@@ -61,6 +63,8 @@ for basic operations to add/delete topics/associations and to query the map via 
 The interface offers basic access function but also some sophisticated filters to create
 sub maps. More convenient functions to retrieve topic and association information can
 be found in the XTM::server package distributed seperately.
+
+For merging related information see L<XTM>.
 
 =head2 Constructor
 
@@ -152,6 +156,16 @@ Examples:
 
 If a parameter is neither a topic nor an association nor a topic map, an exception will be raised.
 
+Note:
+
+When a topic is added it may be merged with other topics according to your consistency setting
+of the map. This implies that topics are B<modified> by having more C<baseNames>, C<occurrences>, ...
+If the calling program still maintains a reference to this topic, then it will experience these
+changes. On the other hand, if topics are merged, then the topic which is merged in, will NOT
+be stored as-is in the map. Only its components (C<baseNames>, ..._) will survive.
+
+Saying this, it means that you cannot trust the topic references you have created. You should
+request a new reference via a subjectIndicator or the topic id.
 
 =cut
 
@@ -163,57 +177,55 @@ sub __do_merge {
 
 #  warn "merging ", $t->id, " and " , $s->id, " ", $reason, "\n";
 
-  # merging instanceOfs is list management
-  $t->add__s ($s->instanceOf_s);
-  $t->add__s ($s->baseName_s);
-  $t->add__s ($s->occurrence_s);
+  # merging is list management
+  push @{$t->{instanceOfs}},  @{$s->{instanceOfs}}; # instanceOfs are mandatory in a topic, no guard
+  push @{$t->{baseNames}},    @{$s->{baseNames}}    if $s->{baseNames};
+  push @{$t->{occurrences}},  @{$s->{occurrences}}  if $s->{occurrences};
+
   { # merging Identities, I love complicated if statements
-    my $ti = $t->subjectIdentity;
-    my $si = $s->subjectIdentity;
+    my $ti = $t->{subjectIdentity};
+    my $si = $s->{subjectIdentity};
     if ($ti && !$si) {                # ignore, nothing new
     } elsif (!$ti && $si) {           # $t did not have, gets one now
-      $t->add_ ($s->subjectIdentity);
+      $t->add_ ($s->{subjectIdentity});
     } elsif (!$ti && !$si) {          # none where here
     } else {                          # both have something
-      my $trr = $ti->resourceRef ? $ti->resourceRef->href : undef;
-      my $srr = $si->resourceRef ? $si->resourceRef->href : undef;
+      my $trr = $ti->{resourceRef} ? $ti->{resourceRef}->{href} : undef;
+      my $srr = $si->{resourceRef} ? $si->{resourceRef}->{href} : undef;
       use URI;
       if (defined $trr and defined $srr) { # both resourceRefs defined? then the URI must match
 	my $u1 = URI->new($trr);
 	my $u2 = URI->new($srr);
-	warn "XTM::Memory: incompatible resourceRefs encountered on merging '".$t->id."' and '".$s->id."'"
+	die "XTM::Memory: incompatible resourceRefs encountered on merging '".$t->{id}."' and '".$s->{id}."'"
 	  unless URI::eq ($u1, $u2);
 	                                   # but we leave it as it is
       } elsif (defined $trr) {             # $srr undefined, leave that
       } elsif (defined $srr) {             # $trr undefined, we have something new
-	$t->subjectIdentity->add_resourceRef ($si->resourceRef);
+	$t->{subjectIdentity}->add_resourceRef ($si->{resourceRef});
       } else {                             # both undefined
       }
-      $ti->add_reference_s (@{$si->references}) if $si->references;
+      $ti->add_reference_s (@{$si->{references}}) if $si->{references};
     }
   }
   # merging variants is list management
-  $t->add__s ($s->variant_s);
+  $t->add__s (@{$s->{variants}});
 
-#  unless ($t->id eq $s->id) {                # if we were dealing with different topic ids
-#    $self->{merged}->{$s->id} = $t->id;      # note that a merge has happened
-#  }                                          # Haensel & Gretel mechanism
-
-  $self->__update_subjects ($t->subjectIdentity, $t->id); # tell the world for which subjects we stand
-
-  foreach my $sid (@{$s->ids}) {
+  foreach my $sid (@{$s->{ids}}) {
     $self->{topics}->{$sid} = $t;             # get rid of old topic, add the merged results
-    $t->add_id_s ($sid);                      # merged topic receives all ids of s
   }
-#warn "s sids are ", @{$s->ids};
-#warn "t afterwards has ", Dumper $t;
-#warn "after merge: ", Dumper $self;
+  push @{$t->{ids}}, @{$s->{ids}};            # merged topic receives all ids of s
+  #warn "s sids are ", @{$s->ids};
+  #warn "t afterwards has ", Dumper $t;
+  #warn "after merge: ", Dumper $self;
 
   # we are done now with s
+  $t->canonicalize;                           # sorting and/or creating the fingerprints for scoped baseNames
+  ##  $self->__update_subjects  ($t->{subjectIdentity}, $t->{id}); # tell the world for which subjects we stand
+  ##  $self->__update_baseNames ($t->{baseNames},       $t->{id}); # and also where the (scoped) baseNames are
 
-#warn "followup merge check for ", $t->id;
-  $self->__check_for_merge ($t->id);          # check whether this merge will trigger a followup merge
-#warn "completed merge check for ", $t->id;
+  #warn "followup merge check for ", $t->id;
+  $self->__check_for_merge ($t->{id});        # check whether this merge will trigger a followup merge
+  #warn "completed merge check for ", $t->id;
 }
 
 sub __check_for_merge {
@@ -223,20 +235,19 @@ sub __check_for_merge {
 
 #print "_check ", $tid, Dumper $t;
 
-  # now we canonicalize the topic
-  $t->canonicalize();
 
   if (grep ($_ eq 'Subject_based_Merging', @{$self->{consistency}->{merge}})) {
     # check F.5.2.1 (share both the same resourceRef)
     my ($href, $href2);
-    if ($t->subjectIdentity && $t->subjectIdentity->resourceRef && ($href = $t->subjectIdentity->resourceRef->href)) {
+    if ($t->{subjectIdentity} && $t->{subjectIdentity}->{resourceRef} && 
+	($href = $t->{subjectIdentity}->{resourceRef}->{href})) {
       foreach my $t2 (grep ($_ != $t, values %{$self->{topics}})) {
 #warn "checking sub for ", $t2->id;
 	use URI;
-	if ($t2->subjectIdentity &&                               # we have identity
-	    $t2->subjectIdentity->resourceRef &&                  # and it has an addressable resource
-	    ($href2 = $t2->subjectIdentity->resourceRef->href) && # get the href
-	    URI::eq ($href, $href2) ) {                           # compare it with the other
+	if ($t2->{subjectIdentity} &&                                   # we have identity
+	    $t2->{subjectIdentity}->{resourceRef} &&                    # and it has an addressable resource
+	    ($href2 = $t2->{subjectIdentity}->{resourceRef}->{href}) && # get the href
+	    URI::eq ($href, $href2) ) {                                 # compare it with the other
 #warn "resource ref equal";
 	  $self->__do_merge ($t2, $t, "merge share both the same resourceRef");
 	  return; # no need to do more with this topic
@@ -244,16 +255,16 @@ sub __check_for_merge {
       }
     }
     # check F.5.2.2 (new one pointing subjectIndicator to existing)
-    foreach my $r ($t->subjectIdentity &&
-		   $t->subjectIdentity->references ?
-		   @{$t->subjectIdentity->references}: ()) {
+    foreach my $r ($t->{subjectIdentity} &&
+		   $t->{subjectIdentity}->{references} ?
+		   @{$t->{subjectIdentity}->{references}}: ()) {
 #	print "afound reference for ", Dumper $r, "\n";
       if (isa($r, 'XTM::topicRef')) {
 #	  print "xfound reference for ", Dumper $r, "\n";
-	my $t2; eval { $t2 = $self->topic ($r->href) };              # try to find this topic in local map
+	my $t2; eval { $t2 = $self->{topics}->{$r->{href}} };               # try to find this topic in local map
 	if ($t2) {
 	  # get rid of this topicRef, it is useless now
-	  $t->subjectIdentity->references ( [ grep ($_ != $r, @{$t->subjectIdentity->references}) ] );
+	  $t->{subjectIdentity}->references ( [ grep ($_ != $r, @{$t->{subjectIdentity}->{references}}) ] );
 	  $self->__do_merge ($t2, $t, "new one pointing subjectIndicator to existing");
 	  return; # no need to do more with this topic
 	}
@@ -265,43 +276,65 @@ sub __check_for_merge {
 #warn "topic in focus ", $t->id, Dumper $t;
 #warn "subjects ", Dumper $self->{subjects};
 #warn "our own ids " , Dumper $t->ids;
-      if (($tid2 = $self->{subjects}->{$t->id}) && (!grep ($tid2 eq $_, @{$t->ids}))) { # this particular topic is topicRef'd by something
+      if (($tid2 = $self->{subjects}->{$t->{id}}) && (!grep ($tid2 eq $_, @{$t->{ids}}))) { # this particular topic is topicRef'd by something
 #warn "short before merging";
-	my $t2 = $self->topic ($tid2);
-	$t2->subjectIdentity->references ( [ grep ($_->href ne $t->id, @{$t2->subjectIdentity->references}) ] );
+	my $t2 = $self->{topics}->{$tid2};
+	$t2->{subjectIdentity}->references ( [ grep ($_->{href} ne $t->{id}, @{$t2->{subjectIdentity}->{references}}) ] );
 	$self->__do_merge ($t2, $t, "existing one pointing subjectIndicator to new");
 	return;
       }
     }
     # check F.5.2.3 (share at least on URI in references)
-    foreach my $r ($t->subjectIdentity && $t->subjectIdentity->references ?
-		   @{$t->subjectIdentity->references} : ()) {
-      my $uri = URI->new($r->href)->canonical->as_string;            # canonical is better
+    foreach my $r ($t->{subjectIdentity} && $t->{subjectIdentity}->{references} ?
+		   @{$t->{subjectIdentity}->{references}} : ()) {
+      my $uri = URI->new($r->{href})->canonical->as_string;            # canonical is better
 #warn "checking for ", Dumper( $t), "sharing", $uri;
       my $tid2;
 #warn "comparing with subjects " , Dumper $self->{subjects};
-      if (($tid2 = $self->{subjects}->{$uri}) && (!grep ($tid2 eq $_, @{$t->ids}))) {# yes we share a subjectIndicator with ourselves, ..
-	my $t2 = $self->topic ($tid2);                               # but that is not the point
+      if (($tid2 = $self->{subjects}->{$uri}) && (!grep ($tid2 eq $_, @{$t->{ids}}))) {# yes we share a subjectIndicator with ourselves, ..
+	my $t2 = $self->{topics}->{$tid2};                               # but that is not the point
 	$self->__do_merge ($t2, $t, "sharing a subjectIndicator");
 	return;
       }
     }
   }
+
   if (grep ($_ eq 'Topic_Naming_Constraint', @{$self->{consistency}->{merge}})) {
     # F.5.3, same baseName in same scope
-    foreach my $t2 (grep ($_ != $t, values %{$self->{topics}})) {
-      foreach my $bn2 (@{$t2->baseNames}) {
-	foreach my $bn (@{$t->baseNames}) {
-	  next unless $bn->baseNameString->string eq $bn2->baseNameString->string;
-	  next unless XTM::scope::scope_eq ($bn->scope->references, $bn2->scope->references);
-	  $self->__do_merge ($t2, $t, "TNC");
-	  return;
-	}
+    foreach my $bn (@{$t->{baseNames}}) {
+#      warn "checking baseName ".$bn->{baseNameString}->{string}." for ".$t->{id};
+      my $tid2;
+#warn "ids list is: ".Dumper $t->{ids};
+#warn "finger print for this is ".Dumper $self->{baseName_fingerprints}->{$bn->{fingerprint}}. " <<end";
+#warn "fingprints are :".Dumper $self->{baseName_fingerprints};
+      if (($tid2 = $self->{baseName_fingerprints}->{$bn->{fingerprint}}) # there is a topic with this baseName
+          && (!grep ($tid2 eq $_, @{$t->{ids}}))) {                      # and it is not the one we have here
+	#warn "!!!!have to merge ".$t->{id}."with $tid2";
+	my $t2 = $self->{topics}->{$tid2};
+	$self->__do_merge ($t2, $t, "sharing a baseName");
+	return;
       }
     }
   }
-  $self->__update_subjects ($t->subjectIdentity, $t->id); # tell the world for which subjects we stand
+
+  $self->__update_subjects  ($t->{subjectIdentity}, $t->{id}); # tell the world for which subjects we stand
+  $self->__update_baseNames ($t->{baseNames},       $t->{id}); # and also where the (scoped) baseNames are
+
+   ## unconditional => can use it later## if (grep ($_ eq 'Subject_based_Merging', @{$self->{consistency}->{merge}}));
 #  warn "no merge for $tid\n";
+}
+
+sub __update_baseNames {
+  my $self = shift;
+  my $bns  = shift; # list ref
+  my $tid  = shift;
+
+  foreach my $bn (@$bns) {
+#    warn "add fingerprint for $tid (".$bn->baseNameString->string.")";
+#    warn "  fingprint: ".$bn->fingerprint."...";
+    $self->{baseName_fingerprints}->{$bn->{fingerprint}} = $tid;
+  }
+#  warn "end fingerprints: ".Dumper $self->{baseName_fingerprints};
 }
 
 sub __update_subjects {
@@ -310,9 +343,9 @@ sub __update_subjects {
   my $tid  = shift;
 
   return unless $si;
-  $self->{subjects}->{$si->resourceRef->href} = $tid if $si->resourceRef;
-  foreach my $r ($si->references ? @{$si->references} : ()) {
-    my $uri = URI->new($r->href)->canonical->as_string;
+  $self->{subjects}->{$si->{resourceRef}->{href}} = $tid if $si->{resourceRef};
+  foreach my $r ($si->{references} ? @{$si->{references}} : ()) {
+    my $uri = URI->new($r->{href})->canonical->as_string;
     $self->{subjects}->{$uri} = $tid;
   }
 }
@@ -321,16 +354,17 @@ sub add_topic {
   my $self = shift;
   my $t    = shift;
 
-  if ($self->{topics}->{$t->id}) {                                      # there exists already a topic with this id
+  if ($self->{topics}->{$t->{id}}) {                                      # there exists already a topic with this id
     if (grep ($_ eq 'Id_based_Merging', @{$self->{consistency}->{merge}}))  { # allow merging based on id
-      $self->__do_merge ($self->{topics}->{$t->id}, $t, "same id");
+      $self->__do_merge ($self->{topics}->{$t->{id}}, $t, "same id");
     } else {                                                            # there can only be one and we overwrite
-      $self->{topics}->{$t->id} = $t;
+      $self->{topics}->{$t->{id}} = $t;
     }
   } else {                                                              # we see a new id
-    $self->{topics}->{$t->id} = $t;
+    $self->{topics}->{$t->{id}} = $t;
   }
-  $self->__check_for_merge ($t->id);                                    # here various merging checks are performed
+  $t->canonicalize();                                                   # sorting and/or creating the fingerprints for scoped baseNames
+  $self->__check_for_merge ($t->{id});                                    # here various merging checks are performed
 }
 
 sub add {
@@ -448,8 +482,8 @@ The filter specifications follow the syntax:
                    'id'         'eq'      ''' string '''                              |
                    'assocs' [ 'via' topic_id ] [ 'with' topic_id ] [ 'transitively' ] |
                    'is-a'  topic_id                                                   |
-                   'reifies'    'regexp'  regexp_string                               |
-                   'indicates'  'regexp'  regexp_string                               |
+                   'reifies'    'regexps' regexp_string                               |
+                   'indicates'  'regexps' regexp_string                               |
 ##                 'instanceOfs' ( '<=' | '==' | '>=' )  set_of_topic_ids | NOT IMPLEMENTED
 ##                 'scoped_by' topic_id   ## NOT IMPLEMENTED
   regexp_string -> '/' regexp '/'
@@ -476,7 +510,7 @@ sub _passes_filter {
       elog ('XTM::Memory', 5, "       baseName", $b);
       return 1 if $b->baseNameString->string =~ /$regexp/i;
     }
-  } elsif ($f =~ /^indicates\s+regexp\s+\/(.+)\/$/) {
+  } elsif ($f =~ /^indicates\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
     if ($t->subjectIdentity) {
       foreach my $r (@{$t->subjectIdentity->references}) {
@@ -484,7 +518,7 @@ sub _passes_filter {
       }
     }
     return 0;
-  } elsif ($f =~ /^reifies\s+regexp\s+\/(.+)\/$/) {
+  } elsif ($f =~ /^reifies\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
     return 
       $t->subjectIdentity && 
@@ -804,6 +838,7 @@ sub _topic_tree {
       my ($a_topic, @b_topics);
       # look whether $a has an instance here
       foreach my $m ( @{$ar->members} ) {
+	next unless $m->roleSpec; # give up if there is no role
 	elog ('XTM::Memory', 4,"    checking for role ", $m->roleSpec->reference->href);
 	next if defined $a && $a ne $m->roleSpec->reference->href;
 	elog ('XTM::Memory', 4,"      still there because of child");
@@ -813,6 +848,7 @@ sub _topic_tree {
 	    elog ('XTM::Memory', 4,"    found $topic playing first role");
 	    foreach my $m2 ( @{$ar->members} ) { 
 	      elog ('XTM::Memory', 4,"    inner loop for other members");
+	      next unless $m->roleSpec && $m2->roleSpec; # give up if there is no role
 	      if ($m->roleSpec->reference->href ne $m2->roleSpec->reference->href) { # get forward drift
 	        next if defined $b && $b ne $m2->roleSpec->reference->href;
 		elog ('XTM::Memory', 4,"    found other playing second role");
@@ -847,7 +883,7 @@ sub _topic_tree {
 
 =head1 SEE ALSO
 
-L<XTM>
+L<XTM>, L<XTM::base>
 
 =head1 AUTHOR INFORMATION
 
@@ -862,3 +898,16 @@ http://www.perl.com/perl/misc/Artistic.html
 1;
 
 __END__
+
+
+# old code was pretty slow
+#    foreach my $t2 (grep ($_ != $t, values %{$self->{topics}})) {
+#      foreach my $bn2 (@{$t2->baseNames}) {
+#	foreach my $bn (@{$t->baseNames}) {
+#	  next unless $bn->baseNameString->string eq $bn2->baseNameString->string;
+#	  next unless XTM::scope::scope_eq ($bn->scope->references, $bn2->scope->references);
+#	  $self->__do_merge ($t2, $t, "TNC");
+#	  return;
+#	}
+#      }
+#    }

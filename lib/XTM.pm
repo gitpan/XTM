@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( );
-$VERSION = '0.28';
+$VERSION = '0.29';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -122,7 +122,7 @@ set, then one topic will substitute the other. This was the old behaviour.
 
 To achieve backward compatibility, you should set
 
-  merge => []
+  merge => $XTM::backward_consistency
 
 =item I<duplicate_suppression>: The value is a list reference containing some of the following
 constants:
@@ -260,6 +260,8 @@ use vars qw($AUTOLOAD);
 sub AUTOLOAD {
   my($method) = $AUTOLOAD =~ m/([^:]+)$/;
   return if $method eq 'DESTROY';
+
+#print " in XTM autoload:".join (",",@_);
 
   $_[0]->{last_read} = time;
   elog ('XTM', 4, "AUTOLOAD forwarding '$method' to memory object"); 

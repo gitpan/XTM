@@ -8,10 +8,11 @@ require AutoLoader;
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.06';
+$VERSION = '0.08';
 
 use Data::Dumper;
 use Parse::RecDescent;
+use URI;
 
 use XTM;
 use XTM::topic;
@@ -25,20 +26,28 @@ sub new {
 }
 
 
+
 our $astma_grammar = q {
+
+
+
+
 		       startrule : section
 
 		       section : topic_definition | association_definition | <error: Problem parsing near "$text" (line "$thisline", col "$thiscolumn")>
 
-		       topic_definition : ( 'tid' ':' )(?) topic_id types(?) reification(?) topic_characteristic(s?)
+		       topic_definition : ( 'tid' ':' )(?) topic_id types(?) reification(?) isreification(s?) topic_characteristic(s?)
 		       {
+			 my @components; # here I collect all which I generate here
+
+			 # deal with the topic first
 			 my $t = new XTM::topic (id => $item{topic_id});
 			 foreach (@{$item{types}->[0]}) {
 			   $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$_")));
 			 }
 			 $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})))
 			   unless $t->instanceOfs && @{$t->instanceOfs};
-
+			 
 			 my $s = new XTM::subjectIdentity (); # maybe we need it
 			 foreach (@{$item{topic_characteristic}}) {
 			   if (ref($_) eq 'XTM::subjectIndicatorRef') {
@@ -65,27 +74,79 @@ our $astma_grammar = q {
 			   $b->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) );
 			   $t->add__s ($b);
 			 }
-			 $return = $t;
+
+			 push @components, $t;
+
+sub _make_reifying_topic {
+  my $uri  = shift; # my id
+  my $taid = shift; # assoc or topic id which we reify
+
+  my $u = new URI ($uri);
+  #print "==found reification==", $uri;
+  my $t = new XTM::topic (id => $uri);
+
+  if ($u->scheme) {                         # a resource
+  } else {                                  # a local topic
+    my $s2 = new XTM::subjectIdentity ();
+    my $r2 = new XTM::resourceRef (href => '#'.$taid);
+    $s2->add_ ($r2);
+    $t->add_ ($s2);
+    
+    my $name = $uri;
+    $name =~ s/-/ /g;
+    my $b2 = new XTM::baseName ();
+    $b2->add_baseNameString (new XTM::baseNameString (string => $name));
+    $b2->add_scope          (new XTM::scope());
+    $b2->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) );
+    $t->add__s ($b2);
+  }
+  return $t;
+}
+
+			 foreach my $uri (@{$item{isreification}}) {
+			   push @components, _make_reifying_topic ($uri, $t->id);
+			 }
+
+			 $return = \@components;
 		       }
 
-		       reification : 'reifies' string
+		       reification : 'reifies' uri
                        {
-                         # check for URI ?
-		         $return = new XTM::resourceRef (href => $item{string});
+                         # check for relative URI ?
+		         $return = new XTM::resourceRef (href => $item{uri});
                        }
 
-		       association_definition : scope(?) '(' type_topic_id ')' association_member(s)
-			 {
-			   my $a = new XTM::association ();
+		       isreification : 'is-reified-by' uri
+                       {
+			 $return = $item{uri};
+                       }
 
-			   $a->add_scope (new XTM::scope (references => [ 
-				    new XTM::topicRef (href => $item{scope}->[0] ? "#$item{scope}->[0]" : $XTM::PSI::xtm{universal_scope}) ]));
+		       association_definition : scopes(?) '(' type_topic_id ')' isreification(s?) association_member(s)
+			 {
+			   my @components; # here I collect all which I generate here
+
+			   my $a = new XTM::association ();
+			   my $s = new XTM::scope();
+			   $a->add_scope ($s);
+			   foreach (@{$item{scopes}->[0]}) {
+			     $s->add_reference_s (new XTM::topicRef (href => "#$_"));
+			   }
+			   $a->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
+			     unless $a->scope->references;
+
 			   $a->add_instanceOf (new XTM::instanceOf (reference => 
 				    new XTM::topicRef (href => "#$item{type_topic_id}")));
 			   foreach (@{$item{association_member}}) {
 			     $a->add__s ($_);
 			   }
-			   $return = $a;
+
+			   push @components, $a;
+
+			   foreach my $uri (@{$item{isreification}}) {
+			     push @components, _make_reifying_topic ($uri, $a->id);
+			   }
+
+			   $return = \@components;
 			 }
 
 		       association_member : topic_id ':' list_of_member_topic_ids
@@ -134,11 +195,10 @@ our $astma_grammar = q {
 			 }
 			 $o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
 			   unless $o->scope->references;
-			 if ($item{type} && $item{type}->[0]) {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$item{type}->[0]")));
-			 } else {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{occurrence})));
-			 }
+
+			 $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => 
+				$item{type} && $item{type}->[0] ?	 "#$item{type}->[0]" : $XTM::PSI::xtm{occurrence}
+												  )));
 			 $return = $o;
 		       }
 
@@ -152,11 +212,10 @@ our $astma_grammar = q {
 			 }
 			 $o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
 			   unless $o->scope->references;
-			 if ($item{type} && $item{type}->[0]) {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$item{type}->[0]")));
-			 } else {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{occurrence})));
-			 }
+
+			 $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => 
+				$item{type} && $item{type}->[0] ?	 "#$item{type}->[0]" : $XTM::PSI::xtm{occurrence}
+												  )));
 			 $return = $o;
 		       }
 
@@ -164,7 +223,6 @@ our $astma_grammar = q {
 		       {
 			 use URI;
 			 my $u = URI->new ($item{string});
-			 use Data::Dumper;
 			 $return = ref ($u) eq 'URI::_generic' ? 
 			   new XTM::topicRef (href => $item{string}) :
 			     new XTM::subjectIndicatorRef (href => $item{string});
@@ -191,6 +249,8 @@ our $astma_grammar = q {
 		       id : /[\w\-\.]+/
 
 		       string : /[^\n\r]+/
+
+		       uri :  /[\w\-\.\/\?\&\:\,\+]+/
 		      };
 	
 sub handle_begin {
@@ -276,11 +336,27 @@ sub handle_astma {
 	$self->handle_naming   ($1);
     } elsif ($text =~ s/^%encoding\s*(.*?)[\n\r]//s) {
 	$line++;
-	$self->handle_encoding ($1);
+	my $encoding = $1;
+	$self->handle_encoding ($encoding);
+	use Text::Iconv;
+	my $converter;
+	eval {
+	  $converter = Text::Iconv->new($encoding, "utf8"); # into Perl utf8 encoding
+	}; if ($@) {
+	  die "XTM::AsTMa::Parser: Could not convert encoding '$encoding' into utf-8 ($@)";
+	};
+	if ($text =~ /(.+?)(%encoding.+)/s) { # there is a second encoding here
+	  $text = $converter->convert($1).$2;
+	} else {
+	  $text = $converter->convert($text);
+	}
     } elsif ($text =~ /^%cancel/) {
 	$line++;
 	warn "XTM::AsTMa: Cancelled at line $line";
 	last;
+    } elsif ($text =~ s/^%auto_complete\s*(.*?)[\n\r]//s) {
+	$line++;
+	$auto_complete = $1 =~ /on/i ? 1 : 0;
     } elsif($text =~ s/^(\w+)\s*:\s*([\w\-]+)\s*[\n\r]//s) { # find encoding
 	$line++;
 	$self->handle_naming   ($1);
@@ -306,20 +382,14 @@ sub handle_astma {
 	$block .= $l;
       }
 
-#print  "Check block:----$block----\n-----";
-
-#      while ($text =~ s/^([^\#\n\r\s][[:blank:]]*.*?[\n\r])//s) {
-#	$line++;
-#        my $l = $1;
-#        $l =~ s/#.*//;
-#	$block .= $1;
-#      }
       $block =~ s/\\[\n\r]//g; # merge \<cr> lines
       eval {
-	my $c = $parser->startrule (\$block);
+	my $cs = $parser->startrule (\$block);
 	die "XTM::AsTMa: Found unparseable '$block' between lines [$start_line, $line]"    unless $block =~ /^\s*$/s;
-	die "XTM::AsTMa: no component around '$block' between lines [$start_line, $line]"  unless defined $c;
-	$self->handle_component ($c);
+	die "XTM::AsTMa: no component around '$block' between lines [$start_line, $line]"  unless defined $cs;
+	foreach (@$cs) {
+	  $self->handle_component ($_);
+	}
       }; if ($@) {
 	die $@;
       }
@@ -332,8 +402,8 @@ sub handle_astma {
 
     $self->handle_trailer_start();
 
-    print STDERR "\ndefined: ",   ($self->{defined}   ? join (",", @{$self->{defined}})   : 'none') if $log_level >= 2;
-    print STDERR "\nmentioned: ", ($self->{mentioned} ? join (",", @{$self->{mentioned}}) : 'none') if $log_level >= 2;
+    warn "\ndefined: ".   ($self->{defined}   ? join (",", @{$self->{defined}})   : 'none') if $log_level >= 2;
+    warn "\nmentioned: ". ($self->{mentioned} ? join (",", @{$self->{mentioned}}) : 'none') if $log_level >= 2;
     
     foreach my $href (@{$self->{mentioned}}) {
       use URI;

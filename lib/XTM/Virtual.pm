@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw(  );
 @EXPORT_OK = qw( );
-$VERSION = '0.07';
+$VERSION = '0.08';
 
 use Carp;
 use Data::Dumper;
@@ -130,7 +130,7 @@ The constructor expects a hash with the following fields:
 =back
 
 Examples:
-   
+
   # relative to this server
   $vtm = new XTM::Virtual (expr => '/m-test');
   # absolute
@@ -143,7 +143,7 @@ Examples:
 =cut
 
 sub new {
-  my $class    = shift;  
+  my $class   = shift;
   my %options  = @_;
   elog ('XTM::Virtual', 5, "in new Virtual $options{expr}");
   return bless { %options }, $class;
@@ -157,25 +157,32 @@ sub new {
 
 =item I<sync_in>
 
+I<$tm>->sync_in (I<$XTM::default_consistency>)
+
 This method will cause the map to be loaded and/or generated, depending
 on the complexity of the expression. The L<XTM::Memory> object will be returned.
+
+You may add a consistency (see L<XTM>) as parameter. It will be used throughout.
 
 =cut
 
 sub sync_in {
   my $self = shift;
+  my $consistency = shift;
   elog ('XTM::Virtual', 3, "syncing in ", $self->{expr});
-  return _assert ($self->{expr}, $self->{key});
+  return _assert ($self->{expr}, $self->{key}, $consistency);
 }
 
 =pod
 
 =item I<sync_out>
 
+Not implemented.
+
 =cut
 
 sub sync_out {
-  warn "syncing out via virtual\n";
+  die "XTM::Virtual: syncing out not implemented yet.\n";
 }
 
 =pod
@@ -214,6 +221,7 @@ sub staleness {
 sub _assert_package {
   my $module = shift;
   my $key    = shift || $module;
+  my $cons   = shift || $XTM::default_consistency;
 
   elog ('XTM::Virtual', 3, "_assert package for '$module', '$key'");
   return $cache{$key} if staleness ($key) <= 0;
@@ -222,7 +230,8 @@ sub _assert_package {
   my $tm;
   eval qq|
     use $module;
-    \$tm = new XTM (tie         => new $module (),
+    \$tm = new XTM (consistency => $cons,
+		    tie         => new $module (),
 		    last_mod    => time,
 		    last_syncin => time);
   |; if ($@) {
@@ -232,29 +241,52 @@ sub _assert_package {
 }
 
 sub _assert_xml {
-  my $url = shift;
-  my $key = shift || $url;
+  my $url  = shift;
+  my $key  = shift || $url;
+  my $cons = shift || $XTM::default_consistency;
 
   elog ('XTM::Virtual', 3, "_assert xml for '$url', '$key'");
   return $cache{$key} if staleness ($key) <= 0;
 
   use XTM::XML;
   elog ('XTM::Virtual', 3, "  XML loading via $url");
-  return $cache{$key} = new XTM (tie         => new XTM::XML (url => $url),
+  return $cache{$key} = new XTM (
+				 consistency => $cons,
+				 tie         => new XTM::XML (url => $url),
 				 last_mod    => time,
 				 last_syncin => time);
 }
 
 sub _assert_atm {
-  my $url = shift;
-  my $key = shift || $url;
+  my $url  = shift;
+  my $key  = shift || $url;
+  my $cons = shift || $XTM::default_consistency;
 
   elog ('XTM::Virtual', 3, "_assert atm for '$url', '$key'");
   return $cache{$key} if staleness ($key) <= 0;
 
   use XTM::AsTMa;
   elog ('XTM::Virtual', 3, "  ATM loading via $url");
-  return $cache{$key} = new XTM (tie         => new XTM::AsTMa (url => $url),
+  return $cache{$key} = new XTM (
+				 consistency => $cons,
+				 tie         => new XTM::AsTMa (url => $url),
+				 last_mod    => time,
+				 last_syncin => time);
+}
+
+sub _assert_ltm {
+  my $url  = shift;
+  my $key  = shift || $url;
+  my $cons = shift || $XTM::default_consistency;
+
+  elog ('XTM::Virtual', 3, "_assert ltm for '$url', '$key'");
+  return $cache{$key} if staleness ($key) <= 0;
+
+  use XTM::LTM;
+  elog ('XTM::Virtual', 3, "  LTM loading via $url");
+  return $cache{$key} = new XTM (
+				 consistency => $cons,
+				 tie         => new XTM::LTM (url => $url),
 				 last_mod    => time,
 				 last_syncin => time);
 }
@@ -262,6 +294,7 @@ sub _assert_atm {
 sub _assert_topic {
   my $tmurl = shift;
   my $key   = shift || $tmurl;
+  my $cons  = shift || $XTM::default_consistency;
 
   elog ('XTM::Virtual', 3, "_assert topic for tmurl: $tmurl");
   return $cache{$key} if staleness ($key) <= 0;
@@ -276,7 +309,7 @@ sub _assert_topic {
 
   my @path = split (m|/|, $uri->path);
   my $tid  = pop @path || ($tmbase =~ m|tm://(.+)/| ? $1 : die "XTM::Virtual: Cannot determine server identity."); # 'se-namod';
-  my $tm   = @path ? _assert_topic ($tmbase.join ("/", @path)) : _assert_xml ('','_peers');
+  my $tm   = @path ? _assert_topic ($tmbase.join ("/", @path), undef, $cons) : _assert_xml ('','_peers', $cons);
   my $t    = $tm->topic ($tid); # might raise an exception which is propagated
 
   elog ('XTM::Virtual', 5, "  corresponding topic: ", $t);
@@ -291,6 +324,7 @@ sub _assert_topic {
 sub _assert_atom {
   my $expr = shift;
   my $key  = shift || $expr;
+  my $cons = shift || $XTM::default_consistency;
 
   elog ('XTM::Virtual', 3, "  working on '$expr'");
   return $cache{$key} if staleness ($key) <= 0;
@@ -307,14 +341,16 @@ sub _assert_atom {
       scalar URI->new_abs ($uri->path, $urlbase) :
       $uri->as_string;
     elog ('XTM::Virtual', 4, "  loading from $url");
-    return $url =~ /\.atm$/i ? _assert_atm ($url) : _assert_xml($url);
+    return $url =~ /\.atm$/i ? _assert_atm ($url, undef, $cons) :
+           $url =~ /\.ltm$/i ? _assert_ltm ($url, undef, $cons) :
+		               _assert_xml ($url, undef, $cons);
   } elsif ($uri->scheme eq 'tm') {
     my $url = scalar URI->new_abs ($uri->path, $tmbase);
     elog ('XTM::Virtual', 4, "  loading from $url");
-    return _assert_topic ($url);
+    return _assert_topic ($url, undef, $cons);
   } elsif ($expr =~ /^package:\/\/(.+)/i) { ## Firm database, et.al
     elog ('XTM::Virtual', 3, "  loading via $1");
-    return _assert_package ($1);
+    return _assert_package ($1, undef, $cons);
     elog ('XTM::Virtual', 4, "      Done.");
   } else {
     die "XTM::Virtual: Unhandled scheme '".$uri->scheme."'in _assert_expr\n";
@@ -324,6 +360,7 @@ sub _assert_atom {
 sub _assert_expr {
   my $expr = shift;
   my $key  = shift || $expr;
+  my $cons = shift || $XTM::default_consistency;
 
   elog ('XTM::Virtual', 3, "_assert expr '$expr'");
   return $cache{$key} if staleness ($key) <= 0;
@@ -331,10 +368,10 @@ sub _assert_expr {
   my $tm;
 
   unless ($expr =~ /\s*\[\]\s*/) { # so no composite here
-    $tm = _assert_atom ($expr, $expr);
+    $tm = _assert_atom ($expr, $expr, $cons);
   } else {
-    # highly simplistic expression parser      
-    $tm = new XTM;
+    # highly simplistic expression parser
+    $tm = new XTM (consistency => $cons);
     $tm->{id} = $expr; # just to give a good idea what it is about
 
     foreach my $e (split /\s*\[\]\s*/, $expr) {

@@ -30,7 +30,7 @@ use URI;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.11';
+$VERSION = '0.13';
 
 =pod
 
@@ -95,7 +95,7 @@ Example:
 
 =cut
 
-my $topic_cntr = 0;
+our $topic_cntr = 0;
 
 sub new {
   my $class   = shift;
@@ -147,7 +147,37 @@ sub default_populate {
 
 =over
 
-=item I<occurrences>
+=item I<id>:
+
+print I<$t>->id
+
+I<$t>->id ("x123");
+
+returns the id of the topic. If provided with a non-empty scalar parameter, this value will be
+used to change the id.
+
+=cut
+
+sub id {
+  my $self = shift;
+  my $id   = shift;
+
+  if ($id) {
+     $self->{ids} = [ grep ($_ ne $self->{id}, @{$self->{ids}}), $id ];
+     $self->{id}  = $id;
+  }
+  return $self->{id};
+}
+
+=pod
+
+=item I<occurrences>:
+
+@{ I<$t>->occurrences }
+
+I<$t>->occurrences ( I<$coderef> )
+
+I<$t>->occurrences ( I<$arrayref> )
 
 returns the occurrences of the topic as a list reference. If provided with a CODEREF parameter,
 this subroutine will be used to filter the occurrences. If provided with a ARRAYREF
@@ -169,7 +199,11 @@ sub occurrences {
 
 =pod
 
-=item I<map>
+=item I<map>:
+
+I<$t>->map
+
+I<$t>->map ( I<$newmap> )
 
 is an accessor method for the C<map> component.
 
@@ -182,7 +216,9 @@ sub map {
 
 =pod
 
-=item I<has_instanceOf>
+=item I<has_instanceOf>:
+
+I<$t>->has_instanceOf ( I<$type_topic_id> )
 
 returns true if the topic is a B<direct> subtype of a topic specified as C<tid> for
 the only parameter.
@@ -212,74 +248,136 @@ sub has_instanceOf {
 
 =pod
 
-=item I<canonicalize>
+=item I<add_defaults>
 
-This method will simplify the topic by eliminating duplicates as prescribed in F.6.
+I<$t>->add_defaults
 
-   $t->canonicalize();
+This methods add default values according to the XTM standard. Specifically,
+it assures that
+
+=over
+
+=item The topic has at least one C<instanceOf> component and there at least
+one entry. If not, one will be generated (XTM clause 3.6.1).
+
+=item Every occurrence must have a type (XTM clause 3.9.1).
+
+=item If a scope exists (in an occurrence or a baseName), then at
+least one reference must be there (XTM clause 3.3.1).
+
+=back
 
 =cut
 
-sub canonicalize {
+sub add_defaults {
   my $self = shift;
 
-  if ($self->instanceOfs) {
-    my $p = 0;
-    $self->instanceOfs ([ grep ($_->reference->href ne $p && ($p = $_->reference->href), 
-                           sort {$a->reference->href cmp $b->reference->href} @{$self->instanceOfs})]);
+  # 3.6.1
+  unless ($self->{instanceOfs} && @{$self->{instanceOfs}}) {
+    $self->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})));
   }
-  if ($self->baseNames) {
-    my $p = 0;
-sub bacult { # computes a value which allows to 'compare' to occurrences
-  my $bn = shift;
-  my $v;
-
-  $v .= $bn->baseNameString->string;
-  $v .= join "", map { $_->href } @{$bn->scope->references};
-  return $v;
-}
-
-    $self->baseNames ([ grep (bacult($_) ne $p && ($p = bacult($_)), 
-                           sort {bacult($a) cmp bacult($b) } @{$self->baseNames})]);
-    foreach my $bn (@{$self->baseNames}) {
-      $bn->scope->references ( [ sort {ref ($a) cmp ref ($b) || $a->href cmp $b->href } @{$bn->scope->references} ]);
+  foreach my $o (@{$self->{occurrences}}) {
+    # 3.3.1
+    unless ($o->{scope}) {
+      $o->add (new XTM::scope ( references => [ new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ]));
     }
-  }
-  if (0 && $self->occurrences) {
-    my $p = 0;
-sub occult { # computes a value which allows to 'compare' to occurrences
-  my $oc = shift;
-  my $v;
-
-  $v .= ref ($oc); # resourceRef or resourceData
-  if (ref($oc) eq 'XTM::resourceRef') {
-     $v .= $oc->resource->data;
-  } else {
-     $v .= $oc->resource->href;
-  }
-  $v .= join "", map { $_->href } @{$oc->scope->references};
-  $v .= $oc->instanceOf->reference->href;
-  return $v;
-}
-    $self->occurrences ([ grep (occult($_) ne $p && ($p = occult ($_)), 
-                           sort {occult ($a) cmp occult ($b) } @{$self->occurrences})]);
-    foreach my $oc (@{$self->occurrences}) {
-      $oc->scope->references ( [ sort {ref ($a) cmp ref ($b) || $a->href cmp $b->href } @{$oc->scope->references} ]);
+    # 3.9.1
+    unless ($o->{instanceOf}) {
+      $o->add (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{occurrence})));
     }
   }
 
-  if ($self->subjectIdentity && $self->subjectIdentity->references) {
-    my $p = 0;
-    $self->subjectIdentity->references ([
-         grep ($_->href ne $p && ($p = $_->href),
-               sort {$a->href cmp $b->href} @{$self->subjectIdentity->references})
-                                         ]);
+  foreach my $b (@{$self->{baseNames}}) {
+    unless ($b->{scope}) {
+      $b->add (new XTM::scope ( references => [ new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ]));
+    }
   }
+
 }
 
 =pod
 
-=item I<connected>
+=item I<canonicalize>
+
+I<$t>->canonicalize
+
+This method simplifies the topic by eliminating duplicates as prescribed in F.6.
+
+=cut
+
+sub __make_uniq_string {
+#warn " !! make _uniq called";
+  my $list = shift;
+  my %found;
+  return [ grep ( ! $found{$_}++ , @$list ) ];
+}
+
+sub __make_uniq_ref {
+  my $eval = shift;
+  my $list = shift;
+
+  my %found;
+  for (my $i = 0, my $l; defined ($l = $list->[$i]); $i++) {
+    my $f = &$eval ($l);;
+#warn "f is ".$f;
+    if ($found{$f}++) {
+#      warn "found duplicate $f";
+#warn "------before splice ".Dumper $list;
+      splice (@$list, $i, 1);
+#warn "------after splice ".Dumper $list;
+    }
+  }
+}
+
+use Digest::MD5;
+
+sub canonicalize {
+  my $self = shift;
+
+#  warn " canon : ".$self->{id};
+
+#  warn "making uniq".Dumper $self->{ids};
+  $self->{ids} = __make_uniq_string  ($self->{ids}) 
+    if @{$self->{ids}} > 1;
+#  warn "     after making uniq".Dumper $self->{ids};
+#  warn "making uniq2".Dumper $self->{instanceOfs};
+  __make_uniq_ref (sub { $_[0]->{reference}->{href}}, $self->{instanceOfs}) 
+    if @{$self->{instanceOfs}} > 1;
+#  warn "     after making uniq2".Dumper $self->{instanceOfs};
+
+  my $md5 = Digest::MD5->new;
+  foreach my $bn ($self->{baseNames} ? @{$self->{baseNames}} : ()) {
+    next if $bn->{fingerprint};
+    $md5->add($bn->{baseNameString}->{string});
+    my @hrefs = map { $_->{href} } @{$bn->{scope}->{references}};
+    foreach my $h (sort { $a cmp $b } @hrefs) { # they have to be sorted!
+      $md5->add($h);
+    }
+    $bn->add_fingerprint ($md5->hexdigest);  # automatically resets md5 object!
+#    warn "bn: ".$bn->{baseNameString}->{string}." has ".$bn->{fingerprint};
+  }
+
+  __make_uniq_ref (sub { $_[0]->{fingerprint} }, $self->{baseNames})
+    if $self->{baseNames} && @{$self->{baseNames}} > 1;
+
+#  die "XTM::topic: topic has more than one addressable resource (violates XTM clause 3.6.2)"
+#    if ($self->{subjectIdentity} && 
+#	$self->{subjectIdentity}->{references} &&
+#	@{$self->{subjectIdentity}->{references}} > 1 &&
+#	grep (isa($_, 'XTM::resourceRef'), @{$self->{subjectIdentity}->{references}}) > 1);
+
+  __make_uniq_ref (sub { $_[0]->{href} }, $self->{subjectIdentity}->{references})
+    if ($self->{subjectIdentity} && 
+	$self->{subjectIdentity}->{references} &&
+	@{$self->{subjectIdentity}->{references}} > 1)
+
+}
+
+=pod
+
+=item I<connected>:
+
+@{ I<$t>->connected }
 
 returns a list reference of all topic references mentioned in this topic. These
 references might be 'internal' or 'external' ones.
@@ -311,7 +409,7 @@ sub connected {
      push @connected, $o->instanceOf->reference->href;
   }
   if ($self->subjectIdentity) {
-     push @connected, $self->subjectIdentity->href;
+     push @connected, $self->subjectIdentity->resourceRef->href if $self->subjectIdentity->resourceRef;
   }
   # TOBEDONE
   # variants
@@ -320,7 +418,9 @@ sub connected {
 
 =pod
 
-=item I<xml>
+=item I<xml>:
+
+I<$t>->xml ( I<$xmlwriter> )
 
 returns an XML representation of the topic.
 
@@ -356,7 +456,7 @@ sub xml {
 
 =head1 SEE ALSO
 
-L<XTM>
+L<XTM>, L<XTM::generic>
 
 =head1 AUTHOR INFORMATION
 
@@ -373,3 +473,26 @@ http://www.perl.com/perl/misc/Artistic.html
 
 __END__
 
+  if (0 && $self->occurrences) {
+    die "I am not here";
+    my $p = 0;
+sub occult { # computes a value which allows to 'compare' to occurrences
+  my $oc = shift;
+  my $v;
+
+  $v .= ref ($oc); # resourceRef or resourceData
+  if (ref($oc) eq 'XTM::resourceRef') {
+     $v .= $oc->resource->data;
+  } else {
+     $v .= $oc->resource->href;
+  }
+  $v .= join "", map { $_->href } @{$oc->scope->references};
+  $v .= $oc->instanceOf->reference->href;
+  return $v;
+}
+    $self->occurrences ([ grep (occult($_) ne $p && ($p = occult ($_)), 
+                           sort {occult ($a) cmp occult ($b) } @{$self->occurrences})]);
+    foreach my $oc (@{$self->occurrences}) {
+      $oc->scope->references ( [ sort {ref ($a) cmp ref ($b) || $a->href cmp $b->href } @{$oc->scope->references} ]);
+    }
+  }

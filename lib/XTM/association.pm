@@ -20,14 +20,14 @@ use XTM::Log ('elog');
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.04';
+$VERSION = '0.06';
 
 my $assoc_cntr = 0;
 
 sub new {
   my $class = shift;
   my %pars  = @_;
-  elog ($class, 5, "new");
+#  elog ($class, 5, "new");
 
   my $self  = bless { id => $pars{id} || sprintf ("a-%10.10d", $assoc_cntr++),
 		    }, $class;
@@ -54,6 +54,8 @@ Generic container for accessor functions.
 
 =item I<xml>
 
+I<$association>->xml (I<$xmlwriter>)
+
 returns an XML representation of the association.
 
 Example:
@@ -73,6 +75,40 @@ sub xml {
     $m->xml($writer);
   }
   $writer->endTag ('association');
+}
+
+=pod
+
+=item I<add_defaults>
+
+I<$association>->add_defaults
+
+This methods add default values according to the XTM standard. Specifically,
+it assures that
+
+=over
+
+=item The association has at exactly one C<instanceOf> component and there
+is an entry. If not, one will be generated (XTM clause 3.8.1).
+
+=item If a scope exists, then at
+least one reference must be there (XTM clause 3.8.1).
+
+=back
+
+=cut
+
+sub add_defaults {
+  my $self = shift;
+
+  # 3.8.1
+  unless ($self->instanceOf) {
+    $self->add (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{association})));
+  }
+  # 3.3.1
+  unless ($self->scope) {
+    $self->add (new XTM::scope ( references => [ new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ]));
+  }
 }
 
 =pod
@@ -100,7 +136,8 @@ sub connected {
     push @connected, $r->href;
   }
   foreach my $m (@{$self->members}) {
-    push @connected, $m->roleSpec->reference->href;
+    push @connected, $m->roleSpec->reference->href
+      if $m->roleSpec;
     foreach my $r (@{$m->references}) {
       push @connected, $r->href;
     }

@@ -1,36 +1,13 @@
 # -*-perl-*-
 use strict;
 use warnings;
-use Test::More tests => 50; #qw(no_plan);
+use Test::More tests => 52; #qw(no_plan);
 
 use XTM;
 use XTM::AsTMa;
 use Data::Dumper;
 $Data::Dumper::Indent = 1;
 
-#-- check setting of consistency ---------------------------------------------------------
-{
-  my $tm;
-
-  $tm = new XTM (consistency => { merge => [ 'Topic_Naming_Constraint' ] });
-  is ($tm->consistency->{merge}->[0], 'Topic_Naming_Constraint', 'setting consistency levels');
-  is (scalar @{$tm->consistency->{merge}}, 1,                    'setting consistency levels');
-  
-  foreach my $c (qw(duplicate_suppression follow_maps)) {
-    foreach my $d (@{$XTM::default_consistency->{$c}}) {
-      ok (grep ($_ eq $d, @{$tm->consistency->{$c}}), "checking $c $d");
-    }
-  }
-  
-  $tm = new XTM (consistency => { merge                 => [ 'all' ],
-				  duplicate_suppression => [ 'all' ],
-				  follow_maps           => [ 'all' ] });
-  foreach my $c (keys %$XTM::max_consistency) {
-    foreach my $d (@{$XTM::max_consistency->{$c}}) {
-      ok (grep ($_ eq $d, @{$tm->consistency->{$c}}), "checking $c $d");
-    }
-  }
-}
 #-- check various flavours of merging for the number of resulting topics -----------------
 
 my $t0815 = '
@@ -95,6 +72,23 @@ my $t0822 = '
 t0822
 bn @ xxx zzz : something completely different
 ';
+
+my $t0823 = '
+t0816 reifies http://www.0816.com/
+bn: something different
+';
+
+{
+  my $astma = join ("", (map { eval "\$$_" } qw(t0823 t0816)));
+  eval {
+    my $tm = new XTM (consistency => { merge => [ 'Id_based_Merging', 'Topic_Naming_Constraint' ] },
+		      tie => new XTM::AsTMa (auto_complete => 0,
+					     text => $astma));
+  };
+  like ($@, qr/incompatible/i, 'detected duplicate resourceRef');
+}
+
+
 
 my %tests = (
 # TNC Based merging
@@ -171,6 +165,31 @@ foreach my $t (sort keys %tests) {
 #print Dumper $tm;
 }
 
+#__END__
+
+#-- check setting of consistency ---------------------------------------------------------
+{
+  my $tm;
+
+  $tm = new XTM (consistency => { merge => [ 'Topic_Naming_Constraint' ] });
+  is ($tm->consistency->{merge}->[0], 'Topic_Naming_Constraint', 'setting consistency levels');
+  is (scalar @{$tm->consistency->{merge}}, 1,                    'setting consistency levels');
+  
+  foreach my $c (qw(duplicate_suppression follow_maps)) {
+    foreach my $d (@{$XTM::default_consistency->{$c}}) {
+      ok (grep ($_ eq $d, @{$tm->consistency->{$c}}), "checking $c $d");
+    }
+  }
+  
+  $tm = new XTM (consistency => { merge                 => [ 'all' ],
+				  duplicate_suppression => [ 'all' ],
+				  follow_maps           => [ 'all' ] });
+  foreach my $c (keys %$XTM::max_consistency) {
+    foreach my $d (@{$XTM::max_consistency->{$c}}) {
+      ok (grep ($_ eq $d, @{$tm->consistency->{$c}}), "checking $c $d");
+    }
+  }
+}
 #-- check result details of merging ------------------------------------------------
 {
   my @topics = qw (t0820 t0817 t0816 t0818);
@@ -213,6 +232,28 @@ foreach my $t (sort keys %tests) {
     is (scalar @{$tm->topics ("occurrence regexps /$_/")}, 1, "merged occurrence $_");
   }
 }
+
+
+
+{ # test for Jan
+  my $tm = new XTM (consistency => { merge => [ 'Subject_based_Merging' ] });
+
+  use XTM::Path;
+  my $xtmp = new XTM::Path;
+
+  my $t1 = $xtmp->create ('topic[baseNameString = "rumsti"]');
+  $t1->add_defaults;
+  $tm->add ($t1);
+  my $t2 = $xtmp->create ('topic[baseNameString = "rumsti"]');
+  $t2->add_defaults;
+  $tm->add ($t2);
+  is (@{$tm->topics}, 2, 'same name, no TNC, no merge');
+#  print Dumper $tm;
+}
+
+#__END__
+
+
 __END__
 
 

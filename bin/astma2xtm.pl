@@ -95,12 +95,16 @@ sub handle_encoding {
   my $name = shift;
   my $encoding = shift;
 
-  $self->{writer}->xmlDecl($encoding);
-  $self->{writer}->startTag([ $XTM::Namespaces::topicmap_ns, "topicMap"],
-			    "id"          => $name,
-#			    [ $XTM::Namespaces::xlink_ns, "href" ] => "",
-			   );
-  $self->{encoding_found} = 1;
+  unless ($self->{encoding_found}) {
+    $self->{writer}->xmlDecl($encoding);
+    $self->{writer}->startTag([ $XTM::Namespaces::topicmap_ns, "topicMap"],
+			      "id"          => $name,
+			      #			    [ $XTM::Namespaces::xlink_ns, "href" ] => "",
+			     );
+    $self->{encoding_found} = 1;
+  } else {
+    warn "astma2xtm: Duplicate encoding '$encoding' ignored";
+  }
 }
 
 
@@ -243,7 +247,7 @@ Please refer to the online documentation
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 200[1-2], Robert Barta <rho@telecoma.net>, All rights reserved.
 
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

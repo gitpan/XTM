@@ -1,7 +1,7 @@
 # -*-perl-*-
 use strict;
 use warnings 'all';
-use Test::More tests => 42;
+use Test::More tests => 59;
 
 use XTM;
 use XTM::Memory;
@@ -17,13 +17,97 @@ sub die_ok {
     is($tm = new XTM (tie => new XTM::AsTMa (text => $_[0])), $_[1], $_[2]);
     fail ($_[2].": did not die -> not good");
   }; if ($@) {
-print "died because of $@\n";
+    warn "died because of $@\n";
     pass ($_[2].": died -> good!");
   }
 }
 
 
 require_ok( 'XTM::AsTMa' );
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+topic
+in: Ich chan Glaas ässe, das tuet mir nöd weeh
+
+"));
+is (@{$tm->topics('occurrence regexps /\x{E4}sse/')}, 1, 'no encoding');
+
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+%encoding iso8859-1
+
+topic
+in: Ich chan Glaas ässe, das tuet mir nöd weeh
+
+"));
+is (@{$tm->topics('occurrence regexps /\x{C3A4}sse/')}, 1, 'single encoding');
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+%encoding iso8859-1
+
+topic
+in: Ich chan Glaas ässe, das tuet mir nöd weeh
+
+%encoding iso8859-2
+
+topic2
+in: Mohu jíst sklo, neublí?í mi
+
+"));
+is (@{$tm->topics('occurrence regexps /\x{C3A4}sse/')}, 1, 'double encoding1');
+is (@{$tm->topics('occurrence regexps /Mohu/')},        1, 'double encoding2');
+is (@{$tm->topics('occurrence regexps /\x{C3AD}st/')},  1, 'double encoding3');
+
+#print Dumper $tm;
+
+#__END__
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+aaa (xxx)
+"));
+is (@{$tm->topics()}, 1, 'auto compl off, no directive');
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 1, text => "
+aaa (xxx)
+"));
+is (@{$tm->topics()}, 2, 'auto compl on, no directive');
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+%auto_complete on
+
+aaa (xxx)
+"));
+is (@{$tm->topics()}, 2, 'auto compl off, but directive');
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 1, text => "
+%auto_complete on
+
+aaa (xxx)
+"));
+is (@{$tm->topics()}, 2, 'auto compl on, and directive');
+
+#__END__
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+aaa (xxx) reifies http://aaa.com/ is-reified-by ooo is-reified-by ppp
+"));
+
+
+is (@{$tm->topics('reifies regexps /aaa.com/')}, 1, "test topic with reification");
+is (@{$tm->topics('reifies regexps /aaa/')}, 2, "test topic with back reification");
+is (@{$tm->topics('baseName regexps /ooo/')}, 1, "test topic with back reification");
+is (@{$tm->topics('baseName regexps /ppp/')}, 1, "test topic with back reification");
+
+
+$tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
+(aaa) is-reified-by ooo is-reified-by ppp
+ xxx: yyy
+ zzz: uuu
+"));
+
+
+is (@{$tm->topics('reifies regexps /a-000/')}, 1, "test assoc with reifications");
+
 
 die_ok ('ttt (bbb)
 in: 
@@ -88,9 +172,19 @@ is (@{$tm->topics()},                               9, 'test comment');
 
 #-----------------------------------------------------------------------
 $tm = new XTM (tie => new XTM::AsTMa (text => '
+aaa (bbbbb)
+bn: AAA
+in:         blabla  
+'));
+is (@{$tm->topics ('occurrence regexps /  blabla  /')},0, 'test blanks in resourceData 1');
+is (@{$tm->topics ('occurrence regexps /blabla/')},    1, 'test blanks in resourceData 2');
+
+
+#-----------------------------------------------------------------------
+$tm = new XTM (tie => new XTM::AsTMa (text => '
 aaa (bbbbb cccc dddd)
 bn: AAA
-in: blabla \
+in:  blabla \
      blobloblo \
      xxxxxxxx
 
@@ -181,6 +275,13 @@ role : aaa
 role2 : 
 ", 1, "test assoc missing player raises error");
 
+die_ok ("
+(xxx)
+
+rumsti
+
+", 1, "test assoc missing member raises error");
+
 is (@{($tm = new XTM (tie => new XTM::AsTMa (text => "
 (xxx)
 member : aaa1
@@ -250,7 +351,7 @@ aaa (xxxx) reifies http://www.remsti.com/
 
 bbb (xxxx) reifies http://www.remsti.com/
  bn: ramsti
-")))->topics('reifies regexp /remsti/')}, 1, "test topic with reification");
+")))->topics('reifies regexps /remsti/')}, 1, "test topic with reification");
 
 is (@{($tm = new XTM (tie => new XTM::AsTMa (auto_complete => 0, text => "
 aaa (xxxx)
@@ -260,7 +361,7 @@ aaa (xxxx)
 
 bbb (xxxx)
  bn: ramsti
-")))->topics('indicates regexp /ramsti/')}, 1, "test topic with subjectIndicator");
+")))->topics('indicates regexps /ramsti/')}, 1, "test topic with subjectIndicator");
 
 # test directives
 

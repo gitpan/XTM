@@ -9,11 +9,28 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( );
-$VERSION = '0.03';
+$VERSION = '0.06';
 
 use XTM::Memory;
 use XTM::Log ('elog');
 use XTM::grammar;
+
+use XTM::topic;
+use XTM::baseName;
+use XTM::baseNameString;
+use XTM::occurrence;
+use XTM::resourceRef;
+use XTM::resourceData;
+use XTM::instanceOf;
+use XTM::topicRef;
+use XTM::subjectIndicatorRef;
+use XTM::subjectIdentity;
+use XTM::scope;
+use XTM::association;
+use XTM::member;
+use XTM::roleSpec;
+
+use XTM;
 
 use URI;
 
@@ -69,7 +86,7 @@ document (this might even not exist if the map is created via other means),
 but is instead using the L<XTM::base> data structure. This implies that all
 querying is done B<after> merging and consolidation has been done.
 
-Obviously, XTM::Path B<can not> be a complete query language, but it is useful
+Obviously, XTM::Path B<cannot> be a complete query language, but it is useful
 in many development situations where drilling down the data structure is a cumbersome
 exercise. Together with intelligent C<add> methods in L<XTM::Memory> and L<XTM::generic> this 
 should simplify drastically the access, creation and manipulation of XTM data structures.
@@ -159,7 +176,9 @@ Currently expressions can have the following simple syntax (EBNF):
 
    compare_op   --> '=' | '!=' | '<' | '>' | '<=' | '>='
 
-   value        --> numeric | string
+   value        --> numeric | string | variable
+
+   variable     --> ?name
 
 
 =head2 Elements
@@ -188,13 +207,18 @@ Following attributes are included:
 
 =item C<id>:
 
-This is only applicable for C<topic> and C<association> elements.
+This is only applicable for C<topic> and C<association> elements. When creating, the
+id attribute can be only be used together with topic, not with associations.
 
 =item C<href>:
 
 This is only application for C<topicRef>, C<subjectIndicatorRef>, C<resourceRef> elements.
 
 =back
+
+=head2 Variables
+
+See the hint about speed.
 
 =head2 Examples
 
@@ -242,6 +266,35 @@ The XTM syntax allows #PCDATA inside a baseNameString. The baseName may also may
 variants which - in turn - may contain another resourceData. So the above itself is not unambiguous. Use
 baseNameString[text() = "something"] instead.
 
+=item I<How can I improve the speed?>
+
+Try to avoid parsing. The object will maintain cached copies of an already
+parsed expression, so here the package tries to take care itself.
+
+If you use always a slightly different expression, you might want to use variables,
+as in
+
+  foreach my $n (...all names...) {
+     $xtmp->find ('topic[baseNameString = ?n]', undef, { n => $name});
+  }
+
+That way the expression remains the same and can be cached.
+
+=item I<It is still not fast. What else?>
+
+What you should also try to avoid is to create new objects too frequently.
+Every object needs a parser which has to be instantiated. This is also
+an expensive operation.
+
+There is no reason (aside from a slightly increased memory consumption)
+why you should not use one and the same object for various finds.
+
+=item I<When creating data structures, they are not automatically filled
+with defaults according to XTM?>
+
+No, you should use the methods C<add_default> for XTM::topics and XTM::associations
+to explicitely control this once your are done with a particular I<create>.
+
 =back
 
 =head1 INTERFACE
@@ -255,7 +308,7 @@ perform queries. Optional, you may pass I<any> XTM object (maps or components th
 This object will become the default context (ala XPath) which will be used in case
 no other context is explicitely used.
 
-Example
+Example:
 
   $xtmp = new XTM::Path (default => $tm);
 
@@ -276,7 +329,7 @@ sub new {
 
 =item B<find>
 
-I<@nodelist> = I<$xtmp>->find (I<$path>, [I<$context>])
+I<@nodelist> = I<$xtmp>->find (I<$path>, [I<$context>], [I<$value_hash>])
 
 B<find> returns a unique list of subnodes of the context which conform to the 
 XTM::Path specification provided as the first parameter. If the second 
@@ -296,6 +349,11 @@ Examples:
 
   # find all topics, providing explicitely a context
   @topics = $xtmp->find ('/topic', $tm2);
+
+Since version 0.06 the object caches already parsed expressions to avoid expensive 
+parsing at every invocation of I<find>. To increase the cache rate you should consider 
+to use variables (see Hints).
+
 
 =cut
 
@@ -387,7 +445,13 @@ our $xtmpath_grammar = q {
 
 			 compare_op : '=' | '!=' | '<' | '>' | '<=' | '>='
 
-			 value : path_numeric | path_string
+			 value : path_numeric | path_string | variable
+
+			 variable : /\?\w+/
+			 {
+			  $item[1] =~ /\?(.+)/;
+			  $return = { variable => $1 };
+			 }
 
 			 path_numeric : /[\+\-\d\.]+/
 
@@ -404,7 +468,7 @@ sub __make_parser {
     require XTM::Path::CParser;
     $parser = XTM::Path::CParser->new();
   }; if ($@) {
-    #    warn "could not find CParser ($@)";
+    warn "could not find CParser ($@)";
     use Parse::RecDescent;
     $parser = new Parse::RecDescent ($xtmpath_grammar) or die "XTM::Path: Problem in grammar";
   };
@@ -419,7 +483,7 @@ sub __do_parse {
     $p = $parser->path_startrule (\$pe);
     #    use Data::Dumper;
     #    warn "pe is now '$pe'\n".Dumper $p;
-    die "XTM::Path: Invalid syntax around '$pe'" if $pe;
+    die "XTM::Path: Invalid syntax around '$pe'" if $pe =~ /\S/;
   }; if ($@) {
     die $@;
   }
@@ -428,26 +492,34 @@ sub __do_parse {
 
 
 sub find {
-  my $self = shift;
-  my $pe   = shift;
+  my $self    = shift;
+  my $pe      = shift;
   my $context = shift || $self->{default};
+  my $values  = shift || {};
   
-  die "XTM::Path: no context defined" unless $context;
+  die "XTM::Path: no context defined"            unless $context;
+  die "XTM::Path: values must be hash reference" unless ref ($values) eq 'HASH';
   
-  my $parser = __make_parser();
-  my $p      = __do_parse($pe, $parser);
-  return __find ($context, @$p);
+  unless ($self->{parser}) { # used cached one
+    $self->{parser} = __make_parser();
+  }
+
+  unless ($self->{cache}->{$pe}) {
+    $self->{cache}->{$pe} = __do_parse($pe, $self->{parser});
+  }
+
+  return __find ($context, $values, @{$self->{cache}->{$pe}});
 }
 
 my $ACTIONS = {
 	 '@id'             => {
-			      'XTM::topic'               => sub { my $c = shift; $c->id },
-			      'XTM::association'         => sub { my $c = shift; $c->id },
+			      'XTM::topic'               => sub { my $c = shift; $c->{id} },
+			      'XTM::association'         => sub { my $c = shift; $c->{id} },
 			      },
 	 '@href'           => {
-			      'XTM::topicRef'            => sub { my $c = shift; $c->href },
-			      'XTM::subjectIndicatorRef' => sub { my $c = shift; $c->href },
-			      'XTM::resourceRef'         => sub { my $c = shift; $c->href },
+			      'XTM::topicRef'            => sub { my $c = shift; $c->{href} },
+			      'XTM::subjectIndicatorRef' => sub { my $c = shift; $c->{href} },
+			      'XTM::resourceRef'         => sub { my $c = shift; $c->{href} },
 			      },
 	 'topic'           => {
 			      'XTM'                      => sub { my $c = shift; map { $c->topic ($_) } @{$c->topics()} },
@@ -455,58 +527,58 @@ my $ACTIONS = {
 			      },
 	 'baseName'        => {
 			      'regress' => [ 'XTM',  'XTM::Memory' ],
- 			      'XTM::topic'               => sub { my $c = shift; @{$c->baseNames} },
+ 			      'XTM::topic'               => sub { my $c = shift; @{$c->{baseNames}} },
 			      },
 	 'baseNameString'  => {
 			      'regress' => [ 'XTM', 'XTM::Memory', 'XTM::topic' ],
-                              'XTM::baseName'            => sub { my $c = shift; $c->baseNameString; },
+                              'XTM::baseName'            => sub { my $c = shift; $c->{baseNameString}; },
 			      },
 	 'occurrence'      => {
 			      'regress' => [ 'XTM', 'XTM::Memory' ],
-			      'XTM::topic'               => sub { my $c = shift; @{$c->occurrences} },
+			      'XTM::topic'               => sub { my $c = shift; @{$c->{occurrences}} },
 			      },
 	 'resourceRef'     => {
 			      'regress' => [ 'XTM', 'XTM::Memory', 'XTM::topic', 'XTM::association' ],
-			      'XTM::member'              => sub { my $c = shift; grep (ref($_) eq 'XTM::resourceRef', @{$c->references}) },
-			      'XTM::scope'               => sub { my $c = shift; grep (ref($_) eq 'XTM::resourceRef', @{$c->references}) },
-			      'XTM::subjectIdentity'     => sub { my $c = shift; $c->resourceRef },
-			      'XTM::occurrence'          => sub { my $c = shift; grep (ref($_) eq 'XTM::resourceRef', ($c->resource))},
+			      'XTM::member'              => sub { my $c = shift; grep (ref($_) eq 'XTM::resourceRef', @{$c->{references}}) },
+			      'XTM::scope'               => sub { my $c = shift; grep (ref($_) eq 'XTM::resourceRef', @{$c->{references}}) },
+			      'XTM::subjectIdentity'     => sub { my $c = shift; $c->{resourceRef} },
+			      'XTM::occurrence'          => sub { my $c = shift; grep (ref($_) eq 'XTM::resourceRef', ($c->{resource}))},
 			      },
 	 'resourceData'    => {
 			      'regress' => [ 'XTM', 'XTM::Memory' ],
-			      'XTM::occurrence'          => sub { my $c = shift; grep (ref($_) eq 'XTM::resourceData', ($c->resource))},
+			      'XTM::occurrence'          => sub { my $c = shift; grep (ref($_) eq 'XTM::resourceData', ($c->{resource}))},
 			      },
 	 'instanceOf'      => {
 			      'regress' => [ 'XTM', 'XTM::Memory', ],
-			      'XTM::topic'               => sub { my $c = shift; @{$c->instanceOfs}},
-			      'XTM::association'         => sub { my $c = shift; $c->instanceOf},
-			      'XTM::occurrence'          => sub { my $c = shift; $c->instanceOf},
+			      'XTM::topic'               => sub { my $c = shift; @{$c->{instanceOfs}}},
+			      'XTM::association'         => sub { my $c = shift; $c->{instanceOf}},
+			      'XTM::occurrence'          => sub { my $c = shift; $c->{instanceOf}},
 			      },
 	 'topicRef'        => {
 			      'regress' => [ 'XTM', 'XTM::Memory', 'XTM::topic', 'XTM::occurrence' ],
-			      'XTM::instanceOf'          => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef',  ($c->reference))  },
-			      'XTM::member'              => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef', @{$c->references}) },
-			      'XTM::roleSpec'            => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef',  ($c->reference))  },
-			      'XTM::scope'               => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef', @{$c->references}) },
-			      'XTM::subjectIdentity'     => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef', @{$c->references}) },
+			      'XTM::instanceOf'          => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef',  ($c->{reference}))  },
+			      'XTM::member'              => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef', @{$c->{references}}) },
+			      'XTM::roleSpec'            => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef',  ($c->{reference}))  },
+			      'XTM::scope'               => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef', @{$c->{references}}) },
+			      'XTM::subjectIdentity'     => sub { my $c = shift; grep (ref($_) eq 'XTM::topicRef', @{$c->{references}}) },
 			      },
 	 'subjectIndicatorRef' => {
 			      'regress' => [ 'XTM', 'XTM::Memory', 'XTM::topic', 'XTM::association' ],
-			      'XTM::scope'               => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef', @{$c->references}) },
-			      'XTM::instanceOf'          => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef',  ($c->reference))  },
-			      'XTM::subjectIdentity'     => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef', @{$c->references}) },
-			      'XTM::member'              => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef', @{$c->references}) },
-			      'XTM::roleSpec'            => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef',  ($c->reference))  },
+			      'XTM::scope'               => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef', @{$c->{references}}) },
+			      'XTM::instanceOf'          => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef',  ($c->{reference}))  },
+			      'XTM::subjectIdentity'     => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef', @{$c->{references}}) },
+			      'XTM::member'              => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef', @{$c->{references}}) },
+			      'XTM::roleSpec'            => sub { my $c = shift; grep (ref($_) eq 'XTM::subjectIndicatorRef',  ($c->{reference}))  },
 			      },
 	 'subjectIdentity' => {
 			      'regress' => [ 'XTM', 'XTM::Memory' ],
-			      'XTM::topic'               => sub { my $c = shift; $c->subjectIdentity },
+			      'XTM::topic'               => sub { my $c = shift; $c->{subjectIdentity} },
 			      },
 	 'scope'           => {
 			      'regress' => [ 'XTM', 'XTM::Memory', 'XTM::topic' ],
-			      'XTM::baseName'            => sub { my $c = shift; $c->scope },
-			      'XTM::association'         => sub { my $c = shift; $c->scope },
-			      'XTM::occurrence'          => sub { my $c = shift; $c->scope },
+			      'XTM::baseName'            => sub { my $c = shift; $c->{scope} },
+			      'XTM::association'         => sub { my $c = shift; $c->{scope} },
+			      'XTM::occurrence'          => sub { my $c = shift; $c->{scope} },
 			      },
 	 'association'     => {
 			      'XTM'                      => sub { my $c = shift; map { $c->association ($_) } @{$c->associations()} },
@@ -514,19 +586,22 @@ my $ACTIONS = {
 			      },
 	 'member'          => {
 			      'regress' => [ 'XTM', 'XTM::Memory' ],
-			      'XTM::association'         => sub { my $c = shift; @{$c->members} },
+			      'XTM::association'         => sub { my $c = shift; @{$c->{members}} },
 			      },
 	 'roleSpec'        => {
 			      'regress' => [ 'XTM', 'XTM::Memory', 'XTM::association' ],
-			      'XTM::member'              => sub { my $c = shift; $c->roleSpec },
+			      'XTM::member'              => sub { my $c = shift; $c->{roleSpec} },
 			      },
 	};
 
 
+
 sub __find {
-  my $c = shift; # context
-  my @p = @_;    # path (parsed)
-  my $s = shift @p;
+  my $c      = shift; # context
+  my $values = shift; # variable values
+  my @p      = @_;    # path (parsed)
+
+  my $s = shift @p;   # one step after the other
 
 #  warn "looking in ".ref($c)." for ".Dumper ($s, \@p);
   my @candidates;
@@ -537,11 +612,12 @@ sub __find {
 #      warn "regressing: from ".$s->{element}." to ".join(',',@{$XTM::grammar::ISIN->{$s->{element}}});
       my @candidates2;
       for my $r (@{$XTM::grammar::ISIN->{$s->{element}}}) {                    # collect ALL regressable and return that
-	push @candidates2,__find ($c, (
-				       { element    => $r,                     # add intermediate step
-					 predicates => [] },
-				       $s,
-				       @p)
+	push @candidates2,__find ($c,$values,
+				  (
+				   { element    => $r,                     # add intermediate step
+				     predicates => [] },
+				   $s,
+				   @p)
 				 );
       }
       return @candidates2;
@@ -551,13 +627,13 @@ sub __find {
     }
   } elsif ($s->{data}) {
     if ($c->isa ('XTM::baseNameString')) {
-      @candidates = ( $c->string );
+      @candidates = ( $c->{string} );
     } elsif ($c->isa ('XTM::baseName')) {
-      @candidates = ( $c->baseNameString->string );
+      @candidates = ( $c->{baseNameString}->{string} );
     } elsif ($c->isa ('XTM::resourceData')) {
-      @candidates = ( $c->data );
+      @candidates = ( $c->{data} );
     } elsif ($c->isa ('XTM::occurrence')) {
-      @candidates = $c->resource->isa ('XTM::resourceData') ? ($c->resource->data) : ('');
+      @candidates = $c->{resource}->isa ('XTM::resourceData') ? ($c->{resource}->{data}) : ('');
     } elsif ($c->isa ('XTM::topic')) {
       my $pcdata;  # baseNames, resourceDatas
       foreach my $path ([ 
@@ -586,7 +662,7 @@ sub __find {
 			  data => 1
 			 }
 			]) {
-	push @candidates, __find ($c, @{$path});
+	push @candidates, __find ($c, $values, @{$path});
       }
     } elsif ($c->isa ('XTM') || $c->isa ('XTM::Memory')) {
       my $pcdata;  # topics
@@ -599,7 +675,7 @@ sub __find {
 			  data => 1
 			 }
 			]) {
-	push @candidates, __find ($c, @{$path});
+	push @candidates, __find ($c, $values, @{$path});
       }
     } else {
       @candidates = ();
@@ -611,12 +687,12 @@ sub __find {
 #      warn "regressing: from ".$s->{attribute}." to ".join ',',@{$XTM::generic::ISIN->{'@'.$s->{attribute}}};
       my @candidates2;
       for my $r (@{$XTM::grammar::ISIN->{'@'.$s->{attribute}}}) {              # collect ALL regressable and return that
-	push @candidates2, __find ($c, ( 
-					{ element    => $r,
-					  predicates => []
-					},
-					$s,
-					@p));
+	push @candidates2, __find ($c, $values, ( 
+						 { element    => $r,
+						   predicates => []
+						 },
+						 $s,
+						 @p));
       }
       return @candidates2;
     } else {
@@ -629,7 +705,7 @@ sub __find {
   # check predicates on all candidates
   foreach my $predicate (@{$s->{predicates}}) {
 #    warn "checking predicate".Dumper ($predicate)." for ". map {ref($_)} @candidates;
-    @candidates = grep (__check_predicate ($_, $predicate), @candidates);
+    @candidates = grep (__check_predicate ($_, $predicate, $values), @candidates);
 #    warn "    after that ". map {ref($_)} @candidates;
   }
 
@@ -637,7 +713,7 @@ sub __find {
   if (@p) { # yet another step down
     my @candidates2;
     foreach my $c2 (@candidates) {
-      push @candidates2, __find ($c2, @p);
+      push @candidates2, __find ($c2, $values, @p);
     }
     return @candidates2;
   } else {
@@ -646,30 +722,36 @@ sub __find {
 }
 
 sub __check_predicate {
-  my $c = shift;
-  my $p = shift;
+  my $c  = shift;
+  my $p  = shift;
+  my $vs = shift;
 
-#  warn "predicate: ". Dumper $p, ref($c);
+  use Data::Dumper;
+#  warn "predicate: ". Dumper( $p) . "context: " . ref($c);
 
   my $path2 = $p->[0];
 #warn "new path2: ".Dumper $path2;
-  if ($path2->[-1]->{element}) {  # I need text to compare!!
+  if ($path2->[-1]->{element} && $p->[1]) {  # I need compare something, so I need text to compare!
     push @$path2, { 'data' => 1 };
   }
 #warn "new new path2: ".Dumper $path2;
 
-  my @candidates =  __find ($c, @{$p->[0]});
+  my @candidates =  __find ($c, $vs, @{$p->[0]});
 #  warn "now really checking candidates: ".Dumper \@candidates;
 
   foreach my $candidate (@candidates) {
     if ($p->[1]) {  # [something op value]
-#      warn "evaluating: ". "'$candidate' ".$p->[1]." '".$p->[2]."'";
+#      warn "evaluating: ". "'$candidate' ".Dumper ($p->[1])." '".Dumper ($p->[2])."'";
+      my $op    = $p->[1];
+      my $value = ref ($p->[2]) && $p->[2]->{variable} ? $vs->{$p->[2]->{variable}} : $p->[2];
+#      warn " really : ". "'$candidate' $op '$value'";
 #      my $b;
 #      eval "\$b = '$candidate' ".$p->[1]." '".$p->[2]."'";
 #warn "b has now $b";
-      return 1 if eval "'$candidate' ".$p->[1]." '".$p->[2]."'";
+      return 1 if eval "'$candidate' $op '$value'";
     } else {        # [something]
-      return 1 if $candidate;
+#      warn "evaluating only a value '$candidate'";
+      return 1 if defined $candidate;
     }
   }
 
@@ -692,9 +774,59 @@ will be raised (as in 'topic/member' or 'topic/topicRef').
 
 Examples:
 
-  my $o = $xtmp->create ('topic[baseNameString = "xxxx"][@id = "x11"');
+  my $o = $xtmp->create ('topic[baseNameString = "xxxx"][@id = "x11"]');
+
+The object will cache successfully parsed expression. You cannot use variable
+inside path expressions here.
 
 =cut
+
+sub __create_element {
+  my $e = shift;
+
+# brute force as other methods have problems, suspect Parse::RecDescent, but...
+  return new XTM::topic if ($e eq 'topic');
+  return new XTM::baseName if ($e eq 'baseName');
+  return new XTM::baseNameString if ($e eq 'baseNameString');
+  return new XTM::occurrence if ($e eq 'occurrence');
+  return new XTM::resourceRef if ($e eq 'resourceRef');
+  return new XTM::resourceData if ($e eq 'resourceData');
+  return new XTM::instanceOf if ($e eq 'instanceOf');
+  return new XTM::topicRef if ($e eq 'topicRef');
+  return new XTM::subjectIndicatorRef if ($e eq 'subjectIndicatorRef');
+  return new XTM::subjectIdentity if ($e eq 'subjectIdentity');
+  return new XTM::scope if ($e eq 'scope');
+  return new XTM::association if ($e eq 'association');
+  return new XTM::member if ($e eq 'member');
+  return new XTM::roleSpec if ($e eq 'roleSpec');
+}
+
+# THAT did not work
+#      die "XTM::Path: unhandled standalone element '".$s->{element}."'" unless $CREATE->{$s->{element}};
+#      $a = &{$CREATE->{$s->{element}}} ("XTM::".$s->{element});
+# why does this not work under special circumstances?      
+#      my $s = "\$a = XTM::".$s->{element}."->new";
+#      warn "creating a new standalone with '$s'";
+#      eval $s;
+#      warn "eval result $@";
+
+#my $CREATE = { 
+#	       'topic'               => \&XTM::topic::new,
+#	       'baseName'            => \&XTM::baseName::new,
+#	       'baseNameString'      => \&XTM::baseNameString::new,
+#	       'occurrence'          => \&XTM::occurrence::new,
+#	       'resourceRef'         => \&XTM::resourceRef::new,
+#	       'resourceData'        => \&XTM::resourceData::new,
+#	       'instanceOf'          => \&XTM::instanceOf::new,
+#	       'topicRef'            => \&XTM::topicRef::new,
+#	       'subjectIndicatorRef' => \&XTM::subjectIndicatorRef::new,
+#	       'subjectIdentity'     => \&XTM::subjectIdentity::new,
+#	       'scope'               => \&XTM::scope::new,
+#	       'association'         => \&XTM::association::new,
+#	       'member'              => \&XTM::member::new,
+#	       'roleSpec'            => \&XTM::roleSpec::new,
+#	      };
+
 
 sub __create {
   my $c = shift;
@@ -712,8 +844,17 @@ sub __create {
   my $a; # this will contain the data structure devised by $s
 
   if (! defined $c) {                                                # standalone object, no problem to create
-    die "XTM::Path: inconsistent path expression (no attribute or text allowed without context)" unless defined $s->{element};
-    eval "\$a = new XTM::$s->{element}";
+    if ($s->{attribute}) {
+      die "XTM::Path: inconsistent path expression (no attribute '".$s->{attribute}."' allowed without context)";
+    } elsif ($s->{data}) {
+      die "XTM::Path: inconsistent path expression (no text '".$s->{data}."' allowed without context)";
+    }
+    {
+#      warn "before creating an element: ".$s->{element};
+      $a = __create_element ($s->{element});
+#      warn "we created a as ".ref($a);
+      die unless defined $a;
+    }
   } elsif (my $parents = $XTM::grammar::ISIN->{$guide}) {            # we have parents
 #    warn " we have parents for $guide ".join (",",@$parents);
     if (grep ($_ eq $context, @$parents)) {                          # find that context is immediate parent
@@ -745,7 +886,7 @@ sub __create {
     die "XTM::Path: internal consistency violated";
   }
 
-#  warn " now we have :".Dumper $a;
+#  warn " now we have a :".Dumper $a;
 
   foreach my $pred (@{$s->{predicates}}) {
 #    warn " in preds: walk through ".Dumper $pred;
@@ -754,15 +895,16 @@ sub __create {
       push @{$pred->[0]}, { data => 1 } if $pred->[0]->[-1]->{element};  # text() is missing, add it here
     }
 
+#    warn " before pred we have a :".Dumper $a;
     my $new =  __create ($a, $pred->[2], @{$pred->[0]});
-#    warn " in preds: returned ".Dumper $new;
+#    warn " in preds: returned ".Dumper $new. " and a is ".Dumper $a;
     if (defined $new && $new != $a) {                                    # if same object, do nothing
       $a->add ($new);
     }
   }
 
 #warn "before add a: ".ref($a);
-  if (@p) {
+  if (@p) { # tail recursion with rest of path
     my $new = __create ($a, $v, @p);
     if (defined $new && $new != $a) {                                    # if same object, do nothing
       $a->add ($new);
@@ -777,9 +919,16 @@ sub create {
   my $pe   = shift;
   my $context = shift || $self->{default};
 
-  my $parser = __make_parser();
-  my $p      = __do_parse($pe, $parser);
-  return __create (undef, undef, @$p);
+
+  unless ($self->{parser}) { # used cached one
+    $self->{parser} = __make_parser();
+  }
+
+  unless ($self->{cache}->{$pe}) {
+    $self->{cache}->{$pe} = __do_parse($pe, $self->{parser});
+  }
+
+  return __create (undef, undef, @{$self->{cache}->{$pe}});
 }
 
 =pod

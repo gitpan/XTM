@@ -4,7 +4,7 @@ use strict;
 no strict ('subs');
 use vars qw($VERSION);
 
-$VERSION = "0.7";
+$VERSION = "0.8";
 
 =pod
 
@@ -179,6 +179,8 @@ if (@history) {
 }
 
 my $tm; # will have later variables here....
+my $consistency = $XTM::max_consistency;
+
 my $scope = undef;
 $XTM::Log::loglevel = $loglevel;
 
@@ -288,7 +290,8 @@ sub ExecuteCommand {
   } elsif (/^load\s+(.+?)\s*$/) {
     my $expr = $1;
     eval {
-      $tm = new XTM (tie => new XTM::Virtual (expr => $expr));
+      $tm = new XTM (tie         => new XTM::Virtual (expr => $expr),
+		     consistency => $consistency);
     }; if ($@) {
       print $OUT "xtm: Exception: $@\n";
     }
@@ -344,6 +347,15 @@ sub ExecuteCommand {
   } elsif (/^loglevel(\s+(\d+))?/) {
     $XTM::Log::loglevel = $2 if $1;
     print $OUT $XTM::Log::loglevel,"\n";
+  } elsif (/^merge(\s+(.+))?/) {
+    $consistency->{merge} = [ split (/,/, $2) ] if $2;
+    print $OUT join (",", @{$consistency->{merge}}),"\n";
+  } elsif (/^duplicate_suppression(\s+(.+))?/) {
+    $consistency->{duplicate_suppression} = [ split (/,/, $2) ] if $2;
+    print $OUT join (",", @{$consistency->{duplicate_suppression}}),"\n";
+  } elsif (/^follow_maps(\s+(.+))?/) {
+    $consistency->{follow_maps} = [ split (/,/, $2) ] if $2;
+    print $OUT join (",", @{$consistency->{follow_maps}}),"\n";
   } elsif (/^exit/ || /^quit/) {
     save_history();
     exit;
@@ -363,6 +375,10 @@ find assoc  <query>                  finds all assocs according to <query> (see 
 find assoc                           finds all assocs
 assocs                               finds all assocs
 scope [ <scope-tid> ]                show/set scope
+
+merge                                show/set merging policies (comma separated list, see XTM)
+duplicate_suppression                show/set suppressing policies (comma separated list, see XTM)
+follow_maps                          show/set policies for following maps (comma separated list, see XTM)
 
 info                                 get some overview information about the map
 warn                                 find unused topics....

@@ -2,7 +2,7 @@ package XTM::base;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.32';
+$VERSION = '0.33';
 
 =pod
 
@@ -82,6 +82,10 @@ Abstract class
 =item L<XTM::AsTMa>
 
 AsTMa adapter, this allows you to bind maps to an external AsTMa instance
+
+=item L<XTM::LTM>
+
+LTM adapter, this allows you to bind maps to an external LTM instance
 
 =item L<XTM::XML>
 
@@ -175,7 +179,7 @@ generic class definition
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 200[1-2], Robert Barta <rho@telecoma.net>, All rights reserved.
 
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

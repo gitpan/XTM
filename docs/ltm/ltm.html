@@ -1,0 +1,804 @@
+<html>
+<head>
+<title>The Linear Topic Map Notation</title>
+<link rel="stylesheet" href="whitepapers.css" type="text/css">
+</head>
+<body>
+<h1>The Linear Topic Map Notation</h1>
+<h2 class="subtitle">Definition and introduction, version 1.2</h2>
+<table width="100%">
+<tr>
+<td>
+<table>
+<tr>
+<th>By:</th><td>Lars Marius Garshol</td>
+</tr>
+<tr>
+<th>Affiliation:</th><td>Ontopia A/S</td>
+</tr>
+<tr>
+<th>Date:</th><td>&#x24;Date: 2002/05/15 18:25:18 $</td>
+</tr>
+<tr>
+<th>Version:</th><td>Version 1.2 (&#x24;Revision: 1.16 $)</td>
+</tr>
+</table>
+</td><td><img src="logo.gif" alt="" align="right"></td>
+</tr>
+</table>
+<h2>Abstract</h2>
+<p>
+This technical report defines version 1.2 of the Linear Topic Map
+Notation, also known as LTM.  It provides both an introduction and a
+formal definition, the latter in the form of a complete EBNF
+specification given at the end of the document.
+</p>
+
+<p>
+Please note that this document is not a formal specification from any
+recognized standards body, but a Technical Report published by <a href="http://www.ontopia.net">Ontopia</a>, a commercial company,
+for the convenience of all interested parties. The specification may
+be taken up by some standards body at some point, but nothing suggests
+that this will happen soon.
+</p>
+
+<p>
+Version 1.2 extends version 1.1 to provide support for reifying the
+topic map itself, specifying a base URI for the topic map, merging in
+external topic maps, and specifying scope on occurrences and
+associations. Some other minor simplifications and improvements to the
+syntax have also been made.
+</p>
+
+<p>
+Version 1.2 is <em>not</em> completely backwards
+compatible with versions 1.1 and 1.0. One change has been made: scope
+must now be specified <em>after</em> the base name rather
+than in front of it, as before. This change was made to make scope on
+base names consistent with that on associations and occurrences.
+Colons are also no longer allowed in topic IDs, in order to avoid
+problems when users write <tt>related-to(a: b, c: d)</tt>,
+since the colon here is ambiguous.
+</p>
+<h2>Table of contents</h2>
+<ul>
+<li>
+<a href="#N60">1. Linear topic map notation? What's that?</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N87">2. An introduction to the notation</a>
+</li>
+<ul>
+<li>
+<a href="#N92">2.1. Defining topics</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N155">2.2. Defining associations</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N191">2.3. Defining occurrences</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N215">2.4. A complete example</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N227">2.5. Directives</a>
+</li>
+<ul>
+<li>
+<a href="#N235">2.5.1. The TOPICMAP directive</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N268">2.5.2. The MERGEMAP directive</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N341">2.5.3. The BASEURI directive</a>
+</li>
+<ul>
+</ul>
+</ul>
+</ul>
+<li>
+<a href="#N385">3. Formal syntax definition</a>
+</li>
+<ul>
+<li>
+<a href="#N414">3.1. Character encoding handling</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N445">3.2. Processing and references</a>
+</li>
+<ul>
+</ul>
+<li>
+<a href="#N493">3.3. Completeness</a>
+</li>
+<ul>
+</ul>
+</ul>
+</ul>
+
+
+
+
+
+<h2>
+<a name="N60">1. Linear topic map notation? What's that?</a>
+</h2>
+
+<p>
+The linear topic map notation is a simple textual format for topic
+maps. Just like the XML interchange format it represents the
+constructs in the topic map standard as text, but unlike the XML
+format it is compact and simple. The notation can be written in any
+text editor and processed by topic map software that supports it, or
+converted into the XML format supported by such software.
+</p>
+
+<p>
+The XML-based topic map interchange format is defined in such a way as
+to make it easy to comprehend for humans and to develop software for,
+and these purposes it fulfills very well.  However, this benefit has
+been realized at the cost of making it awkward to read and write for
+humans.  Now, humans were not really intended to do this, they were
+intended to use specialized topic map editors, which would insulate
+their users from the syntactical details of the interchange format.
+</p>
+
+<p>
+However, there is still a need for a simple textual format that can be
+used to concisely and clearly express topic map constructs in emails,
+discussions and similar contexts. Such a format also makes it easy to
+quickly create and maintain small topic maps for demonstration and
+personal purposes. This is useful while we wait for good topic map
+editors to be developed.
+</p>
+
+<p>
+While you may find that this syntax provides you with a convenient and
+easy way to maintain your topic maps, please note that the only
+standardized forms for interchangeable topic maps remain the XTM 1.0
+and HyTM syntaxes.
+</p>
+
+<p>
+This notation has been developed by Ontopia.  Steve Pepper came up
+with the original idea, based on the linear notation for conceptual
+graphs. The notation has since been refined by Lars Marius Garshol,
+with input from Geir Ove Gr&oslash;nmo and Steve Pepper. Useful contributions
+from Murray Altheim and Akio Yamamoto are also gratefully acknowledged.
+</p>
+
+<p>
+While the copyright to both this description and the format itself is
+held by Ontopia Ontopia reserves <em>only</em> the right
+to be recognized as the originator of the notation.  Permission to use
+it in any way for any purpose whatsoever is hereby granted in
+perpetuity to all potential users.
+</p>
+
+
+<h2>
+<a name="N87">2. An introduction to the notation</a>
+</h2>
+
+
+<h3>
+<a name="N92">2.1. Defining topics</a>
+</h3>
+
+<p>
+The basis of the notation is the ability to define topics, which is
+done by writing the ID of the topic in square brackets. An example is
+shown below.
+</p>
+
+<pre>
+[ltm]
+</pre>
+
+<p>
+This represents a topic map consisting of a single topic that has the
+ID 'ltm', but no other characteristics.  If you want, you can provide
+it with a base name and a sort name as well, as in the example below.
+Note that the sort name is optional.
+</p>
+
+<pre>
+[ltm = "The linear topic map notation";
+       "linear topic map notation, the"]
+</pre>
+
+<p>
+You can even add a display name, if you want.  If you have a display
+name the sort name is optional, but you need two semicolons to tell
+the parser that the second name is a display name and not a sort name.
+The example below shows a topic with all three name types.
+</p>
+
+<pre>
+[foo = "basename"; "sortname"; "dispname"]
+</pre>
+
+<p>
+The topic can also be typed. The example below adds the type 'format'
+to the <tt class="symbol">ltm</tt> topic. Multiple type IDs can be listed
+after the colon, separated by whitespace, if the topic has more than
+just one type.
+</p>
+
+<pre>
+[ltm : format = "The linear topic map notation";
+                "linear topic map notation, the"]
+</pre>
+
+<p>
+Note that even if no topic with the ID 'format' is defined anywhere in
+the LTM file this reference will cause the topic to be created by the
+LTM processor. The 'format' topic will have an ID, but no other
+characteristics.  Note also that LTM is oblivious to whitespace.  You
+can add as much whitespace as you want anywhere (except inside
+strings) without having any effect on the resulting topic map.
+</p>
+
+<p>
+LTM also supports providing subject indicators for topics, as shown
+below. The URL of the subject indicator is quoted and preceded by an
+'@' character. Any number of subject indicators can be given.
+</p>
+
+<pre>
+[ltm : format = "The linear topic map notation";
+                "linear topic map notation, the"
+     @"http://www.ontopia.net/download/ltm.html"]
+</pre>
+
+<p>
+For topics which represent network-retrievable resources it is not
+necessary to use a proxy resource (a subject indicator) to indicate
+the identity of the subject; it can instead be referred to directly.
+LTM supports this, by using a '%' character followed by the quoted URL
+of the resource. An example is shown below.
+</p>
+
+<pre>
+[xmlspec : specification = "The XML 1.0 specification"
+     %"http://www.w3.org/TR/REC-xml"]
+</pre>
+
+<p>
+The final construct supported by LTM for topics is scoping of names.
+This can be done for the base name, sortname, dispname-trinity as a
+whole, by appending a topic ID preceded by a slash after the name, as
+shown below. Multiple topic IDs are allowed, separated by whitespace.
+</p>
+
+<pre>
+[ltm : format = "Den line&aelig;re topic map-notasjonen";
+                "line&aelig;re topic map-notasjonen, den"
+                / norwegian 
+     @"http://www.ontopia.net/download/ltm.html"]
+</pre>
+
+<p>
+Note that if this example and the previous <tt class="symbol">[ltm]</tt>
+example were to appear in the same LTM file it would cause a single
+topic to be created with the union of the characteristics of these two
+definitions. That means that the topic would have the 'ltm' ID, the
+format type, the two different name sets and the given subject
+indicator.
+</p>
+
+<p>
+Note also that there are no requirements on the order in which
+constructs appear in LTM files.  A topic type can be used before it is
+defined, for example.
+</p>
+
+
+<h3>
+<a name="N155">2.2. Defining associations</a>
+</h3>
+
+
+<p>
+The LTM notation also supports defining associations. In the example
+below the LTM topic defined above is associated with a topic with the
+ID 'topic maps' by an association that has the
+<tt class="symbol">format-for</tt> type. ('format-for' is of course the ID of
+the topic that types that association.)
+</p>
+
+<pre>
+format-for(ltm, topic-maps)
+</pre>
+
+<p>
+The meaning of this example is that LTM is a serialization format for
+topic maps.  This should perhaps be made clearer by adding association
+role types. The example below does this.
+</p>
+
+<pre>
+format-for(ltm : format, topic-maps : standard)
+</pre>
+
+<p>
+Note that if the association role type is omitted the role type will
+default to the type of the topic. The rationale for this is that it is
+a useful shorthand for a commonly occurring construction.
+</p>
+
+<p>
+As a shorthand it is allowed to specify a topic in the role player
+position, instead of just referencing it. All the constructs used when
+defining topics can be used here, which means that it is possible to
+define topics with their characteristics in the associations they
+participate in without defining them anywhere else. The example could
+therefore also have been written as follows.
+</p>
+
+<pre>
+format-for(ltm, [topic-maps : standard = "Topic maps"])
+</pre>
+
+<p>
+Associations can also be scoped, as with base names, by appending
+a slash followed by the IDs of the scoping topics, separated by
+whitespace. The example below illustrates this.
+</p>
+
+<pre>
+[lmg : person = "Lars Marius Garshol"
+
+format-for([ltm] : format, [topic-maps] : standard) / lmg
+</pre>
+
+
+<h3>
+<a name="N191">2.3. Defining occurrences</a>
+</h3>
+
+
+<p>
+LTM also supports defining occurrences.  This is done using the
+notation shown below, where the occurrence information is given in
+curly braces.  Three pieces of information, all of which are required,
+appear inside the braces, separated by commas.  The first is the ID
+of the topic which has the occurrence, the second is the ID of the
+occurrence role type and the third is the locator of the occurrence in
+double quotes.
+</p>
+
+<pre>
+{ltm, specification, "http://www.ontopia.net/download/ltm.html"}
+</pre>
+
+<p>
+You can also specify thr resource data of an occurrence inline in the
+LTM file, as shown below.
+</p>
+
+<pre>
+{ltm, description, [[A simple text-based format for topic maps.]]}
+</pre>
+
+<p>
+Occurrences are scoped in the same way as associations:
+</p>
+
+<pre>
+{ltm, specification, "http://www.ontopia.net/download/ltm.html"} / english
+</pre>
+
+
+<h3>
+<a name="N215">2.4. A complete example</a>
+</h3>
+
+
+<p>
+Below is given a more complete example of an LTM topic map.  Note that
+text appearing between '/*' and '*/' is comments.
+</p>
+
+<pre>
+/* topic types */
+
+[format       = "Format"]
+[standard     = "Standard"]
+[organization = "Organization"]
+
+/* association types */
+
+[format-for = "Format for"]
+[defined-by = "Defined by"]
+
+/* occurrence types */
+
+[specification = "Specification"]
+[homepage      = "Home page"]
+
+/* topics, associations and occurrences */
+
+[topic-maps : standard  = "Topic maps"
+                        = "ISO/IEC 13250 Topic Maps" / fullname]
+{topic-maps, specification,
+   "http://www.y12.doe.gov/sgml/sc34/document/0129.pdf"}
+
+[xtm : format = "XTM Syntax"]
+
+[ltm : format = "The linear topic map notation";
+                "linear topic map notation, the"
+     @"http://www.ontopia.net/topicmaps/ltm-tech-report.html"]
+{ltm, specification, "http://www.ontopia.net/topicmaps/ltm-tech-report.html"}
+
+format-for(ltm, topic-maps)
+format-for(xtm, topic-maps)
+
+defined-by(ltm, ontopia)
+defined-by(xtm, topicmaps.org)
+
+[ontopia : organization = "Ontopia AS"]
+{ontopia, homepage, "http://www.ontopia.net"}
+
+[topicmaps.org  : organization = "TopicMaps.Org"]
+{topicmaps.org, homepage, "http://www.topicmaps.org"}
+</pre>
+
+
+<h3>
+<a name="N227">2.5. Directives</a>
+</h3>
+
+
+<p>
+LTM has a concept of so-called "syntax directives", which are used not
+to represent topic map constructs, but to provide information related
+to processing. There are three different directives, each covered in a
+separate section below.
+</p>
+
+<h4>
+<a name="N235">2.5.1. The TOPICMAP directive</a>
+</h4>
+
+
+<p>
+The <tt class="symbol">TOPICMAP</tt> directive is used to make it possible to
+reify the topic map itself. This is useful, since it makes it possible
+to attach metadata to the topic map using topic map constructs. Below
+is shown an example of the directive in use.
+</p>
+
+<pre>
+#TOPICMAP example
+
+[tm-topic = "An example topic map"
+ @"#example"]
+</pre>
+
+<p>
+To phrase it in XTM terms, this is like having a
+<tt class="symbol">topicMap</tt> element with its <tt class="symbol">id</tt> set to
+<tt class="symbol">example</tt>, and a topic with a subject indicator that
+refers to that element.
+</p>
+
+<p>
+Note that it is an error for a topic to be given the same ID as the
+topic map itself.
+</p>
+
+
+<h4>
+<a name="N268">2.5.2. The MERGEMAP directive</a>
+</h4>
+
+
+<p>
+The <tt class="symbol">MERGEMAP</tt> directive is used to merge external
+topic maps into the LTM topic map. The external topic maps can be in
+any syntax, but if this syntax is not LTM it must be declared what
+syntax it is. An example is shown below.
+</p>
+
+<pre>
+#MERGEMAP "geography.xtm" "xtm"
+</pre>
+
+<p>
+This directive causes the topic map at the given URI to be loaded
+according to the rules of the syntax it is written in and merged with
+the current topic map once the loading is complete. Note that the URI
+is allowed to use any URI scheme, although there is no guarantee that
+an LTM processor will understand any URI schemes beyond 'file'.
+</p>
+
+<p>
+LTM processors are required to recognize the syntaxes listed below,
+but not necessarily to support them. XTM and LTM must be supported,
+while the other syntaxes are optional. It is an error if the LTM
+processor is asked to merge in a topic map in a syntax it does not
+understand. Note that the syntax names are case-insensitive. If no
+syntax is specified, the default is LTM.
+</p>
+
+<dl>
+<dt>xtm</dt>
+<dd>The XTM 1.0 XML topic maps syntax.</dd>
+<dt>hytm</dt>
+<dd>The HyTime-based architectural form syntax defined in
+the original ISO 13250 standard.</dd>
+<dt>ltm</dt>
+<dd>The Linear Topic Map Notation.</dd>
+<dt>astma</dt>
+<dd>The textual syntax for topic maps known as
+<a href="http://topicmaps.bond.edu.au/astma/astma=.html">AsTMa=</a>.
+</dd>
+</dl>
+
+
+<h4>
+<a name="N341">2.5.3. The BASEURI directive</a>
+</h4>
+
+
+<p>
+This directive is used to change the base URI against which relative
+URIs in the document are resolved. It works exactly like the
+<tt class="symbol">xml:base</tt> attribute in XML Base, or the
+<tt class="symbol">BASE</tt> element in HTML. Below is shown an example.
+</p>
+
+<pre>
+#BASEURI "http://www.ontopia.net/"
+</pre>
+
+<p>
+All URIs occurring <em>after</em> the directive will
+resolve against the given URI, which must be absolute, rather than
+against the URI of the LTM document itself. This applies to URIs in
+<tt class="symbol">MERGEMAP</tt> directives, subject addresses, subject
+indicators, and the URIs of occurrences. (More formally, it applies to
+all instances of the grammar symbol <tt class="symbol">uri</tt>.) Note that
+the <tt class="symbol">BASEURI</tt> directive does not apply inside any files
+included with <tt class="symbol">MERGEMAP</tt>.
+</p>
+
+<p>
+Note that having more than one <tt class="symbol">BASEURI</tt> directive in
+the same file is an error.
+</p>
+
+
+
+
+<h2>
+<a name="N385">3. Formal syntax definition</a>
+</h2>
+
+
+<p>
+This section defines the LTM syntax using a formal extended BNF
+grammar. Lexical tokens are given either as single-quoted strings
+directly in the grammar, or as upper-case names of token types.  The
+token types are defined separately further below.
+</p>
+
+<pre>
+  topic-map  ::= encoding? directive* (topic | assoc | occur) +
+
+  encoding   ::= '@' STRING
+
+  directive  ::= topicmapid | mergemap | baseuri
+
+  topicmapid ::= '#' 'TOPICMAP' WS NAME
+
+  mergemap   ::= '#' 'MERGEMAP WS uri WS STRING
+
+  baseuri    ::= '#' 'BASEURI' WS uri
+	     
+  topic      ::= '[' NAME (WS ':' NAME+)? (topname)* subject? indicator* ']'
+
+  subject    ::= '%' uri
+
+  indicator  ::= '@' uri
+
+  topname    ::= '=' basename ((';' sortname) |
+                               (';' sortname? ';' dispname))?
+                     scope?
+
+  scope      ::= '/' NAME+
+
+  basename   ::= STRING
+
+  sortname   ::= STRING
+
+  dispname   ::= STRING
+
+  assoc      ::= NAME '(' assoc-role (',' assoc-role)*  ')' scope?
+	     
+  assoc-role ::= (topic | NAME) (':' NAME )?
+	     
+  occur      ::= '{' occ-topic ',' occ-type ',' resource '}' scope?
+
+  resource   ::= uri | DATA
+
+  occ-topic  ::= NAME
+
+  occ-type   ::= NAME
+
+  uri        ::= STRING
+</pre>
+
+<p>
+The lexical token types defined below use Perl-style regular
+expressions for their definitions.  Note that while whitespace
+(represented by the <tt class="symbol">WS</tt> token type) is implicitly
+allowed between any two tokens, it is explicitly required in the
+'topic' production in the above grammar.  This is to avoid problems
+caused by the fact that a colon is allowed in topic IDs.
+</p>
+
+<pre>
+  NAME       = [A-Za-z_][-A-Za-z_0-9.]*
+ 	     
+  COMMENT    = /\*([^*]|\*[^/])*\*/
+	     
+  STRING     = "[^"]*"
+
+  DATA       = \[\[(([^&gt;]+&gt;)*|\])\]
+
+  WS         = [\r\n\t ]+
+</pre>
+
+<p>
+The <tt class="symbol">NAME</tt> token type is slightly modified compared to
+the definition in the XML recommendation.  The colon is no longer
+allowed as a name start character, since otherwise a single colon
+could be both a name and a separator.
+</p>
+
+<p>
+All tokens are case-sensitive.
+</p>
+
+<h3>
+<a name="N414">3.1. Character encoding handling</a>
+</h3>
+
+
+<p>
+All LTM files are to be processed <em>as if</em> they were
+composed of Unicode characters. Files may be in any encoding, but if
+that encoding is not ISO 8859-1 it should be declared using the
+<tt class="symbol">encoding</tt> production. If the encoding declaration
+appears in the file it must appear at the very beginning.  Support for
+this construct is optional, but all processors must allow it to be
+present and at least ignore it.
+</p>
+
+<p>
+The encoding names used are those defined by IANA, which are the same
+as those used by XML. The IANA character encoding identifier registry
+can be found at <a href="http://www.isi.edu/in-notes/iana/assignments/character-sets">http://www.isi.edu/in-notes/iana/assignments/character-sets</a>.
+</p>
+
+<p>
+Below is shown a simple example of an LTM file that uses the UTF-8
+character encoding.
+</p>
+
+<pre>
+@"utf-8"
+
+[grove : person = "Geir Ove Gr&Atilde;&cedil;nmo"]
+</pre>
+
+<p>
+(The name is of course Geir Ove Gr&oslash;nmo, encoded in UTF-8, but viewed
+as if it were ISO 8859-1.)
+</p>
+
+
+<h3>
+<a name="N445">3.2. Processing and references</a>
+</h3>
+
+<p>
+Any topic referred to by its ID in an LTM file is considered to exist,
+even if it is never defined anywhere by an explicit occurrence of the
+<tt class="symbol">topic</tt> production with that topic. All occurrences of
+the same topic ID are considered to be references to the same topic.
+</p>
+
+<p>
+When an instance of the <tt class="symbol">topic</tt> production is found,
+and a topic with the same ID has already been found, the two topic
+definitions are merged as follows:
+</p>
+
+<ul>
+<li>
+<p>The types of the resulting topic are considered to be the union
+of the types found in each definition.</p>
+</li>
+<li>
+<p>The names of the resulting topic are considered to be the union
+of the names found in each definition.</p>
+</li>
+<li>
+<p>The subject indicators of the resulting topic are considered to
+be the union of the subject indicators found in each
+definition.</p>
+</li>
+<li>
+<p>More than one subject address for the topic is found, the one
+occurring last in the file is used.</p>
+</li>
+</ul>
+
+<p>
+If two topic definitions are found which have different topic IDs, but
+in which the same name occurs in the same scope, no specific behaviour
+is guaranteed. Possible results are that the topics may be merged,
+that they may remain distinct and that an error may be signalled.  The
+behaviour for topics with equal subject addresses or subject
+indicators but different IDs is subject to the same unpredictability.
+</p>
+
+
+<h3>
+<a name="N493">3.3. Completeness</a>
+</h3>
+
+
+<p>
+The following topic map constructs from ISO 13250 and XTM 1.0 are not
+supported:
+</p>
+
+<ul>
+<li>
+<p>Base names cannot have other variant names that display and sort
+names, nor can any of these be anything but strings.</p>
+</li>
+<li>
+<p>Facets. Facets are in any case a HyTM feature only, and given
+the concepts of subject adresses and subject indicators introduced in
+XTM 1.0 they are now obsolete. They will therefore not be supported by
+LTM.</p>
+</li>
+<li>
+<p>The mnemonic string alternatives to types on various constructs.
+These only exist in the HyTM syntax, and are really only a HyTime
+legacy, with no model impact. They are therefore not really part of
+topic maps per se.</p>
+</li>
+<li>
+<p>Reification of base names, occurrences, associations, and
+association roles is not possible with the current syntax. This may be
+supported in a later version.</p>
+</li>
+</ul>
+
+
+</body>
+</html>

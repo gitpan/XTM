@@ -1,4 +1,25 @@
 Revision history for Perl extension XTM.
+
+0.33  Fri Jul 26 21:35:17 EST 2002
+	- fixed bug which raises exception when XTM::Path creating /topic[@id = '...']
+	- changed simple search syntax in XTM::Memory 'regexp' -> 'regexps'
+	- added commands 'merge', 'duplicate_suppression', 'follow_maps' to xtm.pl
+	- added consistency to be passed through all sync_ins also through XTM::Virtual
+	- added t/08topic.t for simple tests
+	- added 'is-reified-by' clauses in AsTMa (XTM::AsTMa::Parser) for topics and associations
+	- added AsTMa directive auto_complete
+	- added AsTMa directive encoding to occur several times in a document
+	- added first (still experimental) version of LTM parsing, see XTM::LTM
+	- fixed strange 'cannot add to undefined' error in XTM::Path when using XTM::Path::create and find inside one program (workaround, not solved yet)
+	- allowed several scope topics for an association (follows XTM and LTM)
+	- added caching to XTM::Path, already parsed expressions are cached
+	- added variable to XTM::Path (similar to SQL prepare/expecute)
+	- added method add_defaults to XTM::topic to add default type/scope to topic components if missing
+	- modified Memory, generic for major performance improvements when merging (still some potential to be used)
+	- modified Memory: merging dies if a topic is merged with an existing but both have a
+	     different addressable resource
+	- fixed bug in XTM::Path not detecting correctly strings '0'
+
 0.32  Sun Jun 30 20:36:01 EST 2002
 	- added XTM::grammar, a package to hold element dependencies and nesting (internal mainly)
 	- added XTM::Path, XPath-like navigation through XTM::base data structures

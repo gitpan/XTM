@@ -191,7 +191,7 @@ sub Parse::RecDescent::namespace000001::topic_definition
 	while (!$_matched && !$commit)
 	{
 		
-		Parse::RecDescent::_trace(q{Trying production: ['tid' topic_id types reification topic_characteristic]},
+		Parse::RecDescent::_trace(q{Trying production: ['tid' topic_id types reification isreification topic_characteristic]},
 					  Parse::RecDescent::_tracefirst($_[1]),
 					  q{topic_definition})
 						if defined $::RD_TRACE;
@@ -305,6 +305,31 @@ sub Parse::RecDescent::namespace000001::topic_definition
 		
 
 
+		Parse::RecDescent::_trace(q{Trying repeated subrule: [isreification]},
+				  Parse::RecDescent::_tracefirst($text),
+				  q{topic_definition})
+					if defined $::RD_TRACE;
+		$expectation->is(q{isreification})->at($text);
+		
+		unless (defined ($_tok = $thisparser->_parserepeat($text, \&Parse::RecDescent::namespace000001::isreification, 0, 100000000, $_noactions,$expectation,undef))) 
+		{
+			Parse::RecDescent::_trace(q{<<Didn't match repeated subrule: [isreification]>>},
+						  Parse::RecDescent::_tracefirst($text),
+						  q{topic_definition})
+							if defined $::RD_TRACE;
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched repeated subrule: [isreification]<< (}
+					. @$_tok . q{ times)},
+					  
+					  Parse::RecDescent::_tracefirst($text),
+					  q{topic_definition})
+						if defined $::RD_TRACE;
+		$item{q{isreification}} = $_tok;
+		push @item, $_tok;
+		
+
+
 		Parse::RecDescent::_trace(q{Trying repeated subrule: [topic_characteristic]},
 				  Parse::RecDescent::_tracefirst($text),
 				  q{topic_definition})
@@ -337,13 +362,16 @@ sub Parse::RecDescent::namespace000001::topic_definition
 		
 
 		$_tok = ($_noactions) ? 0 : do {
+			 my @components; # here I collect all which I generate here
+
+			 # deal with the topic first
 			 my $t = new XTM::topic (id => $item{topic_id});
 			 foreach (@{$item{types}->[0]}) {
 			   $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$_")));
 			 }
 			 $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})))
 			   unless $t->instanceOfs && @{$t->instanceOfs};
-
+			 
 			 my $s = new XTM::subjectIdentity (); # maybe we need it
 			 foreach (@{$item{topic_characteristic}}) {
 			   if (ref($_) eq 'XTM::subjectIndicatorRef') {
@@ -370,7 +398,40 @@ sub Parse::RecDescent::namespace000001::topic_definition
 			   $b->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) );
 			   $t->add__s ($b);
 			 }
-			 $return = $t;
+
+			 push @components, $t;
+
+sub _make_reifying_topic {
+  my $uri  = shift; # my id
+  my $taid = shift; # assoc or topic id which we reify
+
+  my $u = new URI ($uri);
+  #print "==found reification==", $uri;
+  my $t = new XTM::topic (id => $uri);
+
+  if ($u->scheme) {                         # a resource
+  } else {                                  # a local topic
+    my $s2 = new XTM::subjectIdentity ();
+    my $r2 = new XTM::resourceRef (href => '#'.$taid);
+    $s2->add_ ($r2);
+    $t->add_ ($s2);
+    
+    my $name = $uri;
+    $name =~ s/-/ /g;
+    my $b2 = new XTM::baseName ();
+    $b2->add_baseNameString (new XTM::baseNameString (string => $name));
+    $b2->add_scope          (new XTM::scope());
+    $b2->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) );
+    $t->add__s ($b2);
+  }
+  return $t;
+}
+
+			 foreach my $uri (@{$item{isreification}}) {
+			   push @components, _make_reifying_topic ($uri, $t->id);
+			 }
+
+			 $return = \@components;
 		       };
 		unless (defined $_tok)
 		{
@@ -386,7 +447,7 @@ sub Parse::RecDescent::namespace000001::topic_definition
 		
 
 
-		Parse::RecDescent::_trace(q{>>Matched production: ['tid' topic_id types reification topic_characteristic]<<},
+		Parse::RecDescent::_trace(q{>>Matched production: ['tid' topic_id types reification isreification topic_characteristic]<<},
 					  Parse::RecDescent::_tracefirst($text),
 					  q{topic_definition})
 						if defined $::RD_TRACE;
@@ -1424,11 +1485,10 @@ sub Parse::RecDescent::namespace000001::resourceData_characteristic
 			 }
 			 $o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
 			   unless $o->scope->references;
-			 if ($item{type} && $item{type}->[0]) {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$item{type}->[0]")));
-			 } else {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{occurrence})));
-			 }
+
+			 $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => 
+				$item{type} && $item{type}->[0] ?	 "#$item{type}->[0]" : $XTM::PSI::xtm{occurrence}
+												  )));
 			 $return = $o;
 		       };
 		unless (defined $_tok)
@@ -1531,7 +1591,7 @@ sub Parse::RecDescent::namespace000001::reification
 	while (!$_matched && !$commit)
 	{
 		
-		Parse::RecDescent::_trace(q{Trying production: ['reifies' string]},
+		Parse::RecDescent::_trace(q{Trying production: ['reifies' uri]},
 					  Parse::RecDescent::_tracefirst($_[1]),
 					  q{reification})
 						if defined $::RD_TRACE;
@@ -1567,29 +1627,29 @@ sub Parse::RecDescent::namespace000001::reification
 		push @item, $item{__STRING1__}=$&;
 		
 
-		Parse::RecDescent::_trace(q{Trying subrule: [string]},
+		Parse::RecDescent::_trace(q{Trying subrule: [uri]},
 				  Parse::RecDescent::_tracefirst($text),
 				  q{reification})
 					if defined $::RD_TRACE;
 		if (1) { no strict qw{refs};
-		$expectation->is(q{string})->at($text);
-		unless (defined ($_tok = Parse::RecDescent::namespace000001::string($thisparser,$text,$repeating,$_noactions,undef)))
+		$expectation->is(q{uri})->at($text);
+		unless (defined ($_tok = Parse::RecDescent::namespace000001::uri($thisparser,$text,$repeating,$_noactions,undef)))
 		{
 			
-			Parse::RecDescent::_trace(q{<<Didn't match subrule: [string]>>},
+			Parse::RecDescent::_trace(q{<<Didn't match subrule: [uri]>>},
 						  Parse::RecDescent::_tracefirst($text),
 						  q{reification})
 							if defined $::RD_TRACE;
 			$expectation->failed();
 			last;
 		}
-		Parse::RecDescent::_trace(q{>>Matched subrule: [string]<< (return value: [}
+		Parse::RecDescent::_trace(q{>>Matched subrule: [uri]<< (return value: [}
 					. $_tok . q{]},
 					  
 					  Parse::RecDescent::_tracefirst($text),
 					  q{reification})
 						if defined $::RD_TRACE;
-		$item{q{string}} = $_tok;
+		$item{q{uri}} = $_tok;
 		push @item, $_tok;
 		
 		}
@@ -1601,8 +1661,8 @@ sub Parse::RecDescent::namespace000001::reification
 		
 
 		$_tok = ($_noactions) ? 0 : do {
-                         # check for URI ?
-		         $return = new XTM::resourceRef (href => $item{string});
+                         # check for relative URI ?
+		         $return = new XTM::resourceRef (href => $item{uri});
                        };
 		unless (defined $_tok)
 		{
@@ -1618,7 +1678,7 @@ sub Parse::RecDescent::namespace000001::reification
 		
 
 
-		Parse::RecDescent::_trace(q{>>Matched production: ['reifies' string]<<},
+		Parse::RecDescent::_trace(q{>>Matched production: ['reifies' uri]<<},
 					  Parse::RecDescent::_tracefirst($text),
 					  q{reification})
 						if defined $::RD_TRACE;
@@ -1656,6 +1716,178 @@ sub Parse::RecDescent::namespace000001::reification
 					  Parse::RecDescent::_tracemax(substr($_[1],0,-length($text))) . q{])}, 
 					  Parse::RecDescent::_tracefirst($text),
 					  , q{reification})
+	}
+	$_[1] = $text;
+	return $return;
+}
+
+# ARGS ARE: ($parser, $text; $repeating, $_noactions, \@args)
+sub Parse::RecDescent::namespace000001::isreification
+{
+	my $thisparser = $_[0];
+	$ERRORS = 0;
+	my $thisrule = $thisparser->{"rules"}{"isreification"};
+	
+	Parse::RecDescent::_trace(q{Trying rule: [isreification]},
+				  Parse::RecDescent::_tracefirst($_[1]),
+				  q{isreification})
+					if defined $::RD_TRACE;
+
+	
+	my $err_at = @{$thisparser->{errors}};
+
+	my $score;
+	my $score_return;
+	my $_tok;
+	my $return = undef;
+	my $_matched=0;
+	my $commit=0;
+	my @item = ();
+	my %item = ();
+	my $repeating =  defined($_[2]) && $_[2];
+	my $_noactions = defined($_[3]) && $_[3];
+ 	my @arg =        defined $_[4] ? @{ &{$_[4]} } : ();
+	my %arg =        ($#arg & 01) ? @arg : (@arg, undef);
+	my $text;
+	my $lastsep="";
+	my $expectation = new Parse::RecDescent::Expectation($thisrule->expected());
+	$expectation->at($_[1]);
+	
+	my $thiscolumn;
+	tie $thiscolumn, q{Parse::RecDescent::ColCounter}, \$text, $thisparser;
+	
+	my $thisline;
+	tie $thisline, q{Parse::RecDescent::LineCounter}, \$text, $thisparser;
+
+	
+
+	while (!$_matched && !$commit)
+	{
+		
+		Parse::RecDescent::_trace(q{Trying production: ['is-reified-by' uri]},
+					  Parse::RecDescent::_tracefirst($_[1]),
+					  q{isreification})
+						if defined $::RD_TRACE;
+		my $thisprod = $thisrule->{"prods"}[0];
+		$text = $_[1];
+		my $_savetext;
+		@item = (q{isreification});
+		%item = (__RULE__ => q{isreification});
+		my $repcount = 0;
+
+
+		Parse::RecDescent::_trace(q{Trying terminal: ['is-reified-by']},
+					  Parse::RecDescent::_tracefirst($text),
+					  q{isreification})
+						if defined $::RD_TRACE;
+		$lastsep = "";
+		$expectation->is(q{})->at($text);
+		
+
+		unless ($text =~ s/\A($skip)/$lastsep=$1 and ""/e and   $text =~ s/\Ais\-reified\-by//)
+		{
+			
+			$expectation->failed();
+			Parse::RecDescent::_trace(qq{<<Didn't match terminal>>},
+						  Parse::RecDescent::_tracefirst($text))
+							if defined $::RD_TRACE;
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched terminal<< (return value: [}
+						. $& . q{])},
+						  Parse::RecDescent::_tracefirst($text))
+							if defined $::RD_TRACE;
+		push @item, $item{__STRING1__}=$&;
+		
+
+		Parse::RecDescent::_trace(q{Trying subrule: [uri]},
+				  Parse::RecDescent::_tracefirst($text),
+				  q{isreification})
+					if defined $::RD_TRACE;
+		if (1) { no strict qw{refs};
+		$expectation->is(q{uri})->at($text);
+		unless (defined ($_tok = Parse::RecDescent::namespace000001::uri($thisparser,$text,$repeating,$_noactions,undef)))
+		{
+			
+			Parse::RecDescent::_trace(q{<<Didn't match subrule: [uri]>>},
+						  Parse::RecDescent::_tracefirst($text),
+						  q{isreification})
+							if defined $::RD_TRACE;
+			$expectation->failed();
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched subrule: [uri]<< (return value: [}
+					. $_tok . q{]},
+					  
+					  Parse::RecDescent::_tracefirst($text),
+					  q{isreification})
+						if defined $::RD_TRACE;
+		$item{q{uri}} = $_tok;
+		push @item, $_tok;
+		
+		}
+
+		Parse::RecDescent::_trace(q{Trying action},
+					  Parse::RecDescent::_tracefirst($text),
+					  q{isreification})
+						if defined $::RD_TRACE;
+		
+
+		$_tok = ($_noactions) ? 0 : do {
+			 $return = $item{uri};
+                       };
+		unless (defined $_tok)
+		{
+			Parse::RecDescent::_trace(q{<<Didn't match action>> (return value: [undef])})
+					if defined $::RD_TRACE;
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched action<< (return value: [}
+					  . $_tok . q{])}, $text)
+						if defined $::RD_TRACE;
+		push @item, $_tok;
+		$item{__ACTION1__}=$_tok;
+		
+
+
+		Parse::RecDescent::_trace(q{>>Matched production: ['is-reified-by' uri]<<},
+					  Parse::RecDescent::_tracefirst($text),
+					  q{isreification})
+						if defined $::RD_TRACE;
+		$_matched = 1;
+		last;
+	}
+
+
+        unless ( $_matched || defined($return) || defined($score) )
+	{
+		
+
+		$_[1] = $text;	# NOT SURE THIS IS NEEDED
+		Parse::RecDescent::_trace(q{<<Didn't match rule>>},
+					 Parse::RecDescent::_tracefirst($_[1]),
+					 q{isreification})
+					if defined $::RD_TRACE;
+		return undef;
+	}
+	if (!defined($return) && defined($score))
+	{
+		Parse::RecDescent::_trace(q{>>Accepted scored production<<}, "",
+					  q{isreification})
+						if defined $::RD_TRACE;
+		$return = $score_return;
+	}
+	splice @{$thisparser->{errors}}, $err_at;
+	$return = $item[$#item] unless defined $return;
+	if (defined $::RD_TRACE)
+	{
+		Parse::RecDescent::_trace(q{>>Matched rule<< (return value: [} .
+					  $return . q{])}, "",
+					  q{isreification});
+		Parse::RecDescent::_trace(q{(consumed: [} .
+					  Parse::RecDescent::_tracemax(substr($_[1],0,-length($text))) . q{])}, 
+					  Parse::RecDescent::_tracefirst($text),
+					  , q{isreification})
 	}
 	$_[1] = $text;
 	return $return;
@@ -1986,7 +2218,7 @@ sub Parse::RecDescent::namespace000001::association_definition
 	while (!$_matched && !$commit)
 	{
 		
-		Parse::RecDescent::_trace(q{Trying production: [scope '(' type_topic_id ')' association_member]},
+		Parse::RecDescent::_trace(q{Trying production: [scopes '(' type_topic_id ')' isreification association_member]},
 					  Parse::RecDescent::_tracefirst($_[1]),
 					  q{association_definition})
 						if defined $::RD_TRACE;
@@ -1998,27 +2230,27 @@ sub Parse::RecDescent::namespace000001::association_definition
 		my $repcount = 0;
 
 
-		Parse::RecDescent::_trace(q{Trying repeated subrule: [scope]},
+		Parse::RecDescent::_trace(q{Trying repeated subrule: [scopes]},
 				  Parse::RecDescent::_tracefirst($text),
 				  q{association_definition})
 					if defined $::RD_TRACE;
 		$expectation->is(q{})->at($text);
 		
-		unless (defined ($_tok = $thisparser->_parserepeat($text, \&Parse::RecDescent::namespace000001::scope, 0, 1, $_noactions,$expectation,undef))) 
+		unless (defined ($_tok = $thisparser->_parserepeat($text, \&Parse::RecDescent::namespace000001::scopes, 0, 1, $_noactions,$expectation,undef))) 
 		{
-			Parse::RecDescent::_trace(q{<<Didn't match repeated subrule: [scope]>>},
+			Parse::RecDescent::_trace(q{<<Didn't match repeated subrule: [scopes]>>},
 						  Parse::RecDescent::_tracefirst($text),
 						  q{association_definition})
 							if defined $::RD_TRACE;
 			last;
 		}
-		Parse::RecDescent::_trace(q{>>Matched repeated subrule: [scope]<< (}
+		Parse::RecDescent::_trace(q{>>Matched repeated subrule: [scopes]<< (}
 					. @$_tok . q{ times)},
 					  
 					  Parse::RecDescent::_tracefirst($text),
 					  q{association_definition})
 						if defined $::RD_TRACE;
-		$item{q{scope}} = $_tok;
+		$item{q{scopes}} = $_tok;
 		push @item, $_tok;
 		
 
@@ -2098,6 +2330,31 @@ sub Parse::RecDescent::namespace000001::association_definition
 		push @item, $item{__STRING2__}=$&;
 		
 
+		Parse::RecDescent::_trace(q{Trying repeated subrule: [isreification]},
+				  Parse::RecDescent::_tracefirst($text),
+				  q{association_definition})
+					if defined $::RD_TRACE;
+		$expectation->is(q{isreification})->at($text);
+		
+		unless (defined ($_tok = $thisparser->_parserepeat($text, \&Parse::RecDescent::namespace000001::isreification, 0, 100000000, $_noactions,$expectation,undef))) 
+		{
+			Parse::RecDescent::_trace(q{<<Didn't match repeated subrule: [isreification]>>},
+						  Parse::RecDescent::_tracefirst($text),
+						  q{association_definition})
+							if defined $::RD_TRACE;
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched repeated subrule: [isreification]<< (}
+					. @$_tok . q{ times)},
+					  
+					  Parse::RecDescent::_tracefirst($text),
+					  q{association_definition})
+						if defined $::RD_TRACE;
+		$item{q{isreification}} = $_tok;
+		push @item, $_tok;
+		
+
+
 		Parse::RecDescent::_trace(q{Trying repeated subrule: [association_member]},
 				  Parse::RecDescent::_tracefirst($text),
 				  q{association_definition})
@@ -2130,16 +2387,30 @@ sub Parse::RecDescent::namespace000001::association_definition
 		
 
 		$_tok = ($_noactions) ? 0 : do {
-			   my $a = new XTM::association ();
+			   my @components; # here I collect all which I generate here
 
-			   $a->add_scope (new XTM::scope (references => [ 
-				    new XTM::topicRef (href => $item{scope}->[0] ? "#$item{scope}->[0]" : $XTM::PSI::xtm{universal_scope}) ]));
+			   my $a = new XTM::association ();
+			   my $s = new XTM::scope();
+			   $a->add_scope ($s);
+			   foreach (@{$item{scopes}->[0]}) {
+			     $s->add_reference_s (new XTM::topicRef (href => "#$_"));
+			   }
+			   $a->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
+			     unless $a->scope->references;
+
 			   $a->add_instanceOf (new XTM::instanceOf (reference => 
 				    new XTM::topicRef (href => "#$item{type_topic_id}")));
 			   foreach (@{$item{association_member}}) {
 			     $a->add__s ($_);
 			   }
-			   $return = $a;
+
+			   push @components, $a;
+
+			   foreach my $uri (@{$item{isreification}}) {
+			     push @components, _make_reifying_topic ($uri, $a->id);
+			   }
+
+			   $return = \@components;
 			 };
 		unless (defined $_tok)
 		{
@@ -2155,7 +2426,7 @@ sub Parse::RecDescent::namespace000001::association_definition
 		
 
 
-		Parse::RecDescent::_trace(q{>>Matched production: [scope '(' type_topic_id ')' association_member]<<},
+		Parse::RecDescent::_trace(q{>>Matched production: [scopes '(' type_topic_id ')' isreification association_member]<<},
 					  Parse::RecDescent::_tracefirst($text),
 					  q{association_definition})
 						if defined $::RD_TRACE;
@@ -2681,7 +2952,6 @@ sub Parse::RecDescent::namespace000001::subject_identity
 		$_tok = ($_noactions) ? 0 : do {
 			 use URI;
 			 my $u = URI->new ($item{string});
-			 use Data::Dumper;
 			 $return = ref ($u) eq 'URI::_generic' ? 
 			   new XTM::topicRef (href => $item{string}) :
 			     new XTM::subjectIndicatorRef (href => $item{string});
@@ -3499,6 +3769,129 @@ sub Parse::RecDescent::namespace000001::_alternation_1_of_production_1_of_rule_t
 }
 
 # ARGS ARE: ($parser, $text; $repeating, $_noactions, \@args)
+sub Parse::RecDescent::namespace000001::uri
+{
+	my $thisparser = $_[0];
+	$ERRORS = 0;
+	my $thisrule = $thisparser->{"rules"}{"uri"};
+	
+	Parse::RecDescent::_trace(q{Trying rule: [uri]},
+				  Parse::RecDescent::_tracefirst($_[1]),
+				  q{uri})
+					if defined $::RD_TRACE;
+
+	
+	my $err_at = @{$thisparser->{errors}};
+
+	my $score;
+	my $score_return;
+	my $_tok;
+	my $return = undef;
+	my $_matched=0;
+	my $commit=0;
+	my @item = ();
+	my %item = ();
+	my $repeating =  defined($_[2]) && $_[2];
+	my $_noactions = defined($_[3]) && $_[3];
+ 	my @arg =        defined $_[4] ? @{ &{$_[4]} } : ();
+	my %arg =        ($#arg & 01) ? @arg : (@arg, undef);
+	my $text;
+	my $lastsep="";
+	my $expectation = new Parse::RecDescent::Expectation($thisrule->expected());
+	$expectation->at($_[1]);
+	
+	my $thiscolumn;
+	tie $thiscolumn, q{Parse::RecDescent::ColCounter}, \$text, $thisparser;
+	
+	my $thisline;
+	tie $thisline, q{Parse::RecDescent::LineCounter}, \$text, $thisparser;
+
+	
+
+	while (!$_matched && !$commit)
+	{
+		
+		Parse::RecDescent::_trace(q{Trying production: [/[\\w\\-\\.\\/\\?\\&\\:\\,\\+]+/]},
+					  Parse::RecDescent::_tracefirst($_[1]),
+					  q{uri})
+						if defined $::RD_TRACE;
+		my $thisprod = $thisrule->{"prods"}[0];
+		$text = $_[1];
+		my $_savetext;
+		@item = (q{uri});
+		%item = (__RULE__ => q{uri});
+		my $repcount = 0;
+
+
+		Parse::RecDescent::_trace(q{Trying terminal: [/[\\w\\-\\.\\/\\?\\&\\:\\,\\+]+/]}, Parse::RecDescent::_tracefirst($text),
+					  q{uri})
+						if defined $::RD_TRACE;
+		$lastsep = "";
+		$expectation->is(q{})->at($text);
+		
+
+		unless ($text =~ s/\A($skip)/$lastsep=$1 and ""/e and   $text =~ s/\A(?:[\w\-\.\/\?\&\:\,\+]+)//)
+		{
+			
+			$expectation->failed();
+			Parse::RecDescent::_trace(q{<<Didn't match terminal>>},
+						  Parse::RecDescent::_tracefirst($text))
+					if defined $::RD_TRACE;
+
+			last;
+		}
+		Parse::RecDescent::_trace(q{>>Matched terminal<< (return value: [}
+						. $& . q{])},
+						  Parse::RecDescent::_tracefirst($text))
+					if defined $::RD_TRACE;
+		push @item, $item{__PATTERN1__}=$&;
+		
+
+
+		Parse::RecDescent::_trace(q{>>Matched production: [/[\\w\\-\\.\\/\\?\\&\\:\\,\\+]+/]<<},
+					  Parse::RecDescent::_tracefirst($text),
+					  q{uri})
+						if defined $::RD_TRACE;
+		$_matched = 1;
+		last;
+	}
+
+
+        unless ( $_matched || defined($return) || defined($score) )
+	{
+		
+
+		$_[1] = $text;	# NOT SURE THIS IS NEEDED
+		Parse::RecDescent::_trace(q{<<Didn't match rule>>},
+					 Parse::RecDescent::_tracefirst($_[1]),
+					 q{uri})
+					if defined $::RD_TRACE;
+		return undef;
+	}
+	if (!defined($return) && defined($score))
+	{
+		Parse::RecDescent::_trace(q{>>Accepted scored production<<}, "",
+					  q{uri})
+						if defined $::RD_TRACE;
+		$return = $score_return;
+	}
+	splice @{$thisparser->{errors}}, $err_at;
+	$return = $item[$#item] unless defined $return;
+	if (defined $::RD_TRACE)
+	{
+		Parse::RecDescent::_trace(q{>>Matched rule<< (return value: [} .
+					  $return . q{])}, "",
+					  q{uri});
+		Parse::RecDescent::_trace(q{(consumed: [} .
+					  Parse::RecDescent::_tracemax(substr($_[1],0,-length($text))) . q{])}, 
+					  Parse::RecDescent::_tracefirst($text),
+					  , q{uri})
+	}
+	$_[1] = $text;
+	return $return;
+}
+
+# ARGS ARE: ($parser, $text; $repeating, $_noactions, \@args)
 sub Parse::RecDescent::namespace000001::resourceRef_characteristic
 {
 	my $thisparser = $_[0];
@@ -3693,11 +4086,10 @@ sub Parse::RecDescent::namespace000001::resourceRef_characteristic
 			 }
 			 $o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
 			   unless $o->scope->references;
-			 if ($item{type} && $item{type}->[0]) {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$item{type}->[0]")));
-			 } else {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{occurrence})));
-			 }
+
+			 $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => 
+				$item{type} && $item{type}->[0] ?	 "#$item{type}->[0]" : $XTM::PSI::xtm{occurrence}
+												  )));
 			 $return = $o;
 		       };
 		unless (defined $_tok)
@@ -4390,7 +4782,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                  'rules' => {
                               'list_of_scope_topic_ids' => bless( {
                                                                     'impcount' => 0,
-                                                                    'line' => '154',
+                                                                    'line' => '210',
                                                                     'prods' => [
                                                                                  bless( {
                                                                                           'dircount' => 0,
@@ -4402,7 +4794,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                           'line' => undef,
                                                                                           'items' => [
                                                                                                        bless( {
-                                                                                                                'line' => '154',
+                                                                                                                'line' => '210',
                                                                                                                 'subrule' => 'list_of_ids',
                                                                                                                 'argcode' => undef,
                                                                                                                 'implicit' => undef,
@@ -4423,7 +4815,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                   }, 'Parse::RecDescent::Rule' ),
                               'topic_definition' => bless( {
                                                              'impcount' => 1,
-                                                             'line' => '6',
+                                                             'line' => '10',
                                                              'prods' => [
                                                                           bless( {
                                                                                    'dircount' => 0,
@@ -4440,13 +4832,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
                                                                                                          'subrule' => '_alternation_1_of_production_1_of_rule_topic_definition',
-                                                                                                         'line' => '6',
+                                                                                                         'line' => '10',
                                                                                                          'expected' => '\'tid\'',
                                                                                                          'max' => 1,
                                                                                                          'repspec' => '?'
                                                                                                        }, 'Parse::RecDescent::Repetition' ),
                                                                                                 bless( {
-                                                                                                         'line' => '6',
+                                                                                                         'line' => '10',
                                                                                                          'subrule' => 'topic_id',
                                                                                                          'argcode' => undef,
                                                                                                          'implicit' => undef,
@@ -4459,7 +4851,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
                                                                                                          'subrule' => 'types',
-                                                                                                         'line' => '6',
+                                                                                                         'line' => '10',
                                                                                                          'expected' => undef,
                                                                                                          'max' => 1,
                                                                                                          'repspec' => '?'
@@ -4470,7 +4862,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
                                                                                                          'subrule' => 'reification',
-                                                                                                         'line' => '6',
+                                                                                                         'line' => '10',
                                                                                                          'expected' => undef,
                                                                                                          'max' => 1,
                                                                                                          'repspec' => '?'
@@ -4480,22 +4872,36 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'argcode' => undef,
                                                                                                          'matchrule' => 0,
                                                                                                          'lookahead' => 0,
-                                                                                                         'subrule' => 'topic_characteristic',
-                                                                                                         'line' => '6',
+                                                                                                         'subrule' => 'isreification',
+                                                                                                         'line' => '10',
                                                                                                          'expected' => undef,
                                                                                                          'max' => 100000000,
                                                                                                          'repspec' => 's?'
                                                                                                        }, 'Parse::RecDescent::Repetition' ),
                                                                                                 bless( {
-                                                                                                         'line' => '7',
+                                                                                                         'min' => 0,
+                                                                                                         'argcode' => undef,
+                                                                                                         'matchrule' => 0,
+                                                                                                         'lookahead' => 0,
+                                                                                                         'subrule' => 'topic_characteristic',
+                                                                                                         'line' => '10',
+                                                                                                         'expected' => undef,
+                                                                                                         'max' => 100000000,
+                                                                                                         'repspec' => 's?'
+                                                                                                       }, 'Parse::RecDescent::Repetition' ),
+                                                                                                bless( {
+                                                                                                         'line' => '11',
                                                                                                          'code' => '{
+			 my @components; # here I collect all which I generate here
+
+			 # deal with the topic first
 			 my $t = new XTM::topic (id => $item{topic_id});
 			 foreach (@{$item{types}->[0]}) {
 			   $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$_")));
 			 }
 			 $t->add__s (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic})))
 			   unless $t->instanceOfs && @{$t->instanceOfs};
-
+			 
 			 my $s = new XTM::subjectIdentity (); # maybe we need it
 			 foreach (@{$item{topic_characteristic}}) {
 			   if (ref($_) eq \'XTM::subjectIndicatorRef\') {
@@ -4522,7 +4928,40 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
 			   $b->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) );
 			   $t->add__s ($b);
 			 }
-			 $return = $t;
+
+			 push @components, $t;
+
+sub _make_reifying_topic {
+  my $uri  = shift; # my id
+  my $taid = shift; # assoc or topic id which we reify
+
+  my $u = new URI ($uri);
+  #print "==found reification==", $uri;
+  my $t = new XTM::topic (id => $uri);
+
+  if ($u->scheme) {                         # a resource
+  } else {                                  # a local topic
+    my $s2 = new XTM::subjectIdentity ();
+    my $r2 = new XTM::resourceRef (href => \'#\'.$taid);
+    $s2->add_ ($r2);
+    $t->add_ ($s2);
+    
+    my $name = $uri;
+    $name =~ s/-/ /g;
+    my $b2 = new XTM::baseName ();
+    $b2->add_baseNameString (new XTM::baseNameString (string => $name));
+    $b2->add_scope          (new XTM::scope());
+    $b2->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) );
+    $t->add__s ($b2);
+  }
+  return $t;
+}
+
+			 foreach my $uri (@{$item{isreification}}) {
+			   push @components, _make_reifying_topic ($uri, $t->id);
+			 }
+
+			 $return = \\@components;
 		       }',
                                                                                                          'hashname' => '__ACTION1__',
                                                                                                          'lookahead' => 0
@@ -4536,6 +4975,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                           'topic_id',
                                                                           'types',
                                                                           'reification',
+                                                                          'isreification',
                                                                           'topic_characteristic'
                                                                         ],
                                                              'opcount' => 0,
@@ -4545,7 +4985,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                            }, 'Parse::RecDescent::Rule' ),
                               'section' => bless( {
                                                     'impcount' => 0,
-                                                    'line' => '4',
+                                                    'line' => '8',
                                                     'prods' => [
                                                                  bless( {
                                                                           'dircount' => 0,
@@ -4557,7 +4997,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                           'line' => undef,
                                                                           'items' => [
                                                                                        bless( {
-                                                                                                'line' => '4',
+                                                                                                'line' => '8',
                                                                                                 'subrule' => 'topic_definition',
                                                                                                 'argcode' => undef,
                                                                                                 'implicit' => undef,
@@ -4574,10 +5014,10 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                           'strcount' => 0,
                                                                           'number' => 1,
                                                                           'error' => undef,
-                                                                          'line' => '4',
+                                                                          'line' => '8',
                                                                           'items' => [
                                                                                        bless( {
-                                                                                                'line' => '4',
+                                                                                                'line' => '8',
                                                                                                 'subrule' => 'association_definition',
                                                                                                 'argcode' => undef,
                                                                                                 'implicit' => undef,
@@ -4594,10 +5034,10 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                           'strcount' => 0,
                                                                           'number' => 2,
                                                                           'error' => 1,
-                                                                          'line' => '4',
+                                                                          'line' => '8',
                                                                           'items' => [
                                                                                        bless( {
-                                                                                                'line' => '4',
+                                                                                                'line' => '8',
                                                                                                 'commitonly' => '',
                                                                                                 'hashname' => '__DIRECTIVE1__',
                                                                                                 'lookahead' => 0,
@@ -4618,7 +5058,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                   }, 'Parse::RecDescent::Rule' ),
                               'list_of_type_topic_ids' => bless( {
                                                                    'impcount' => 0,
-                                                                   'line' => '156',
+                                                                   'line' => '212',
                                                                    'prods' => [
                                                                                 bless( {
                                                                                          'dircount' => 0,
@@ -4630,7 +5070,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                          'line' => undef,
                                                                                          'items' => [
                                                                                                       bless( {
-                                                                                                               'line' => '156',
+                                                                                                               'line' => '212',
                                                                                                                'subrule' => 'list_of_ids',
                                                                                                                'argcode' => undef,
                                                                                                                'implicit' => undef,
@@ -4663,7 +5103,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                             'line' => undef,
                                                                             'items' => [
                                                                                          bless( {
-                                                                                                  'line' => '2',
+                                                                                                  'line' => '6',
                                                                                                   'subrule' => 'section',
                                                                                                   'argcode' => undef,
                                                                                                   'implicit' => undef,
@@ -4684,7 +5124,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                     }, 'Parse::RecDescent::Rule' ),
                               'types' => bless( {
                                                   'impcount' => 0,
-                                                  'line' => '80',
+                                                  'line' => '139',
                                                   'prods' => [
                                                                bless( {
                                                                         'dircount' => 0,
@@ -4697,13 +5137,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                         'items' => [
                                                                                      bless( {
                                                                                               'description' => '\'(\'',
-                                                                                              'line' => '80',
+                                                                                              'line' => '139',
                                                                                               'pattern' => '(',
                                                                                               'hashname' => '__STRING1__',
                                                                                               'lookahead' => 0
                                                                                             }, 'Parse::RecDescent::Literal' ),
                                                                                      bless( {
-                                                                                              'line' => '80',
+                                                                                              'line' => '139',
                                                                                               'subrule' => 'list_of_type_topic_ids',
                                                                                               'argcode' => undef,
                                                                                               'implicit' => undef,
@@ -4712,13 +5152,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                             }, 'Parse::RecDescent::Subrule' ),
                                                                                      bless( {
                                                                                               'description' => '\')\'',
-                                                                                              'line' => '80',
+                                                                                              'line' => '139',
                                                                                               'pattern' => ')',
                                                                                               'hashname' => '__STRING2__',
                                                                                               'lookahead' => 0
                                                                                             }, 'Parse::RecDescent::Literal' ),
                                                                                      bless( {
-                                                                                              'line' => '80',
+                                                                                              'line' => '139',
                                                                                               'code' => '{ $return = $item{list_of_type_topic_ids}; }',
                                                                                               'hashname' => '__ACTION1__',
                                                                                               'lookahead' => 0
@@ -4737,7 +5177,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                 }, 'Parse::RecDescent::Rule' ),
                               'type_topic_id' => bless( {
                                                           'impcount' => 0,
-                                                          'line' => '152',
+                                                          'line' => '208',
                                                           'prods' => [
                                                                        bless( {
                                                                                 'dircount' => 0,
@@ -4749,7 +5189,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                 'line' => undef,
                                                                                 'items' => [
                                                                                              bless( {
-                                                                                                      'line' => '152',
+                                                                                                      'line' => '208',
                                                                                                       'subrule' => 'topic_id',
                                                                                                       'argcode' => undef,
                                                                                                       'implicit' => undef,
@@ -4770,7 +5210,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                         }, 'Parse::RecDescent::Rule' ),
                               'resourceData_characteristic' => bless( {
                                                                         'impcount' => 0,
-                                                                        'line' => '118',
+                                                                        'line' => '176',
                                                                         'prods' => [
                                                                                      bless( {
                                                                                               'dircount' => 0,
@@ -4783,7 +5223,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                               'items' => [
                                                                                                            bless( {
                                                                                                                     'description' => '\'in\'',
-                                                                                                                    'line' => '118',
+                                                                                                                    'line' => '176',
                                                                                                                     'pattern' => 'in',
                                                                                                                     'hashname' => '__STRING1__',
                                                                                                                     'lookahead' => 0
@@ -4794,7 +5234,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                     'matchrule' => 0,
                                                                                                                     'lookahead' => 0,
                                                                                                                     'subrule' => 'scopes',
-                                                                                                                    'line' => '118',
+                                                                                                                    'line' => '176',
                                                                                                                     'expected' => undef,
                                                                                                                     'max' => 1,
                                                                                                                     'repspec' => '?'
@@ -4805,20 +5245,20 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                     'matchrule' => 0,
                                                                                                                     'lookahead' => 0,
                                                                                                                     'subrule' => 'type',
-                                                                                                                    'line' => '118',
+                                                                                                                    'line' => '176',
                                                                                                                     'expected' => undef,
                                                                                                                     'max' => 1,
                                                                                                                     'repspec' => '?'
                                                                                                                   }, 'Parse::RecDescent::Repetition' ),
                                                                                                            bless( {
                                                                                                                     'description' => '\':\'',
-                                                                                                                    'line' => '118',
+                                                                                                                    'line' => '176',
                                                                                                                     'pattern' => ':',
                                                                                                                     'hashname' => '__STRING2__',
                                                                                                                     'lookahead' => 0
                                                                                                                   }, 'Parse::RecDescent::Literal' ),
                                                                                                            bless( {
-                                                                                                                    'line' => '118',
+                                                                                                                    'line' => '176',
                                                                                                                     'subrule' => 'string',
                                                                                                                     'argcode' => undef,
                                                                                                                     'implicit' => undef,
@@ -4826,7 +5266,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                     'lookahead' => 0
                                                                                                                   }, 'Parse::RecDescent::Subrule' ),
                                                                                                            bless( {
-                                                                                                                    'line' => '119',
+                                                                                                                    'line' => '177',
                                                                                                                     'code' => '{
 			 my $o = new XTM::occurrence ();
 			 $o->add_resource (new XTM::resourceData (data => $item{string}));
@@ -4836,11 +5276,10 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
 			 }
 			 $o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
 			   unless $o->scope->references;
-			 if ($item{type} && $item{type}->[0]) {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$item{type}->[0]")));
-			 } else {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{occurrence})));
-			 }
+
+			 $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => 
+				$item{type} && $item{type}->[0] ?	 "#$item{type}->[0]" : $XTM::PSI::xtm{occurrence}
+												  )));
 			 $return = $o;
 		       }',
                                                                                                                     'hashname' => '__ACTION1__',
@@ -4862,7 +5301,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                       }, 'Parse::RecDescent::Rule' ),
                               'reification' => bless( {
                                                         'impcount' => 0,
-                                                        'line' => '44',
+                                                        'line' => '84',
                                                         'prods' => [
                                                                      bless( {
                                                                               'dircount' => 0,
@@ -4875,24 +5314,24 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                               'items' => [
                                                                                            bless( {
                                                                                                     'description' => '\'reifies\'',
-                                                                                                    'line' => '44',
+                                                                                                    'line' => '84',
                                                                                                     'pattern' => 'reifies',
                                                                                                     'hashname' => '__STRING1__',
                                                                                                     'lookahead' => 0
                                                                                                   }, 'Parse::RecDescent::Literal' ),
                                                                                            bless( {
-                                                                                                    'line' => '44',
-                                                                                                    'subrule' => 'string',
+                                                                                                    'line' => '84',
+                                                                                                    'subrule' => 'uri',
                                                                                                     'argcode' => undef,
                                                                                                     'implicit' => undef,
                                                                                                     'matchrule' => 0,
                                                                                                     'lookahead' => 0
                                                                                                   }, 'Parse::RecDescent::Subrule' ),
                                                                                            bless( {
-                                                                                                    'line' => '45',
+                                                                                                    'line' => '85',
                                                                                                     'code' => '{
-                         # check for URI ?
-		         $return = new XTM::resourceRef (href => $item{string});
+                         # check for relative URI ?
+		         $return = new XTM::resourceRef (href => $item{uri});
                        }',
                                                                                                     'hashname' => '__ACTION1__',
                                                                                                     'lookahead' => 0
@@ -4902,16 +5341,64 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                             }, 'Parse::RecDescent::Production' )
                                                                    ],
                                                         'calls' => [
-                                                                     'string'
+                                                                     'uri'
                                                                    ],
                                                         'opcount' => 0,
                                                         'changed' => 0,
                                                         'vars' => '',
                                                         'name' => 'reification'
                                                       }, 'Parse::RecDescent::Rule' ),
+                              'isreification' => bless( {
+                                                          'impcount' => 0,
+                                                          'line' => '90',
+                                                          'prods' => [
+                                                                       bless( {
+                                                                                'dircount' => 0,
+                                                                                'uncommit' => undef,
+                                                                                'patcount' => 0,
+                                                                                'strcount' => 1,
+                                                                                'number' => 0,
+                                                                                'error' => undef,
+                                                                                'line' => undef,
+                                                                                'items' => [
+                                                                                             bless( {
+                                                                                                      'description' => '\'is-reified-by\'',
+                                                                                                      'line' => '90',
+                                                                                                      'pattern' => 'is-reified-by',
+                                                                                                      'hashname' => '__STRING1__',
+                                                                                                      'lookahead' => 0
+                                                                                                    }, 'Parse::RecDescent::Literal' ),
+                                                                                             bless( {
+                                                                                                      'line' => '90',
+                                                                                                      'subrule' => 'uri',
+                                                                                                      'argcode' => undef,
+                                                                                                      'implicit' => undef,
+                                                                                                      'matchrule' => 0,
+                                                                                                      'lookahead' => 0
+                                                                                                    }, 'Parse::RecDescent::Subrule' ),
+                                                                                             bless( {
+                                                                                                      'line' => '91',
+                                                                                                      'code' => '{
+			 $return = $item{uri};
+                       }',
+                                                                                                      'hashname' => '__ACTION1__',
+                                                                                                      'lookahead' => 0
+                                                                                                    }, 'Parse::RecDescent::Action' )
+                                                                                           ],
+                                                                                'actcount' => 1
+                                                                              }, 'Parse::RecDescent::Production' )
+                                                                     ],
+                                                          'calls' => [
+                                                                       'uri'
+                                                                     ],
+                                                          'opcount' => 0,
+                                                          'changed' => 0,
+                                                          'vars' => '',
+                                                          'name' => 'isreification'
+                                                        }, 'Parse::RecDescent::Rule' ),
                               'topic_characteristic' => bless( {
                                                                  'impcount' => 0,
-                                                                 'line' => '82',
+                                                                 'line' => '141',
                                                                  'prods' => [
                                                                               bless( {
                                                                                        'dircount' => 0,
@@ -4923,7 +5410,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                        'line' => undef,
                                                                                        'items' => [
                                                                                                     bless( {
-                                                                                                             'line' => '82',
+                                                                                                             'line' => '141',
                                                                                                              'subrule' => 'basename_characteristic',
                                                                                                              'argcode' => undef,
                                                                                                              'implicit' => undef,
@@ -4940,10 +5427,10 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                        'strcount' => 0,
                                                                                        'number' => 1,
                                                                                        'error' => undef,
-                                                                                       'line' => '82',
+                                                                                       'line' => '141',
                                                                                        'items' => [
                                                                                                     bless( {
-                                                                                                             'line' => '83',
+                                                                                                             'line' => '142',
                                                                                                              'subrule' => 'resourceRef_characteristic',
                                                                                                              'argcode' => undef,
                                                                                                              'implicit' => undef,
@@ -4960,10 +5447,10 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                        'strcount' => 0,
                                                                                        'number' => 2,
                                                                                        'error' => undef,
-                                                                                       'line' => '83',
+                                                                                       'line' => '142',
                                                                                        'items' => [
                                                                                                     bless( {
-                                                                                                             'line' => '84',
+                                                                                                             'line' => '143',
                                                                                                              'subrule' => 'resourceData_characteristic',
                                                                                                              'argcode' => undef,
                                                                                                              'implicit' => undef,
@@ -4980,10 +5467,10 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                        'strcount' => 0,
                                                                                        'number' => 3,
                                                                                        'error' => undef,
-                                                                                       'line' => '84',
+                                                                                       'line' => '143',
                                                                                        'items' => [
                                                                                                     bless( {
-                                                                                                             'line' => '85',
+                                                                                                             'line' => '144',
                                                                                                              'subrule' => 'subject_identity',
                                                                                                              'argcode' => undef,
                                                                                                              'implicit' => undef,
@@ -5007,7 +5494,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                }, 'Parse::RecDescent::Rule' ),
                               'association_definition' => bless( {
                                                                    'impcount' => 0,
-                                                                   'line' => '50',
+                                                                   'line' => '95',
                                                                    'prods' => [
                                                                                 bless( {
                                                                                          'dircount' => 0,
@@ -5023,21 +5510,21 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                'argcode' => undef,
                                                                                                                'matchrule' => 0,
                                                                                                                'lookahead' => 0,
-                                                                                                               'subrule' => 'scope',
-                                                                                                               'line' => '50',
+                                                                                                               'subrule' => 'scopes',
+                                                                                                               'line' => '95',
                                                                                                                'expected' => undef,
                                                                                                                'max' => 1,
                                                                                                                'repspec' => '?'
                                                                                                              }, 'Parse::RecDescent::Repetition' ),
                                                                                                       bless( {
                                                                                                                'description' => '\'(\'',
-                                                                                                               'line' => '50',
+                                                                                                               'line' => '95',
                                                                                                                'pattern' => '(',
                                                                                                                'hashname' => '__STRING1__',
                                                                                                                'lookahead' => 0
                                                                                                              }, 'Parse::RecDescent::Literal' ),
                                                                                                       bless( {
-                                                                                                               'line' => '50',
+                                                                                                               'line' => '95',
                                                                                                                'subrule' => 'type_topic_id',
                                                                                                                'argcode' => undef,
                                                                                                                'implicit' => undef,
@@ -5046,35 +5533,60 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                              }, 'Parse::RecDescent::Subrule' ),
                                                                                                       bless( {
                                                                                                                'description' => '\')\'',
-                                                                                                               'line' => '50',
+                                                                                                               'line' => '95',
                                                                                                                'pattern' => ')',
                                                                                                                'hashname' => '__STRING2__',
                                                                                                                'lookahead' => 0
                                                                                                              }, 'Parse::RecDescent::Literal' ),
+                                                                                                      bless( {
+                                                                                                               'min' => 0,
+                                                                                                               'argcode' => undef,
+                                                                                                               'matchrule' => 0,
+                                                                                                               'lookahead' => 0,
+                                                                                                               'subrule' => 'isreification',
+                                                                                                               'line' => '95',
+                                                                                                               'expected' => undef,
+                                                                                                               'max' => 100000000,
+                                                                                                               'repspec' => 's?'
+                                                                                                             }, 'Parse::RecDescent::Repetition' ),
                                                                                                       bless( {
                                                                                                                'min' => 1,
                                                                                                                'argcode' => undef,
                                                                                                                'matchrule' => 0,
                                                                                                                'lookahead' => 0,
                                                                                                                'subrule' => 'association_member',
-                                                                                                               'line' => '50',
+                                                                                                               'line' => '95',
                                                                                                                'expected' => undef,
                                                                                                                'max' => 100000000,
                                                                                                                'repspec' => 's'
                                                                                                              }, 'Parse::RecDescent::Repetition' ),
                                                                                                       bless( {
-                                                                                                               'line' => '51',
+                                                                                                               'line' => '96',
                                                                                                                'code' => '{
-			   my $a = new XTM::association ();
+			   my @components; # here I collect all which I generate here
 
-			   $a->add_scope (new XTM::scope (references => [ 
-				    new XTM::topicRef (href => $item{scope}->[0] ? "#$item{scope}->[0]" : $XTM::PSI::xtm{universal_scope}) ]));
+			   my $a = new XTM::association ();
+			   my $s = new XTM::scope();
+			   $a->add_scope ($s);
+			   foreach (@{$item{scopes}->[0]}) {
+			     $s->add_reference_s (new XTM::topicRef (href => "#$_"));
+			   }
+			   $a->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
+			     unless $a->scope->references;
+
 			   $a->add_instanceOf (new XTM::instanceOf (reference => 
 				    new XTM::topicRef (href => "#$item{type_topic_id}")));
 			   foreach (@{$item{association_member}}) {
 			     $a->add__s ($_);
 			   }
-			   $return = $a;
+
+			   push @components, $a;
+
+			   foreach my $uri (@{$item{isreification}}) {
+			     push @components, _make_reifying_topic ($uri, $a->id);
+			   }
+
+			   $return = \\@components;
 			 }',
                                                                                                                'hashname' => '__ACTION1__',
                                                                                                                'lookahead' => 0
@@ -5084,8 +5596,9 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                        }, 'Parse::RecDescent::Production' )
                                                                               ],
                                                                    'calls' => [
-                                                                                'scope',
+                                                                                'scopes',
                                                                                 'type_topic_id',
+                                                                                'isreification',
                                                                                 'association_member'
                                                                               ],
                                                                    'opcount' => 0,
@@ -5095,7 +5608,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                  }, 'Parse::RecDescent::Rule' ),
                               'scope' => bless( {
                                                   'impcount' => 0,
-                                                  'line' => '150',
+                                                  'line' => '206',
                                                   'prods' => [
                                                                bless( {
                                                                         'dircount' => 0,
@@ -5108,13 +5621,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                         'items' => [
                                                                                      bless( {
                                                                                               'description' => '\'@\'',
-                                                                                              'line' => '150',
+                                                                                              'line' => '206',
                                                                                               'pattern' => '@',
                                                                                               'hashname' => '__STRING1__',
                                                                                               'lookahead' => 0
                                                                                             }, 'Parse::RecDescent::Literal' ),
                                                                                      bless( {
-                                                                                              'line' => '150',
+                                                                                              'line' => '206',
                                                                                               'subrule' => 'topic_id',
                                                                                               'argcode' => undef,
                                                                                               'implicit' => undef,
@@ -5135,7 +5648,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                 }, 'Parse::RecDescent::Rule' ),
                               'type' => bless( {
                                                  'impcount' => 0,
-                                                 'line' => '146',
+                                                 'line' => '202',
                                                  'prods' => [
                                                               bless( {
                                                                        'dircount' => 0,
@@ -5148,13 +5661,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                        'items' => [
                                                                                     bless( {
                                                                                              'description' => '\'(\'',
-                                                                                             'line' => '146',
+                                                                                             'line' => '202',
                                                                                              'pattern' => '(',
                                                                                              'hashname' => '__STRING1__',
                                                                                              'lookahead' => 0
                                                                                            }, 'Parse::RecDescent::Literal' ),
                                                                                     bless( {
-                                                                                             'line' => '146',
+                                                                                             'line' => '202',
                                                                                              'subrule' => 'type_topic_id',
                                                                                              'argcode' => undef,
                                                                                              'implicit' => undef,
@@ -5163,13 +5676,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                            }, 'Parse::RecDescent::Subrule' ),
                                                                                     bless( {
                                                                                              'description' => '\')\'',
-                                                                                             'line' => '146',
+                                                                                             'line' => '202',
                                                                                              'pattern' => ')',
                                                                                              'hashname' => '__STRING2__',
                                                                                              'lookahead' => 0
                                                                                            }, 'Parse::RecDescent::Literal' ),
                                                                                     bless( {
-                                                                                             'line' => '146',
+                                                                                             'line' => '202',
                                                                                              'code' => '{ $return = $item{type_topic_id}; }',
                                                                                              'hashname' => '__ACTION1__',
                                                                                              'lookahead' => 0
@@ -5188,7 +5701,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                }, 'Parse::RecDescent::Rule' ),
                               'subject_identity' => bless( {
                                                              'impcount' => 0,
-                                                             'line' => '136',
+                                                             'line' => '193',
                                                              'prods' => [
                                                                           bless( {
                                                                                    'dircount' => 0,
@@ -5201,20 +5714,20 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                    'items' => [
                                                                                                 bless( {
                                                                                                          'description' => '\'sin\'',
-                                                                                                         'line' => '136',
+                                                                                                         'line' => '193',
                                                                                                          'pattern' => 'sin',
                                                                                                          'hashname' => '__STRING1__',
                                                                                                          'lookahead' => 0
                                                                                                        }, 'Parse::RecDescent::Literal' ),
                                                                                                 bless( {
                                                                                                          'description' => '\':\'',
-                                                                                                         'line' => '136',
+                                                                                                         'line' => '193',
                                                                                                          'pattern' => ':',
                                                                                                          'hashname' => '__STRING2__',
                                                                                                          'lookahead' => 0
                                                                                                        }, 'Parse::RecDescent::Literal' ),
                                                                                                 bless( {
-                                                                                                         'line' => '136',
+                                                                                                         'line' => '193',
                                                                                                          'subrule' => 'string',
                                                                                                          'argcode' => undef,
                                                                                                          'implicit' => undef,
@@ -5222,11 +5735,10 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          'lookahead' => 0
                                                                                                        }, 'Parse::RecDescent::Subrule' ),
                                                                                                 bless( {
-                                                                                                         'line' => '137',
+                                                                                                         'line' => '194',
                                                                                                          'code' => '{
 			 use URI;
 			 my $u = URI->new ($item{string});
-			 use Data::Dumper;
 			 $return = ref ($u) eq \'URI::_generic\' ? 
 			   new XTM::topicRef (href => $item{string}) :
 			     new XTM::subjectIndicatorRef (href => $item{string});
@@ -5248,7 +5760,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                            }, 'Parse::RecDescent::Rule' ),
                               'topic_id' => bless( {
                                                      'impcount' => 0,
-                                                     'line' => '162',
+                                                     'line' => '218',
                                                      'prods' => [
                                                                   bless( {
                                                                            'dircount' => 0,
@@ -5260,7 +5772,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                            'line' => undef,
                                                                            'items' => [
                                                                                         bless( {
-                                                                                                 'line' => '162',
+                                                                                                 'line' => '218',
                                                                                                  'subrule' => 'id',
                                                                                                  'argcode' => undef,
                                                                                                  'implicit' => undef,
@@ -5281,7 +5793,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                    }, 'Parse::RecDescent::Rule' ),
                               'association_member' => bless( {
                                                                'impcount' => 0,
-                                                               'line' => '64',
+                                                               'line' => '123',
                                                                'prods' => [
                                                                             bless( {
                                                                                      'dircount' => 0,
@@ -5293,7 +5805,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                      'line' => undef,
                                                                                      'items' => [
                                                                                                   bless( {
-                                                                                                           'line' => '64',
+                                                                                                           'line' => '123',
                                                                                                            'subrule' => 'topic_id',
                                                                                                            'argcode' => undef,
                                                                                                            'implicit' => undef,
@@ -5302,13 +5814,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                          }, 'Parse::RecDescent::Subrule' ),
                                                                                                   bless( {
                                                                                                            'description' => '\':\'',
-                                                                                                           'line' => '64',
+                                                                                                           'line' => '123',
                                                                                                            'pattern' => ':',
                                                                                                            'hashname' => '__STRING1__',
                                                                                                            'lookahead' => 0
                                                                                                          }, 'Parse::RecDescent::Literal' ),
                                                                                                   bless( {
-                                                                                                           'line' => '64',
+                                                                                                           'line' => '123',
                                                                                                            'subrule' => 'list_of_member_topic_ids',
                                                                                                            'argcode' => undef,
                                                                                                            'implicit' => undef,
@@ -5316,7 +5828,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                            'lookahead' => 0
                                                                                                          }, 'Parse::RecDescent::Subrule' ),
                                                                                                   bless( {
-                                                                                                           'line' => '65',
+                                                                                                           'line' => '124',
                                                                                                            'code' => '{
 			   my $m = new XTM::member ();
 
@@ -5349,7 +5861,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                              }, 'Parse::RecDescent::Rule' ),
                               'string' => bless( {
                                                    'impcount' => 0,
-                                                   'line' => '166',
+                                                   'line' => '222',
                                                    'prods' => [
                                                                 bless( {
                                                                          'dircount' => 0,
@@ -5367,7 +5879,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                'hashname' => '__PATTERN1__',
                                                                                                'lookahead' => 0,
                                                                                                'ldelim' => '/',
-                                                                                               'line' => '166',
+                                                                                               'line' => '222',
                                                                                                'rdelim' => '/'
                                                                                              }, 'Parse::RecDescent::Token' )
                                                                                     ],
@@ -5382,7 +5894,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                  }, 'Parse::RecDescent::Rule' ),
                               'list_of_ids' => bless( {
                                                         'impcount' => 0,
-                                                        'line' => '160',
+                                                        'line' => '216',
                                                         'prods' => [
                                                                      bless( {
                                                                               'dircount' => 1,
@@ -5394,7 +5906,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                               'line' => undef,
                                                                               'items' => [
                                                                                            bless( {
-                                                                                                    'line' => '160',
+                                                                                                    'line' => '216',
                                                                                                     'code' => 'my $oldskip = $skip; $skip=\'[ ]*\'; $oldskip',
                                                                                                     'hashname' => '__DIRECTIVE1__',
                                                                                                     'lookahead' => 0,
@@ -5406,7 +5918,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                     'matchrule' => 0,
                                                                                                     'lookahead' => 0,
                                                                                                     'subrule' => 'id',
-                                                                                                    'line' => '160',
+                                                                                                    'line' => '216',
                                                                                                     'expected' => undef,
                                                                                                     'max' => 100000000,
                                                                                                     'repspec' => 's'
@@ -5425,7 +5937,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                       }, 'Parse::RecDescent::Rule' ),
                               '_alternation_1_of_production_1_of_rule_topic_definition' => bless( {
                                                                                                     'impcount' => 0,
-                                                                                                    'line' => '167',
+                                                                                                    'line' => '225',
                                                                                                     'prods' => [
                                                                                                                  bless( {
                                                                                                                           'dircount' => 0,
@@ -5438,14 +5950,14 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                           'items' => [
                                                                                                                                        bless( {
                                                                                                                                                 'description' => '\'tid\'',
-                                                                                                                                                'line' => '167',
+                                                                                                                                                'line' => '225',
                                                                                                                                                 'pattern' => 'tid',
                                                                                                                                                 'hashname' => '__STRING1__',
                                                                                                                                                 'lookahead' => 0
                                                                                                                                               }, 'Parse::RecDescent::Literal' ),
                                                                                                                                        bless( {
                                                                                                                                                 'description' => '\':\'',
-                                                                                                                                                'line' => '167',
+                                                                                                                                                'line' => '225',
                                                                                                                                                 'pattern' => ':',
                                                                                                                                                 'hashname' => '__STRING2__',
                                                                                                                                                 'lookahead' => 0
@@ -5460,9 +5972,42 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                     'vars' => '',
                                                                                                     'name' => '_alternation_1_of_production_1_of_rule_topic_definition'
                                                                                                   }, 'Parse::RecDescent::Rule' ),
+                              'uri' => bless( {
+                                                'impcount' => 0,
+                                                'line' => '224',
+                                                'prods' => [
+                                                             bless( {
+                                                                      'dircount' => 0,
+                                                                      'uncommit' => undef,
+                                                                      'patcount' => 1,
+                                                                      'strcount' => 0,
+                                                                      'number' => 0,
+                                                                      'error' => undef,
+                                                                      'line' => undef,
+                                                                      'items' => [
+                                                                                   bless( {
+                                                                                            'description' => '/[\\\\w\\\\-\\\\.\\\\/\\\\?\\\\&\\\\:\\\\,\\\\+]+/',
+                                                                                            'pattern' => '[\\w\\-\\.\\/\\?\\&\\:\\,\\+]+',
+                                                                                            'mod' => '',
+                                                                                            'hashname' => '__PATTERN1__',
+                                                                                            'lookahead' => 0,
+                                                                                            'ldelim' => '/',
+                                                                                            'line' => '224',
+                                                                                            'rdelim' => '/'
+                                                                                          }, 'Parse::RecDescent::Token' )
+                                                                                 ],
+                                                                      'actcount' => 0
+                                                                    }, 'Parse::RecDescent::Production' )
+                                                           ],
+                                                'calls' => [],
+                                                'opcount' => 0,
+                                                'changed' => 0,
+                                                'vars' => '',
+                                                'name' => 'uri'
+                                              }, 'Parse::RecDescent::Rule' ),
                               'resourceRef_characteristic' => bless( {
                                                                        'impcount' => 0,
-                                                                       'line' => '100',
+                                                                       'line' => '159',
                                                                        'prods' => [
                                                                                     bless( {
                                                                                              'dircount' => 0,
@@ -5475,7 +6020,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                              'items' => [
                                                                                                           bless( {
                                                                                                                    'description' => '\'oc\'',
-                                                                                                                   'line' => '100',
+                                                                                                                   'line' => '159',
                                                                                                                    'pattern' => 'oc',
                                                                                                                    'hashname' => '__STRING1__',
                                                                                                                    'lookahead' => 0
@@ -5486,7 +6031,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                    'matchrule' => 0,
                                                                                                                    'lookahead' => 0,
                                                                                                                    'subrule' => 'scopes',
-                                                                                                                   'line' => '100',
+                                                                                                                   'line' => '159',
                                                                                                                    'expected' => undef,
                                                                                                                    'max' => 1,
                                                                                                                    'repspec' => '?'
@@ -5497,20 +6042,20 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                    'matchrule' => 0,
                                                                                                                    'lookahead' => 0,
                                                                                                                    'subrule' => 'type',
-                                                                                                                   'line' => '100',
+                                                                                                                   'line' => '159',
                                                                                                                    'expected' => undef,
                                                                                                                    'max' => 1,
                                                                                                                    'repspec' => '?'
                                                                                                                  }, 'Parse::RecDescent::Repetition' ),
                                                                                                           bless( {
                                                                                                                    'description' => '\':\'',
-                                                                                                                   'line' => '100',
+                                                                                                                   'line' => '159',
                                                                                                                    'pattern' => ':',
                                                                                                                    'hashname' => '__STRING2__',
                                                                                                                    'lookahead' => 0
                                                                                                                  }, 'Parse::RecDescent::Literal' ),
                                                                                                           bless( {
-                                                                                                                   'line' => '100',
+                                                                                                                   'line' => '159',
                                                                                                                    'subrule' => 'string',
                                                                                                                    'argcode' => undef,
                                                                                                                    'implicit' => undef,
@@ -5518,7 +6063,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                    'lookahead' => 0
                                                                                                                  }, 'Parse::RecDescent::Subrule' ),
                                                                                                           bless( {
-                                                                                                                   'line' => '101',
+                                                                                                                   'line' => '160',
                                                                                                                    'code' => '{
 			 my $o = new XTM::occurrence ();
 			 $o->add_resource (new XTM::resourceRef (href => $item{string}));
@@ -5528,11 +6073,10 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
 			 }
 			 $o->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) ) 
 			   unless $o->scope->references;
-			 if ($item{type} && $item{type}->[0]) {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => "#$item{type}->[0]")));
-			 } else {
-			   $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => $XTM::PSI::xtm{occurrence})));
-			 }
+
+			 $o->add_instanceOf (new XTM::instanceOf ( reference => new XTM::topicRef (href => 
+				$item{type} && $item{type}->[0] ?	 "#$item{type}->[0]" : $XTM::PSI::xtm{occurrence}
+												  )));
 			 $return = $o;
 		       }',
                                                                                                                    'hashname' => '__ACTION1__',
@@ -5554,7 +6098,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                      }, 'Parse::RecDescent::Rule' ),
                               'id' => bless( {
                                                'impcount' => 0,
-                                               'line' => '164',
+                                               'line' => '220',
                                                'prods' => [
                                                             bless( {
                                                                      'dircount' => 0,
@@ -5572,7 +6116,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                            'hashname' => '__PATTERN1__',
                                                                                            'lookahead' => 0,
                                                                                            'ldelim' => '/',
-                                                                                           'line' => '164',
+                                                                                           'line' => '220',
                                                                                            'rdelim' => '/'
                                                                                          }, 'Parse::RecDescent::Token' )
                                                                                 ],
@@ -5587,7 +6131,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                              }, 'Parse::RecDescent::Rule' ),
                               'list_of_member_topic_ids' => bless( {
                                                                      'impcount' => 0,
-                                                                     'line' => '158',
+                                                                     'line' => '214',
                                                                      'prods' => [
                                                                                   bless( {
                                                                                            'dircount' => 0,
@@ -5599,7 +6143,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                            'line' => undef,
                                                                                            'items' => [
                                                                                                         bless( {
-                                                                                                                 'line' => '158',
+                                                                                                                 'line' => '214',
                                                                                                                  'subrule' => 'list_of_ids',
                                                                                                                  'argcode' => undef,
                                                                                                                  'implicit' => undef,
@@ -5620,7 +6164,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                    }, 'Parse::RecDescent::Rule' ),
                               'basename_characteristic' => bless( {
                                                                     'impcount' => 0,
-                                                                    'line' => '87',
+                                                                    'line' => '146',
                                                                     'prods' => [
                                                                                  bless( {
                                                                                           'dircount' => 0,
@@ -5633,7 +6177,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                           'items' => [
                                                                                                        bless( {
                                                                                                                 'description' => '\'bn\'',
-                                                                                                                'line' => '87',
+                                                                                                                'line' => '146',
                                                                                                                 'pattern' => 'bn',
                                                                                                                 'hashname' => '__STRING1__',
                                                                                                                 'lookahead' => 0
@@ -5644,20 +6188,20 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                 'matchrule' => 0,
                                                                                                                 'lookahead' => 0,
                                                                                                                 'subrule' => 'scopes',
-                                                                                                                'line' => '87',
+                                                                                                                'line' => '146',
                                                                                                                 'expected' => undef,
                                                                                                                 'max' => 1,
                                                                                                                 'repspec' => '?'
                                                                                                               }, 'Parse::RecDescent::Repetition' ),
                                                                                                        bless( {
                                                                                                                 'description' => '\':\'',
-                                                                                                                'line' => '87',
+                                                                                                                'line' => '146',
                                                                                                                 'pattern' => ':',
                                                                                                                 'hashname' => '__STRING2__',
                                                                                                                 'lookahead' => 0
                                                                                                               }, 'Parse::RecDescent::Literal' ),
                                                                                                        bless( {
-                                                                                                                'line' => '87',
+                                                                                                                'line' => '146',
                                                                                                                 'subrule' => 'string',
                                                                                                                 'argcode' => undef,
                                                                                                                 'implicit' => undef,
@@ -5665,7 +6209,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                                                                 'lookahead' => 0
                                                                                                               }, 'Parse::RecDescent::Subrule' ),
                                                                                                        bless( {
-                                                                                                                'line' => '88',
+                                                                                                                'line' => '147',
                                                                                                                 'code' => '{
 			 my $b = new XTM::baseName ();
 			 $b->add_baseNameString (new XTM::baseNameString (string => $item{string}));
@@ -5695,7 +6239,7 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                   }, 'Parse::RecDescent::Rule' ),
                               'scopes' => bless( {
                                                    'impcount' => 0,
-                                                   'line' => '148',
+                                                   'line' => '204',
                                                    'prods' => [
                                                                 bless( {
                                                                          'dircount' => 0,
@@ -5708,13 +6252,13 @@ package XTM::AsTMa::CParser; sub new { my $self = bless( {
                                                                          'items' => [
                                                                                       bless( {
                                                                                                'description' => '\'@\'',
-                                                                                               'line' => '148',
+                                                                                               'line' => '204',
                                                                                                'pattern' => '@',
                                                                                                'hashname' => '__STRING1__',
                                                                                                'lookahead' => 0
                                                                                              }, 'Parse::RecDescent::Literal' ),
                                                                                       bless( {
-                                                                                               'line' => '148',
+                                                                                               'line' => '204',
                                                                                                'subrule' => 'list_of_scope_topic_ids',
                                                                                                'argcode' => undef,
                                                                                                'implicit' => undef,

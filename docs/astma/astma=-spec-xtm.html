@@ -1,0 +1,651 @@
+
+
+<html><!-- Automatically generated, do not edit -->
+<head>
+	<title>AsTMa= Language Definition</title>
+        <link rel="stylesheet" media="screen"  href="astma-print.css" type="text/css">
+</head>
+<body bgcolor="white"  >
+
+<h1>AsTMa= Language Definition</h1><p>
+			Robert
+			 Barta
+
+			
+				<a href="http://www.bond.edu.au/">Bond University</a>
+				<address><a href="mailto:rho@bond.edu.au">rho@bond.edu.au</a></address>
+			
+		</p>Copyright © 
+			2002
+			<a href="mailto:rho@bond.edu.au">Robert Barta</a>
+		<p>
+			<p>
+   			AsTMa= is part of the <a href="astma-family.dbk">AsTMa language family</a> which was 
+			designed to facilitate authoring, but also constraining and querying topic maps.
+			This document provides a formal language definition based on a syntax and mapping rules
+			how particular AsTMa= language constructs are mapped into an XTM equivalent.
+			</p>
+
+			<p>
+			This document has no formal status. It is a technical report of <a href="http://www.bond.edu.au/">Bond 
+			University</a>.
+			</p>
+		</p><releaseinfo>v1.0, 2002-07-07, Revision 1.8</releaseinfo>
+
+<hr>
+
+
+		<h2>General Syntax</h2>
+
+	<p>
+	In the following we use grammars (<a href="http://www.cl.cam.ac.uk/~mgk25/iso-14977.pdf">extended BNFs</a>) and 
+	<a href="http://etext.lib.virginia.edu/helpsheets/regex.html">regexps</a> (regular expressions) 
+	to define the
+	syntax of an AsTMa= instance.
+	</p>
+
+	<p>
+	An <i>AsTMa= instance</i> is any (linear) text which follows the rules given in this specification. Such a
+	text can reside	in a file on a file system or can also be created on the fly from an external data source.
+	As AsTMa= is line-oriented, we introduce <tt>eol</tt> as special terminal to symbolize the end of the line
+	(or the end of the text stream, for that matter). AsTMa= processors use the start and the end of a line
+	as a natural boundary of pertained Topic Map information. If for some reason, say readability, a line n has to be broken
+	into several lines, the backslash character <tt>\</tt> at the very end of a line n indicates that the followup line
+	n+1 extends line n.
+	</p>
+
+	<p>
+	Example: Lines will be collapsed into one
+      
+    	<pre class="astma">
+bn: this line is too long, so\
+    we continue it on the next line
+</pre>
+	</p>
+
+	<p>
+	If we allow any number of white spaces to occur on a
+	specific point in the
+	grammar, the we symbolize this as <tt>ws*</tt>. If we require at least one white space to appear
+	somewhere, then we use <tt>ws+</tt> to denote this.
+	Before and after terminals (keywords and special characters), white-spaces can be used freely while
+	this is not made explicit in the grammar productions to keep the grammar readable. Moreover, any text is stripped 
+        off white-spaces on its beginning and its end:
+
+	<blockquote>
+	    <i>string</i> --> [ ws* ] { <i>any character</i> } [ ws* ] eol
+	</blockquote>
+	</p>
+
+	<p>
+	In many cases topic identifiers will be used to refer to other topics. To underline <i>what kind</i>
+	of topic is expected in specific cases (without necessarily enforcing this with an AsTMa= processor) the syntax uses
+	<i>typed</i> non-terminals, like <i>role-topic-id</i> or <i>type-topic-id</i>.
+	</p>
+
+	<hr />
+		<h2>General Semantics</h2>
+	<p>
+	An AsTMa= processor is any program which is capable to parse and process an AsTMa= instance.
+	For the sake of the following definition it is assumed that the processor will convert an AsTMa= instance into an
+	equivalent XTM instance, henceforth referred to as the <i>virtual XTM instance</i>. 
+	The following semantic definition
+	of AsTMa= is based on this transformation and not on Topic Map processing models (
+	<a href="http://www.isotopicmaps.org/sam/">SAM</a>, 
+	<a href="http://www.topicmaps.net/pmtm4.htm">TMPM</a>) which are developed at the time of writing.
+	</p>
+
+	<p>
+	A AsTMa= processor is free to skip the transformation step and to directly load AsTMa= instances as long
+	as this results in the same semantics as the virtual XTM instance.
+	</p>
+
+	<hr />
+		<h2>Overall Structure</h2>
+	<p>
+	An AsTMa= instance has the following structure:
+    
+	<blockquote>
+	      <i>instance</i> --> { <i>comment</i> } <i>name-encode</i> { <i>section</i> }<br />
+	      <i>section</i> --> <i>comment</i> | <i>topic-definition</i> | <i>association-definition</i>
+	</blockquote>
+	</p>
+
+	<p>
+	An AsTMa= processor has to honor the following processing constraints:
+
+	<ul>
+		<li>
+		The order of above components SHOULD NOT be relevant.
+		</li>
+		<li>
+		An AsTMa= processor MAY issue warnings when topic ids are referenced but are never defined as part of
+		a topic definition. AsTMa= processor also may automatically define these topics with reasonable defaults.
+		</li>
+	</ul>
+	</p>
+	<hr />
+		<h2>Naming and Encoding</h2>
+	<p>
+	A particular AsTMa= instance is a character string in a particular character encoding. The
+	AsTMa= processor transparently passes all characters to the equivalent virtual XTM instance. To make this 
+	happen, an AsTMa= instance CAN specify at the begining of the text stream the appropriate character encoding. 
+	This encoding will also be the XML encoding used in the virtual XTM instance. 
+	Any AsTMa= instance CAN be named by a string matching [^\S]+ (anything not containing white spaces).
+	It is up to the AsTMa= processor how this name will be utilized. The <i>name</i> MAY become
+	the value of the ID attribute of the top-level
+	<a href="http://www.topicmaps.org/xtm/index.html#syn-topicmap">topicMap</a> element.
+	</p>
+	<p>
+	<blockquote>
+	     <i>name-encode</i> --> <i>name</i> [ ':' <i>encoding</i> ] eol
+	</blockquote>
+	</p>
+
+	<p>
+	Example: The following AsTMa= instance will be named <tt>linux</tt> and will assume any text to
+	be  encoded in <tt>iso-8859-1</tt>.
+
+
+	<pre class="astma">
+linux: iso-8859-1
+</pre>
+	</p>
+
+	<hr />
+		<h2>Comments</h2>
+	<p>
+	It is up to an AsTMa= processor how to process comments. When converting into XTM, the processor MAY
+	create XML comment sections. When directly loading it any comment may also be discarded.
+	</p>
+
+	<p>
+	<blockquote>
+	      <i>comment</i> --> { '#' <i>string</i> eol }
+	</blockquote>
+
+
+
+	</p>
+
+	<p>
+	AsTMa= supports <i>global</i> and <i>local</i> comments.
+
+	<dl>
+		
+		<dt><strong><i>global comment section</i></strong></dt>
+			<dd>
+			<p>
+			A <i>global comment section</i> is introduced by a <tt>#</tt> at the very beginning of a 
+			line (column 1). Any following
+			text (i.e. starting with the 2nd column) is regarded to be comment text. Any directly subsequent line(s) which 
+			also begin(s) with a <tt>#</tt> is(are) accumulated into the comment. A global comment section is 
+			terminated by the begin of some other top level section or an empty line.
+			</p>
+
+			<p>
+			Example: The following comment contains 3 lines, the '<tt>#</tt>'s themselves are discarded.
+			<pre class="astma">
+# warning from the information secretary
+# Linux is a communist conspiration
+# against the free Microsoft world
+</pre>
+			</p>
+			</dd>
+
+		
+		
+		<dt><strong><i>local comment section</i></strong></dt>
+			<dd>
+			<p>
+			A <i>local comment</i> is introduced by a <tt>#</tt> NOT at the beginning of the line AND
+			following at least one white-space character 
+			(changed starting with <a href="astma=-1.0r1.5.dbk"> Rev1.5</a>). 
+			Local comments include ALL white-space characters
+			before the '#' (changed starting with <a href="astma=-1.0r1.5.dbk">Rev1.5</a>) and reach until
+			the end of the current line.
+			</p>
+			</dd>
+
+		
+	</dl>
+	</p>
+	<hr />
+		<h2>Topics</h2>
+	<p>
+	A topic definition section follows the syntax
+
+	<blockquote>
+	      <i>topic-definition</i> --> [ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] [ 'reifies' <i>string</i> ] { 'is-reified-by' uri } eol 
+              { ws* <i>topic-characteristic</i> eol } 
+	</blockquote>
+	</p>
+
+	<p>
+	The <i>topic-id</i> stands for the topic identifier and HAS to be provided. This identifier
+	SHOULD follow the <a href="http://www.w3.org/TR/2000/REC-xml-20001006#NT-Name">XML identifier rules</a>
+	although an AsTMa= processor may not directly police this.
+	</p>
+
+	<p>
+	The topic identifier itself has to be placed at the beginning of the line; if the optional list
+	of type identifiers is specified, these topic identifiers mentioned therein are interpreted as <i>types</i>
+	of that topic. The list entries are separated by one (or more) white spaces:
+      
+	<blockquote>
+	      <i>list-of-*-topic-ids</i> --> <i>topic-id</i> { ws+ <i>topic-id</i> }
+	</blockquote>
+	</p>
+
+	<p>
+	Example: A topic with id <tt>linux</tt> and with two types.
+
+    	<pre class="astma">
+linux (operating-system-technology open-source-software)
+...
+</pre>
+	</p>
+
+	<p>
+	Every topic definition will result in a <a href="http://www.topicmaps.org/xtm/#elt-topic"><i>topic</i> 
+	element</a> in the
+	virtual XTM instance. The <i>topic-id</i> will be used as value for the ID attribute.
+	For every topic type an <a href="http://www.topicmaps.org/xtm/index.html#elt-instanceOf">instanceOf element</a>
+	will be generated inside this topic containing a <a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef
+	element</a> with the xlink:href attribute having the value of the type id.
+	</p>
+
+	<hr />
+		<h2>Topic Reification</h2>
+	<p>
+	Optionally, it can be specified that a particular topic <i>reifies</i> a particular addressable
+	resource. To unambiguously name this resource after the keyword 'reifies' a URI must be provided. The URI may
+	point to an external resource, but also to another topic in the map. The AsTMa= processor will generate a
+	<a href="http://www.topicmaps.org/xtm/index.html#elt-resourceRef">resourceRef element</a> within 
+        the <a href="http://www.topicmaps.org/xtm/index.html#elt-subjectIdentity">subjectIdentity element</a> of that topic.
+	</p>
+	<p>
+	Example: A topic reifies a subject which is an addressable resource.
+
+    	<pre class="astma">
+linux-org (web-site) reifies http://www.linux.org/
+...
+</pre>
+	</p>
+
+	<p>
+	Additionally, any number of other topics can be named which reify the current topic. The effect is similar
+	to the above except that all these topics will be generated with the subjectIdentity defined within them
+	(and not in the current topic).
+	</p>
+
+	<p>
+	Example: A topic is reified by another topic.
+
+    	<pre class="astma">
+linux-org (web-site) is-reified-by kernel-org
+...
+</pre>
+	</p>
+
+	<hr />
+		<h2>Topic characteristics</h2>
+	<p>
+	Any topic definition section can include any number of topic characteristics, the order itself is irrelevant. 
+	Every such characteristic is indicated
+	by a (case sensitive) keyword, followed by scoping and/or typing information (if appropriate),
+	a colon (<tt>:</tt>) and the value for this particular characteristic. To improve readibility, before the keyword
+	white spaces are allowed.
+	</p>
+
+	<p>
+	Example: A topic with id <tt>linux</tt> with an explicit base name and a typed occurrence.
+	<pre class="astma">
+linux (operating-system-technology open-source-software)
+  bn: Linux Operating System
+  oc (download): http://www.linux.org/
+</pre>
+	</p>
+
+	<p>
+	Following defaults are used for a topic in the case there is no explicit characteristic defined:
+
+	<ul>
+		<li>
+		If no unscoped <i>baseName</i> characteristic is defined, then the topic identifier will be used. The AsTMa=
+		processor is free to prettify this string for better readability.
+		</li>
+		<li>
+		If no type list is supplied or if the list is empty the AsTMa= processor SHOULD conform 
+		to <a href="http://www.topicmaps.org/xtm/index.html">XTM</a> in that it provides a
+		default type.
+		</li>
+	</ul>
+	</p>
+
+	<p>
+	All topic characteristics result in the generation of an appropriate XTM element inside the current topic
+	element of the virtual XTM instance:
+
+	<blockquote>
+	   <i>topic-characteristic</i> --> <i>basename-characteristic</i> | <i>resourceRef-characteristic</i> | <i>resourceData-characteristic</i> | <i>subject-identity</i>
+	</blockquote>
+
+	<dl>
+		
+		<dt><strong>baseName</strong></dt>
+			<dd>
+			<p>
+			A (scoped) base name can be defined via
+			<blockquote>
+			  <i>basename-characteristic</i> --> 'bn' [ '@' <i>list-of-scope-topic-ids</i> ] ':' <i>string</i>
+			</blockquote>
+			The <i>string</i> will---after being stripped off leading and trailing blanks---be used  
+			for the text content of the 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-baseNameString">baseNameString element</a> inside
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-baseName">baseName element</a> of the
+			virtual XTM instance. If a list of scope topic ids
+			exists, then these ids will be used as values each for the attribute xlink:href for a 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a>
+			inside a <a href="http://www.topicmaps.org/xtm/index.html#elt-scope">scope element</a> inside above 
+			baseName element.
+			</p>
+			</dd>
+
+		
+		
+		<dt><strong>resourceRef occurrence</strong></dt>
+			<dd>
+			<p>
+			A (scoped and/or typed) resourceRef occurrence is defined with
+			<blockquote>
+			  <i>resourceRef-characteristic</i> --> 'oc' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>uri</i>
+			</blockquote>
+			The <i>uri</i> SHOULD be a valid URI. An AsTMa= processor MAY perform checks on this URL.
+			</p>
+
+			<p>
+			For each resource occurrence, in the virtual XTM instance a 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-resourceRef">resourceRef element</a> will be created
+			with the <i>uri</i> being used as xlink:href attribute. That element will be nested inside a
+			<a href="http://www.topicmaps.org/xtm/index.html#ex-occurrence">occurrence element</a> inside the current 
+			topic element.
+			</p>
+
+			<p>
+			If a list of scope topic ids is provided, then these ids will be used as values each
+			for the attribute xlink:href for a 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a>
+			inside a <a href="http://www.topicmaps.org/xtm/index.html#elt-scope">scope element</a> inside the
+			above occurrence element.
+			</p>
+
+			<p>
+			If a type topic id is provided, then this id will be used as value for the attribute xlink:href for a 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a>
+			inside a <a href="http://www.topicmaps.org/xtm/index.html#elt-instanceOf">instanceOf element</a>
+			inside the above occurrence element.
+			</p>
+			</dd>
+
+		
+		
+		<dt><strong>resourceData occurrence</strong></dt>
+			<dd>
+			<p>
+			A (scoped and/or typed) resourceData occurrence is defined with
+			<blockquote>
+			  <i>resourceData-characteristic</i> --> 'in' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>string</i>
+			</blockquote>
+			The <i>string</i> will---after being stripped off leading and trailing blanks---be used as 
+			text inside a
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-resourceData">resourceData element</a> inside an
+			<a href="http://www.topicmaps.org/xtm/index.html#ex-occurrence">occurrence element</a> inside the current 
+			topic element.
+			</p>
+
+			<p>
+			If a list of scope topic ids is provided, then these ids will be used as value each for the
+			attribute xlink:href for a 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a>
+			inside a <a href="http://www.topicmaps.org/xtm/index.html#elt-scope">scope element</a> inside the
+			above occurrence element.
+			</p>
+
+			<p>
+			If a type topic id is provided, then this id will be used as value for the attribute xlink:href for a 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a>
+			inside a <a href="http://www.topicmaps.org/xtm/index.html#elt-instanceOf">instanceOf element</a>
+			inside the above occurrence element.
+			</p>
+			</dd>
+
+		
+		
+		<dt><strong>subject identity</strong></dt>
+			<dd>
+			<p>
+			A subject identity is defined by
+			<blockquote>
+			  <i>subject-identity</i> --> 'sin' ':' <i>uri</i>
+			</blockquote>
+			This <i>uri</i> will be used as subject indicator reference as the value for the 
+			attribute xlink:href for a 
+			<a href="http://www.topicmaps.org/xtm/index.html#elt-subjectIndicatorRef">subjectIndicatorRef element</a>
+			inside a <a href="http://www.topicmaps.org/xtm/index.html#elt-subjectIdentity">subjectIdentity element</a> 
+			inside the current topic.
+			</p>
+			</dd>
+
+		
+	</dl>
+	</p>
+
+	<hr />
+		<h2>Associations</h2>
+	<p>
+	An association definition section follows the syntax
+
+	<blockquote>
+	      <i>association-definition</i> --> [ '@' <i>scope-topic-id</i> ] '(' [ <i>association-type-topic-id</i> ] ')' { 'is-reified-by' uri } eol { ws* <i>association-member</i> eol }
+	</blockquote>
+
+	</p>
+
+	<p>
+	Example: An association of type <tt>kernel-patch-provides-feature</tt> with three roles <tt>feature</tt>, 
+	<tt>platform</tt> and <tt>patch</tt> and players, respectively.
+      
+	<pre class="astma">
+(kernel-patch-provides-feature)
+   feature:  reiserfs
+   platform: i386
+   patch:    generic-reiserfs-patch-2.4.x
+</pre>
+	</p>
+
+	<p>
+	If a list of scope topic ids
+	exists, then these ids will be used as values each for the attribute xlink:href for a 
+	<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a>
+	inside a <a href="http://www.topicmaps.org/xtm/index.html#elt-scope">scope element</a> inside
+	the <a href="http://www.topicmaps.org/xtm/index.html#elt-association">association</a> element.
+	</p>
+
+	<p>
+	At most one topic identifier can occur as association type. If no type is specified the 
+	<a href="http://www.topicmaps.org/xtm/#psi-association">XTM default</a> will be assumed.
+	</p>
+	
+	<p>
+	Association members are defined line-by-line according to
+
+	<blockquote>
+	      <i>association-member</i> --> <i>role-topic-id</i> ':' { <i>member-topic-id</i> }
+	</blockquote>
+	</p>
+
+	<p>
+	In the virtual XTM instance for every association definition in the AsTMa= instance an 
+	<a href="http://www.topicmaps.org/xtm/index.html#elt-association">association element</a> will be created 
+	inside the current topic map. Every member will result in the creation of a
+	<a href="http://www.topicmaps.org/xtm/index.html#elt-member">member element</a> inside this association
+	element.
+	</p>
+
+	<p>
+	The <i>role-topic-id</i> will be used as the value of the xlink:href attribute of an
+	<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a> inside a
+	<a href="http://www.topicmaps.org/xtm/index.html#elt-roleSpec">roleSpec element</a> inside the member.
+	</p>
+
+	<p>
+	Every single <i>member-topic-id</i> is used as the value of the xlink:href attribute of a
+	<a href="http://www.topicmaps.org/xtm/index.html#elt-topicRef">topicRef element</a> inside the member.
+	</p>
+
+	<p>
+	Associations can be reified in the same way as topics.
+	</p>
+
+	<p>
+	Example: Above association is reified as <tt>statement-1</tt>
+      
+	<pre class="astma">
+(kernel-patch-provides-feature) is-reified-by statement-1
+   feature:  reiserfs
+   platform: i386
+   patch:    generic-reiserfs-patch-2.4.x
+</pre>
+	</p>
+
+	<hr />
+		<h2>Directives</h2>
+	<p>
+	AsTMa= allows processors to define any number of <i>directives</i>. The only (syntactic)
+  	constraint the language imposes is that such an directive may only occupy <i>exactly one line</i>
+	which has to begin with the character '%'.
+	</p>
+
+	<p>
+	The precise semantics of each such directive is completely under the discretion of the AsTMa= processor. Suggestions
+	for directives are:
+	<ul>
+		<li>Character encoding</li>
+		<li>logging, debugging and aborting the parse process</li>
+		<li>controls for specifying what to do in case of missing topics</li>
+		<li>controls for specifying what to do in case of missing topic parts (e.g. baseName)</li>
+	</ul>
+	</p>
+
+	<hr />
+		<h2>Open Issues</h2>
+	<p>
+	Following unresolved issues exist:
+    
+	<ul>
+		<li>flexible use of topic ids and URIs</li>
+		<li>conformant converter is free to produce any additional topic/assocs appropriate??</li>
+		<li>specifying additional behavior? auto complete, defaults for assocs (types?)</li>
+		<li>should there be default roles for association members?</li>
+	</ul>
+	</p>
+	<hr />
+		<h2>Appendix: Changes</h2>
+	<ul>
+		<li>
+		relative to <a href="astma=-1.0r1.8.dbk">v1.0 Rev.1.8</a>:
+		added is-reified-by, factorized out tutorial and language issues parts, some editorial fixes
+		</li>
+
+		<li>
+		relative to <a href="astma=-1.0r1.7.dbk">v1.0 Rev.1.7</a>:
+		minor editorial changes
+		</li>
+
+		<li>
+		relative to <a href="astma=-1.0r1.6.dbk">v1.0 Rev.1.6</a>:
+		distinguished subject indicators of being either local topicRef or external subjectIndicatorRef,
+		added more text to topic map tutorial,
+		added reifies syntax for topics
+		</li>
+
+		<li>
+		relative to <a href="astma=-1.0r1.5.dbk">v1.0 Rev.1.5</a>:
+		directives to control modalities of parsing, macros removed, local comments MUST have at least one blank leading
+		</li>
+
+		<li>
+		relative to <a href="astma=-1.0r1.4.html">v1.0 Rev.1.4</a>:
+		added subjectIdentity, added multiple scopes for basenames, occurrences, added scoping for associations, minor layouting changes, moved some introduction to the family document, modified differences to LTM
+		</li>
+
+		<li>
+		relative to <a href="astma-1.0r1.3.html">v1.0 Rev.1.3</a>: 
+		renaming to AsTMa=, open issues added, topic syntax changed (+tid)
+		</li>
+
+		<li>
+		relative to <a href="astma-1.0r1.2.html">v1.0 Rev.1.2</a>: 
+		clarified the term AsTMa= processor, 
+		added semantics, 
+		minor grammar corrections
+		</li>
+
+		<li>
+		relative to <a href="astma-0.999.html">v0.999</a>: added language definition, added language issues discussion
+		</li>
+
+		<li>
+		relative to <a href="astma-0.99.html">v0.99</a>: association types HAVE to be in () s now
+		</li>
+	</ul>
+	<hr />
+		<h2>Appendix: Syntax</h2>
+	<table width="100%">
+	<caption>AsTMa= Syntax</caption>
+	<tbody>
+<!--		<row><td colspan="3"></entry><entry>Comment</entry></row> -->
+		<tr><td><i>instance</i></td><td>--></td><td>{ <i>comment</i> } <i>name-encode</i> { <i>section</i> }</td><td></td></tr>
+
+		<tr><td><i>comment</i></td><td>--></td><td>{ '#' <i>string</i> eol }</td><td></td></tr>
+
+		<tr><td><i>name-encode</i></td><td>--></td><td><i>name</i> [ ':' <i>encoding</i> ] eol</td><td></td></tr>
+
+		<tr><td><i>section</i></td><td>--></td><td><i>comment</i> |<br />
+	    <i>topic-definition</i> |<br />
+	    <i>association-definition</i></td><td></td></tr>
+
+		<tr><td><i>topic-definition</i></td><td>--></td><td>[ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] [ 'reifies' <i>string</i> ] eol { ws* <i>topic-characteristic</i> eol } </td><td></td></tr>
+
+		<tr><td><i>topic-characteristic</i></td><td>--></td><td><i>basename-characteristic</i> |<br />
+	    <i>resourceRef-characteristic</i> |<br />
+	    <i>resourceData-characteristic</i> |<br />
+	    <i>subject-identity</i></td><td></td></tr>
+
+		<tr><td><i>basename-characteristic</i></td><td>--></td><td>'bn' [ '@' <i>list-of-scope-topic-ids</i> ] ':' <i>string</i></td><td></td></tr>
+
+		<tr><td><i>resourceRef-characteristic</i></td><td>--></td><td>'oc' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>string</i></td><td></td></tr>
+
+		<tr><td><i>resourceData-characteristic</i></td><td>--></td><td>'in' [ '@' <i>list-of-scope-topic-ids</i> ] [ '(' <i>type-topic-id</i> ')' ]':' <i>string</i></td><td></td></tr>
+
+		<tr><td><i>subject-identity</i></td><td>--></td><td>'sin' ':' <i>string</i></td><td>must be a valid URI</td></tr>
+
+		<tr><td><i>association-definition</i></td><td>--></td><td>[ '@' <i>scope-topic-id</i> ] '(' [ <i>association-type-topic-id</i> ] ')' eol { ws* <i>association-member</i> eol }</td><td>at least one member</td></tr>
+
+		<tr><td><i>association-member</i></td><td>--></td><td><i>role-topic-id</i> ':' { <i>member-topic-id</i> }</td><td>at least one player</td></tr>
+
+		<tr><td><i>list-of-any-topic-ids</i></td><td>--></td><td><i>topic-id</i> { ws+ <i>topic-id</i> }</td><td></td></tr>
+
+		<tr><td><i>any-topic-id</i></td><td>--></td><td><i>topic-id</i></td><td></td></tr>
+
+		<tr><td><i>string</i></td><td>--></td><td>[ ws* ] { <i>character</i> } [ ws* ]</td><td>stripped of blanks</td></tr>
+
+		<tr><td><i>name</i></td><td>--></td><td>/\w+/ in regexp</td><td></td></tr>
+	</tbody>
+	</table>
+
+	<hr />
+
+</body>
+</html>

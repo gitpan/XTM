@@ -8,6 +8,9 @@ lib/XTM/AsTMa.pm
 lib/XTM/AsTMa/MemoryBuilder.pm
 lib/XTM/AsTMa/Parser.pm
 lib/XTM/AsTMa/CParser.pm
+lib/XTM/LTM.pm
+lib/XTM/LTM/MemoryBuilder.pm
+lib/XTM/LTM/Parser.pm
 lib/XTM/IO.pm
 lib/XTM/Log.pm
 lib/XTM/Memory.pm
@@ -47,6 +50,9 @@ t/04astma.t
 t/05merge.t
 t/06info.t
 t/07path.t
+t/08topic.t
+t/09ltm.t
+t/10association.t
 bin/xtm.pl
 bin/astma2xtm.pl
 bin/prettifyxtm.pl
@@ -55,6 +61,9 @@ maps/test.atm
 maps/test2.xtm
 maps/root.xtm
 maps/knowledge.xtm
-docs/astma-print.css
-docs/astma=.html
-docs/draft.jpg
+docs/astma/astma-print.css
+docs/astma/astma=-spec-xtm.html
+docs/astma/astma=-tutorial.html
+docs/ltm/whitepapers.css
+docs/ltm/ltm.html
+docs/ltm/logo.gif

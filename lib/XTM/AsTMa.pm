@@ -8,8 +8,7 @@ require AutoLoader;
 
 use base qw (XTM::IO);
 
-@EXPORT_OK = qw( astma2xtm );
-$VERSION = '0.05';
+$VERSION = '0.07';
 
 use Carp;
 use XTM::Log ('elog');
@@ -73,7 +72,20 @@ Adds a name attribute to the topic map.
 
 =item %encoding [ encoding ]
 
-Specifies which encoding to use to interpret the text.
+Specifies which encoding to use to interpret the B<following> text. This implies that this
+directive may appear several times to change the encoding. Whether this is a good idea
+in terms of information management, is a different question.
+
+Note: It is still not allowed to use several I<name> : I<encoding> clauses.
+
+Note: If no encoding is provided, utf8 is assumed.
+
+=item %auto_complete [ on/off ]
+
+Turns on/off auto completion.
+
+Note: topics which have been mentioned in a 'is-reified-by' clause will be B<always>
+generated.
 
 =back
 
@@ -103,13 +115,15 @@ is just a convenience function as it will be mapped to I<url>).
 
 =item I<text>:
 
-If given, then the AsTMa instance will be read directly from this text. (See method
-I<text> how to retrieve the current value).
+If given, then the AsTMa instance will be read directly from this text.
 
 =item I<auto_complete>
 
 If set to 0, the AsTMa loader will NOT try to automatically generate topics which
 have been mentioned without being declared.
+
+Note: topics which have been mentioned in a 'is-reified-by' clause will be B<always>
+generated.
 
 =back
 
@@ -147,6 +161,8 @@ sub new {
 
 =item C<last_mod>
 
+I<$time> = I<$atm>->last_mod
+
 returns the UNIX time when the resource has been modified last. C<undef> is
 returned if the result cannot be determined.
 
@@ -172,6 +188,8 @@ sub last_mod {
 =pod
 
 =item C<sync_in>
+
+I<$tmmemory> = I<$atm>->sync_in
 
 loads an AsTMa instance and returns a L<XTM::Memory> object. Note that that all undefined
 topics will be defined automatically, unless C<auto_complete> is set to 0.
