@@ -9,7 +9,7 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw(  );
 @EXPORT_OK = qw( );
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 use Carp;
 use Data::Dumper;
@@ -58,12 +58,12 @@ can be performed:
 =item joining
 
 Here two topic maps are B<joined> by identifying topics in each of
-the maps to be synonymous. The mapping is done by another map (see L<"JOINING">).
+the maps to be synonymous. The mapping is done by another map.
 
 =item scoping
 
 Given a particular topic map, the scope filters out only those topics
-and associations for this very scope (see L<"SCOPING">).
+and associations for this very scope.
 
 =item versioning
 
@@ -90,6 +90,7 @@ The I<tm-url> has the form
 
  tm://server-name/map-id1/map-id2/....
 
+=back
 
 =head1 INTERFACE
 
@@ -115,6 +116,8 @@ $urlbase = URI::file->cwd; # everything relative will be resolved against this
 use vars qw($tmbase);
 
 =pod
+
+=back
 
 =head2 Constructor
 
@@ -243,6 +246,20 @@ sub _assert_xml {
 				 last_syncin => time);
 }
 
+sub _assert_atm {
+  my $url = shift;
+  my $key = shift || $url;
+
+  elog ('XTM::Virtual', 3, "_assert atm for '$url', '$key'");
+  return $cache{$key} if staleness ($key) <= 0;
+
+  use XTM::ATM;
+  elog ('XTM::Virtual', 3, "  ATM loading via $url");
+  return $cache{$key} = new XTM (tie         => new XTM::ATM (url => $url),
+				 last_mod    => time,
+				 last_syncin => time);
+}
+
 sub _assert_topic {
   my $tmurl = shift;
   my $key   = shift || $tmurl;
@@ -289,7 +306,7 @@ sub _assert_atom {
       scalar URI->new_abs ($uri->path, $urlbase) :
 	$expr;
     elog ('XTM::Virtual', 4, "  loading from $url");
-    return _assert_xml($url);
+    return $url =~ /\.atm$/i ? _assert_atm ($url) : _assert_xml($url);
   } elsif ($uri->scheme eq 'tm') {
     my $url = scalar URI->new_abs ($uri->path, $tmbase);
     elog ('XTM::Virtual', 4, "  loading from $url");
@@ -322,7 +339,7 @@ sub _assert_expr {
     foreach my $e (split /\s*\[\]\s*/, $expr) {
       elog ('XTM::Virtual', 3, "working on '$e'");
       my $tm_to_be_added = _assert_atom ($e);
-      elog ('XTM::Virtual', 4, "  merging new map ".$tm_to_be_added->{id}." to ".$tm->{id});
+      elog ('XTM::Virtual', 4, "  merging new map (id=".($tm_to_be_added->{id} ? $tm_to_be_added->{id} : '??')." to ".($tm->{id} ? $tm->{id} : '?'));
       $tm->add ($tm_to_be_added->memory);
       push @{$tm->{depends}}, $e; # note, that I'm dependent on others
     }
@@ -356,21 +373,3 @@ sub _asserted {
 1;
 
 __END__
-
-=item I<_assert> (private method) tries to make sure the map specified via the parameter is loaded into
-the cache. An exception will be raised if there is any problem (document not found, XML
-parsing error, ....).
-
-Example:
-
-  # the bootstrap map is loaded. Should be first in most cases
-  _assert ('/');
-  # load this or die
-  _assert ('tm://se-namod/m-internet/m-ecommerce/');
-
-=pod
-
-=item I<_asserted> (private method) returns a list (reference) of known maps.
-
-=cut
-

@@ -36,24 +36,53 @@ XTM::XML - Topic Map management, syncing with XML data
 This package provides an abstract class to deal with TMs stored in XML form,
 be it on files or as a string. The package honors
 
+=begin html
+
+<BLOCKQUOTE>
+<A HREF="http://www.topicmaps.org/xtm/1.0/xtm1-20010302-2.html">http://www.topicmaps.org/xtm/1.0/xtm1-20010302-2.html</A>
+</BLOCKQUOTE>
+
+=end html
+
+=begin man
+
    http://www.topicmaps.org/xtm/1.0/xtm1-20010302-2.html
+
+=end man
 
 except 
 
-  - ignores all merging related constraints (TNC) given in
+=over
 
+=item 
+
+ignores all merging related constraints (TNC) given in
        http://www.topicmaps.org/xtm/1.0/#processing
 
-  - only allows ONE SINGLE <topicMap> element in a document violating
+=item
+
+only allows ONE SINGLE <topicMap> element in a document violating
     '4.4 XTM Document Conformance', item 2
 
+=item
 
 All elements with no explicit ID element remain anonymous, execept
 
-  - <topic> and
-  - <association>
+=over
+
+=item
+
+<topic> and
+
+=item
+
+<association>
+
+=back
 
 elements which will get an ID assigned.
+
+=back
 
   
 
@@ -168,6 +197,9 @@ sub sync_in {
   use Data::Grove::Visitor;
   my $tm = new XTM::Memory;
   use XTM::XML::Grove2TM;
+# this is to silence Perl in -w context: I use undef values sometimes in expressions and I'm happy with it
+  use Carp ();
+  local $SIG{__WARN__} = sub {};
   $grove->accept_name (XTM::XML::Grove2TM->new, $tm);
   elog ('XTM::XML', 5, '   sync in tm: ', $tm);
   return $tm;

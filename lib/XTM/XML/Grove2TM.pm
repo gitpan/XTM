@@ -22,8 +22,9 @@ use vars qw{$AUTOLOAD};
   my $grove;
   $grove  = $parser->parse ( Source => { String => $stream,
                                          Encoding => 'ISO-8859-1' } );
-  use Data::Grove::Visitor;
   my $tm = new XTM::Memory;
+
+  use Data::Grove::Visitor;
   use XTM::XML::Grove2TM;
   $grove->accept_name (XTM::XML::Grove2TM->new, $tm);
 
@@ -377,7 +378,7 @@ sub visit_name_member {
 
   die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.2\n" if $m->rolesSpec_s > 1;
   $m->add_roleSpec ($m->roleSpec_s);  $m->undefine (qw (roleSpecs));
-  die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.2\n" 
+  die "XTM::XML, conformance error in '$element->{Name}': see XTM standard, 3.8.2\n".Dumper $element 
     unless $m->topicRef_s + $m->resourceRef_s + $m->subjectIndicatorRef_s > 0;
   $m->add_reference_s ($m->topicRef_s, $m->resourceRef_s, $m->subjectIndicatorRef_s);  $m->undefine (qw (topicRefs resourceRefs subjectIndicatorRefs));
 

@@ -33,41 +33,127 @@ via an URL) as prescribed by the XTM standard. There is also a way
 to tie a map to any persistent medium. The latter is especially interesting
 when running this module along with a (web) server.
 
+=head1 PROGRAMS
+
+Following programs come with this distribution:
+
+=over 4
+
+=item L<xtm>.pl
+
+A simple text interface to load & query topic maps locally.
+
+=back
+
 =head1 PACKAGES
 
 Following packages come with this distribution:
 
-      XTM                          this package, toplevel wrapper for (non-threaded) maps
-      XTM::Memory                  in-memory representation of a map
+=over 4
 
-      XTM::XML::PSI                PSI definitions
-      XTM::XML                     XML parser
-      XTM::XML::Latin1Parser       
-      XTM::XML::UTF8
-      XTM::XML::Grove2TM
+=item L<XTM>
 
-      XTM::Log                     logging facility will be used by others
+toplevel wrapper for (non-threaded) maps
 
-      XTM::generic                 accessor functions for all below
-      XTM::topic                   implementation of the 'topic' class
-      XTM::association             implementation of the 'association' class
+=item L<XTM::Memory>
 
-      XTM::topicRef                generic class definition
-      XTM::baseName                generic class definition
-      XTM::scope                   generic class definition
-      XTM::resourceRef             generic class definition
-      XTM::instanceOf              generic class definition
-      XTM::subjectIdentity         generic class definition
-      XTM::subjectIndicatorRef     generic class definition
-      XTM::variant                 generic class definition
-      XTM::variantName             generic class definition
-      XTM::parameters              generic class definition
-      XTM::roleSpec                generic class definition
-      XTM::member                  generic class definition
-      XTM::mergeMap                generic class definition
-      XTM::resourceData            generic class definition
-      XTM::baseNameString          generic class definition
-      XTM::occurrence              generic class definition
+in-memory representation of a map
+
+=item L<XTM::PSI>
+
+PSI definitions
+
+=item L<XTM::XML>
+
+XML parser
+
+=item L<XTM::XML::Latin1Parser>
+
+=item L<XTM::XML::UTF8>
+
+=item L<XTM::XML::Grove2TM>
+
+=item L<XTM::Log>
+
+logging facility will be used by others
+
+=item L<XTM::generic>
+
+accessor functions for all below
+
+=item L<XTM::topic>
+
+implementation of the 'topic' class
+
+=item L<XTM::association>
+
+implementation of the 'association' class
+
+=item L<XTM::topicRef>
+
+generic class definition
+
+=item L<XTM::baseName>
+
+generic class definition
+
+=item L<XTM::scope>
+
+generic class definition
+
+=item L<XTM::resourceRef>
+
+generic class definition
+
+=item L<XTM::instanceOf>
+
+generic class definition
+
+=item L<XTM::subjectIdentity>
+
+generic class definition
+
+=item L<XTM::subjectIndicatorRef>
+
+generic class definition
+
+=item L<XTM::variant>
+
+generic class definition
+
+=item L<XTM::variantName>
+
+generic class definition
+
+=item L<XTM::parameters>
+
+generic class definition
+
+=item L<XTM::roleSpec>
+
+generic class definition
+
+=item L<XTM::member>
+
+generic class definition
+
+=item L<XTM::mergeMap>
+
+generic class definition
+
+=item L<XTM::resourceData>
+
+generic class definition
+
+=item L<XTM::baseNameString>
+
+generic class definition
+
+=item L<XTM::occurrence>
+
+generic class definition
+
+=back
 
 =head1 AUTHOR INFORMATION
 

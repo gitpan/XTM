@@ -4,7 +4,7 @@ use strict;
 no strict ('subs');
 use vars qw($VERSION);
 
-$VERSION = "0.2";
+$VERSION = "0.4";
 
 =pod
 
@@ -22,7 +22,8 @@ This simple, textual oriented user interface gives access to some Topic
 Map functions. This program is mainly thought for quick prototyping
 and testing Topic Maps and/or TM software.
 
-For a more convenient environment see for the server package.
+Type 'help' within this shell to get an overview over available
+commands.
 
 =head1 OPTIONS
 
@@ -30,10 +31,13 @@ Following command line switches are understood by the program:
 
 =over
 
-=item history <file> (default: none) 
+=item 
 
-file which will be replayed at start of session. You can have any number of histories
-here, they will be all replayed in the order given.
+B<history> <file> (default: none) 
+
+File which will be replayed at start of session. You can have any number of histories
+here, they will be all replayed in the order given. If the history is specified here,
+other implicit history files (see below) are ignored.
 
 =cut
 
@@ -41,7 +45,9 @@ my @history = (); # can be a list of histories actually, will be concatenated
 
 =pod
 
-=item loglevel n (default: 1)
+=item
+
+B<loglevel> n (default: 1)
 
 Controls the log level.
 
@@ -51,7 +57,22 @@ my $loglevel = 1;
 
 =pod
 
-=item about (default: no) 
+=item
+
+B<batch> boolean (default: no)
+
+If set to true, the interpreter will just execute the history and
+will not enter the interactive loop.
+
+=cut
+
+my $batch = '';
+
+=pod
+
+=item
+
+B<about> (default: no) 
 
 The program will print out some information about the software itself, (version) and 
 will terminate thereafter.
@@ -66,16 +87,33 @@ my $about = 0;
 
 The interpreter will look for history files:
 
+=begin html
+
+<PRE>
+      $ENV{HOME}/.xtm/history
+      $ENV{HOME}/.xtmhistory
+      ./.xtmhistory
+</PRE>
+
+=end html
+
+=begin text
+
       $ENV{HOME}/.xtm/history
       $ENV{HOME}/.xtmhistory
       ./.xtmhistory
 
+=end text
+
 in this order taking only the first it will find. It will only use the last
 100 lines.
 
-=head1 AUTHOR
+=head1 AUTHOR INFORMATION
 
-  rho@telecoma.net, Copyright 2001
+Copyright 2001, Robert Barta <rho@telecoma.net>, All rights reserved.
+ 
+This library is free software; you can redistribute it
+and/or modify it under the same terms as Perl itself.
 
 =cut
 
@@ -86,6 +124,7 @@ my $help;
 if (!GetOptions ('help|?|man' => \$help, 
 		 'history=s'  => \@history,
 		 'loglevel=i' => \$loglevel,
+		 'batch!'     => \$batch,
 		 'about!'     => \$about,
 		) || $help) {
   pod2usage(-exitstatus => 0, -verbose => 2);
@@ -113,32 +152,33 @@ use XTM::Virtual;
 
 my $term = new Term::ReadLine 'XTM Interpreter';
 my $prompt = "xtm> ";
-my $OUT = $term->OUT || STDOUT;
+my $OUT = $batch ? \*STDOUT : $term->OUT || \*STDOUT;
+my $ERR = $batch ? \*STDERR : $term->OUT || \*STDERR;
 
 
-
-load_history();
-
-
+if (@history) {
 ##-- work on history files -----------------------------------------
-foreach my $h (@history) {
-  use File::Slurp;
-  print $OUT "Replaying '$h'\n";
-  ExecuteLineList (read_file($h));
+  foreach my $h (@history) {
+    use File::Slurp;
+    print $ERR "Replaying '$h'\n";
+    ExecuteLineList (read_file($h));
+  }
+} else {
+  load_history();
 }
 
 my $tm; # will have later variables here....
 my $scope = undef;
 $XTM::Log::loglevel = $loglevel;
 
+unless ($batch) {
 #-- main -----------------------------------------------------------
-
-undef $_;
-do {
-  ExecuteLine ($_) unless /^$/;
-} while (defined ($_ = $term->readline($prompt)));
-print $OUT "\n"; #argh.
-
+  undef $_;
+  do {
+    ExecuteLine ($_) unless /^$/;
+  } while (defined ($_ = $term->readline($prompt)));
+  print $OUT "\n"; #argh.
+}
 ##-- main end -------------------------------------------------------
 
 save_history();
@@ -187,7 +227,7 @@ sub ExecuteLineList {
   foreach my $l (@_) {
     chomp $l;
     last if $l =~ /^skip/;     # skip rest of the file
-    print $OUT "   $l\n";
+    print $ERR "   $l\n";
     ExecuteLine ($l);
     $term->AddHistory ($l);
   }
@@ -241,14 +281,32 @@ sub ExecuteCommand {
 ##-- the gory details ------------------------------------------------
   } elsif (/^dump/) {
     print $OUT Dumper $tm;
+##-- the gory details ------------------------------------------------
+  } elsif (/^info/) {
+    print $OUT Dumper $tm->info ('informational')->{informational} if $tm && defined $tm->memory;
+  } elsif (/^warn/) {
+    print $OUT Dumper $tm->info ('warnings')->{warnings} if $tm && defined $tm->memory;
+  } elsif (/^errors/) {
+    print $OUT Dumper $tm->info ('errors')->{errors} if $tm && defined $tm->memory;
 ##-- finding -------------------------------------------------
-  } elsif (/^find(\s+(.+?)\s*)?$/) {
+  } elsif (/^find\s+topic(\s+(.+?)\s*)?$/) {
     my $query = $2 if $1;
     eval {
       my $ts = $tm->topics ($query);
       my $bns = $tm->baseNames ($ts, [ $scope ]);
       foreach my $tid (sort { $bns->{$a} cmp $bns->{$b} } keys %$bns) {
 	print $OUT "$tid: $bns->{$tid}\n";
+      }
+    }; if ($@) {
+      print $OUT "xtm: Exception: $@";
+    }
+  } elsif (/^find\s+assoc(\s+(.+?)\s*)?$/) {
+    my $query = $2 if $1;
+    eval {
+      my $as = $tm->associations ($query);
+      my $bns = $tm->baseNames ($as, [ $scope ]);
+      foreach my $aid (sort { $bns->{$a} cmp $bns->{$b} } keys %$bns) {
+	print $OUT "$aid: $bns->{$aid}\n";
       }
     }; if ($@) {
       print $OUT "xtm: Exception: $@";
@@ -279,8 +337,13 @@ sub ExecuteCommand {
 load  <url>                          loading the topic map from the <url>
 topic <topic-id>                     shows some information about a particular topic
 assoc <assoc-id>                     shows some information about a particular association
-find  <query>                        finds all topics according to <query> (see XTM::Memory)
+find topic  <query>                  finds all topics according to <query> (see XTM::Memory)
+find assoc  <query>                  finds all assocs according to <query> (see XTM::Memory)
 scope [ <scope-tid> ]                show/set scope
+
+info                                 get some statistical information about the map
+warn                                 find unused topics....
+errors                               find undefined topics...
 
 dump                                 dumps out the whole map (can be huge!)
 

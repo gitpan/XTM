@@ -1,0 +1,584 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>AsTMa (Asymptotic Topic Map Notation)</title>
+    <link rel="stylesheet" href="astma.css" type="text/css">
+  </head>
+
+
+  <body background="draft.jpg">
+    <h1>AsTMa, Asymptotic Topic Map Notation</h1>
+
+    <p>
+      v0.999, 2001-07-25<br>
+      <blink>Draft</blink>
+    <p>
+      <a href="mailto:rho@bond.edu.au-spam.no">Robert (\rho) Barta</a><br>
+      <A HREF="http://www.bond.edu.au/">Bond University</A><br>
+    </p>
+
+    <h2>Contents</h2>
+
+    <ul>
+    <li><a href="#changes">Changes</a></li>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#tutorial">Tutorial</a></li>
+    <li><a href="#language-definition">Language Definition<a/></li>
+    <li><a href="#conclusions">Conclusions</a></li>
+    </ul>
+      
+    <h2><a name="changes">0. Changes</a></h2>
+
+    <dl>
+      <!-- one of (dd dt) -->
+      <dt>From 0.99 to 0.999</dt>
+      <dd>Syntax of association changed: Now association types are also in ()'s ---</dd>
+      <dt>From 0.9 to 0.99</dt>
+      <dd>.</dd>
+    </dl>
+
+    <h2><a name="introduction">1. Introduction</a></h2>
+
+    <p>
+      Since the stabilisation of <A HREF="http://www.topicmaps.org/xtm/">XTM</A>, an XML-based 
+      notation for <A HREF="http://www.topicmaps.org/">Topic Maps</A> the interest in authoring Topic Maps has increased.
+    <p>
+      While the automatic generation of topic maps towards XTM can easily be achieved, manual authoring
+      is tedious and error-prone, even if one uses XML aware development tools, such as XML-editors. This
+      may change when Topic Map authoring tools will be available on a broad basis, but this still has
+      to come. Server-side solutions are certainly more powerful, but are too slow and inconvenient to use
+      at this stage of writing.
+    <p>
+      In the following we suggest a textual notation, AsTMa, sufficiently rich to prototype medium
+      sized topic maps.  This notation is heavily influenced by 
+      <A HREF="http://www.ontopia.net/download/ltm.html">LTM</A>, Ontopias Linear Topic Map Notation where
+      the need for a simplified notation was already acknowledged. Moreover, AsTMa has the following design
+       objectives:
+    <p>
+    <dl>
+      <dt>Minimum of effort:</dt>
+      <dd>A converter should be able to <i>interpret</i> the intention of the author in a specific context reducing the
+	verbosity of the language.</dd>
+      <dt>Minimum of special characters:</dt>
+      <dd>Banning of [(&^%$}] delimiters should increase the usability of the language. This also reduces the need to
+	escape these special characters once they belong to the information.</dd>
+      <dt>Asymptotic regarding to XTM:</dt>
+      <dd>The language should not have a built-in <i>syntax-barrier</i> making it impossible to reach the same
+	expressiveness as XTM.</dd>
+      <dt>Keep things together:</dt>
+      <dd>The author should NOT be forced to split up (topic) information into several fragments, which have
+        to be <A HREF="http://www.topicmaps.org/xtm/1.0/#def-topic-naming-constraint">merged via TNC</A> by a 
+	followup Topic Map processor.</dd>
+    </dl>
+
+    <p>
+      At this stage AsTMa does not fulfill all of the above objectives.
+    </p>
+
+    <p>
+      This document has no formal status. It is a technical report of the local university.
+    </p>
+
+    <h2><a name="tutorial">2. Tutorial</a></h2>
+
+    <p>
+    The setting assumes that the AsTMa text will be either directly understood by Topic Map processing software
+    or that a specialized processor will convert the AsTMa stream into an XTM stream.
+    </p>
+
+    <p>
+    First we present the core concepts in a short tutorial, before we turn to a semi-formal language specification.
+    You can find the running example used throughout the tutorial at 
+    the <A HREF="http://topicmaps.bond.edu.au/examples/">Bond Topicmap Server</A>. You might want to
+    peruse an <a href="http://topicmaps.bond.edu.au/astma/atm.mc">online converter</a>.
+    </p>
+
+    <h3>2.1 Basics</h3>
+
+    AsTMa is line oriented. This means that pertinent information is terminated with the end of the line. A single
+    line containing
+
+    <pre class="astma">
+   filesystem (software)
+</pre>
+
+    <p>
+      already defines a topic (as explained below). If there is more to a topic (or an association) this information
+      will be on follow-up lines:
+
+    <pre class="astma">
+   filesystem (software)
+   bn: File System
+</pre>
+
+    <p>
+      An empty line, thus, separates items like topic and associations. On any line white-spaces are silently ignored.
+      Any line also can contain comment like
+    </p>
+
+    <pre class="astma">
+   filesystem (software) # more information will follow
+</pre>
+
+    <p>
+    Such comments will be discarded by any processor and are only for <i>internal</i> documentation purposes. If you 
+    would like to have a comment in the processor output, then this comment MUST begin at the start of the line:
+    </p>
+    
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+    <pre class="astma">
+# I will survive and (hopefully) 
+#     the line structure will not
+#        be broken
+</pre>
+        </td>
+	<td>
+	  <pre class="xtm">
+&lt;!--  I will survive and (hopefully)
+          the line structure will not
+             be broken --&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      Comments on consecutive lines will be treated as one comment. Any non-comment line
+      signals the end of a group. Also, any '--&gt;' occurrence within a comment will be
+      converted into '- - &gt;'.
+    </p>
+
+    <h3>2.2 Topics</h3>
+
+    The line
+
+    <pre class="astma">
+   filesystem (software)
+</pre>
+
+    <p>
+      indicates the definition of topic with id <code>filesystem</code> which is an instance of another topic, <code>software</code>:
+    </p>
+
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+filesystem (software)
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;topic id="filesystem"&gt;
+   &lt;instanceOf&gt;
+     &lt;topicRef xlink:href="#software"/&gt;
+   &lt;/instanceOf&gt;
+   &lt;baseName&gt;
+     &lt;baseNameString&gt;filesystem&lt;/baseNameString&gt;
+   &lt;/baseName&gt;
+&lt;/topic&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      As we did not provide a base name, the topic id 'filesystem' is also assumed to be the basename. While this
+      heuristic approach works fine for some words, it does not with others, say, 
+    </p>
+
+<pre class="astma">
+   linux-distribution (software)
+</pre>
+
+    <p>
+      Any AsTMa processor is free to apply any other heuristics, such as:
+    </p>
+
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+linux-distribution (software)
+</pre>
+	</td>
+	<td>
+<pre class="xtm">
+&lt;topic id="linux-distribution"&gt;
+  &lt;instanceOf&gt;
+    &lt;topicRef xlink:href="#software"/&gt;
+  &lt;/instanceOf&gt;
+  &lt;baseName&gt;
+     &lt;baseNameString&gt;linux distribution&lt;/baseNameString&gt;
+  &lt;/baseName&gt;
+&lt;/topic&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      substituting dashes by blanks, looking up 3rd-party databases or leaving it as it is. Of course,
+      the author can enforce a particular base name:
+    </p>
+
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+RedHat-Linux-sparc (linux-distribution-port)
+bn: RedHat Linux for SPARC
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;topic id="RedHat-Linux-sparc"&gt;
+  &lt;instanceOf&gt;
+    &lt;topicRef xlink:href="#linux-distribution-port"/&gt;
+  &lt;/instanceOf&gt;
+  &lt;baseName&gt;
+     &lt;baseNameString&gt;RedHat Linux for SPARC&lt;/baseNameString&gt;
+  &lt;/baseName&gt;
+&lt;/topic&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      On a similar take, you can also specify occurrences for topics:
+    </p>
+
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+linux (os)
+bn: Linux kernel
+oc: http://www.kernel.org/
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;topic id="linux"&gt;
+  &lt;instanceOf&gt;
+    &lt;topicRef xlink:href="#os"/&gt;
+  &lt;/instanceOf&gt;
+  &lt;baseName&gt;
+     &lt;baseNameString&gt;Linux kernel&lt;/baseNameString&gt;
+  &lt;/baseName&gt;
+  &lt;occurrence&gt;
+    &lt;resourceRef xlink:href="http://www.kernel.org/"/&gt;
+  &lt;/occurrence&gt;
+&lt;/topic&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      in the case for resource references or also for inline data (aka resourceData):
+    </p>
+    
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+linux-port-on-sparc (linux-port)
+bn: SPARC Linux port
+oc: http://www.sparc.org/linux.shtml
+in: The kernel and kernel modules \
+    are 64-bit on sparc64, \
+    userland is still 32-bit, \
+    and in fact the same as on sparc32.
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;topic id="linux-port-on-sparc"&gt;
+  &lt;instanceOf&gt;
+    &lt;topicRef xlink:href="#linux-port"/&gt;
+  &lt;/instanceOf&gt;
+  &lt;baseName&gt;
+     &lt;baseNameString&gt;SPARC Linux port&lt;/baseNameString&gt;
+  &lt;/baseName&gt;
+  &lt;occurrence&gt;
+    &lt;resourceRef xlink:href="http://www.sparc.org/linux.shtml"/&gt;
+  &lt;/occurrence&gt;
+  &lt;occurrence&gt;
+    &lt;resourceData&gt;The kernel and kernel mod....&lt;/resourceData&gt;
+&lt;/occurrence&gt;
+&lt;/topic&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      If appropriate, you can also type topic characteristics:
+    </p>
+
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+reiserfs (filesystem)
+bn: Reiser File System, ReiserFS
+oc (download): http://www.namesys.com/download.html
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;topic id="reiserfs"&gt;
+  &lt;instanceOf&gt;
+    &lt;topicRef xlink:href="#filesystem"/&gt;
+  &lt;/instanceOf&gt;
+  &lt;baseName&gt;
+     &lt;baseNameString&gt;Reiser File System, ReiserFS&lt;/baseNameString&gt;
+  &lt;/baseName&gt;
+  &lt;occurrence&gt;
+    &lt;instanceOf&gt;
+       &lt;topicRef xlink:href="#download"/&gt;
+    &lt;/instanceOf&gt;
+    &lt;resourceRef xlink:href="http://www.namesys.com/download.html"/&gt;
+  &lt;/occurrence&gt;
+&lt;/topic&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      To scope a characteristic you use '@' to introduce a particular context:
+    </p>
+
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+RedHat-Linux-sparc (linux-distribution-port)
+bn: RedHat Linux for SPARC
+bn @ deutsch : RedHat Linux f&uuml;r SPARC
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;topic id="RedHat-Linux-sparc"&gt;
+  &lt;instanceOf&gt;
+    &lt;topicRef xlink:href="#linux-distribution-port"/&gt;
+  &lt;/instanceOf&gt;
+  &lt;baseName&gt;
+     &lt;baseNameString&gt;RedHat Linux for SPARC&lt;/baseNameString&gt;
+  &lt;/baseName&gt;
+  &lt;baseName&gt;&lt;scope&gt;&lt;topicRef xlink:href="#deutsch"/&gt;&lt;/scope&gt;
+     &lt;baseNameString&gt;RedHat Linux f&uuml;r SPARC&lt;/baseNameString&gt;
+  &lt;/baseName&gt;
+&lt;/topic&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <h3>2.3 Associations</h3>
+
+    <p>
+      Associations may or may not have a particular type. In any case they have a number of members
+      playing roles:
+    </p>
+
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+(kernel-patch-provides-feature)
+feature: reiserfs
+platform: i386
+patch:   generic-reiserfs-patch-2.4.x
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;association&gt;
+  &lt;instanceOf&gt;
+    &lt;topicRef xlink:href="#kernel-patch-provides-feature"/&gt;
+  &lt;/instanceOf&gt;
+  &lt;member&gt;
+     &lt;roleSpec&gt;
+       &lt;topicRef xlink:href="#feature"/&gt;
+     &lt;/roleSpec&gt;
+     &lt;topicRef xlink:href="#reiserfs"/&gt;
+  &lt;/member&gt;
+  &lt;member&gt;
+     &lt;roleSpec&gt;
+       &lt;topicRef xlink:href="#platform"/&gt;
+     &lt;/roleSpec&gt;
+     &lt;topicRef xlink:href="#i386"/&gt;
+  &lt;/member&gt;
+  &lt;member&gt;
+     &lt;roleSpec&gt;
+       &lt;topicRef xlink:href="#patch"/&gt;
+     &lt;/roleSpec&gt;
+     &lt;topicRef xlink:href="#generic-reiserfs-patch-2.4.x"/&gt;
+  &lt;/member&gt;
+&lt;/association&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      For better readability you may want to indent the roles
+    </p>
+    <pre class="astma">
+(kernel-patch-provides-feature)
+      feature: reiserfs
+      platform: i386
+      patch:   generic-reiserfs-patch-2.4.x
+</pre>
+
+    <h3>2.4 Topic Maps</h3>
+
+    <p>
+      To inform the processor about the name (id) of the topic map itself, the <strong>very
+	first non-empty line within the document MUST</strong>  provide it:
+    </p>
+ 
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td >
+	  <pre class="astma">
+sparclinux : iso-8859-1
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;?xml version="1.0" encoding="iso-8859-1"?&gt;
+&lt;topicMap id="sparclinux"
+          xmlns       = 'http://www.topicmaps.org/xtm/1.0/'
+          xmlns:xlink = 'http://www.w3.org/1999/xlink'&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>Optionally, you can specify an particular encoding, like in the example above. The encoding defaults to iso-8859-1, though.</p>
+
+    <h3>2.5 Macros</h3>
+    
+    <p>
+      For authors who have no access to a general macro expansion environment, the language
+      supports a rudimentary macro facility which comes handy when to abbreviate long strings. The
+      idea is to first declare a macro via
+    </p>
+
+    <pre class="astma">
+  de=http://www.topicmaps.org/xtm/1.0/language.xtm#de
+</pre>
+
+    <p>
+      somewhere towards the beginning of the document and then use this definition for, say,
+      scoping:
+    </p>
+
+    <table border="1" width="90%">
+      <tr><th>AsTMa</th><th>XTM</th></tr>
+      <tr>
+	<td>
+	  <pre class="astma">
+oc @ &de; (press-release) : http://www....
+</pre>
+	</td>
+	<td>
+	  <pre class="xtm">
+&lt;occurrence&gt;
+  &lt;scope&gt;&lt;topicRef xlink:href="http://www.topicmaps.org/xtm/1.0/language.xtm#de"/&gt;&lt;/scope&gt;
+  &lt;instanceOf&gt;
+     &lt;topicRef xlink:href="#press-release"/&gt;
+  &lt;/instanceOf&gt;
+  &lt;resourceRef xlink:href="http://www.s...."/&gt;
+&lt;/occurrence&gt;
+</pre>
+	</td>
+      </tr>
+    </table>
+
+    <p>
+      Every instance of <code>&amp;de;</code> throughout the document will be expanded. 
+    </p>
+    <p>
+      While these macros cannot have parameters, they will be evaluated recursively, i.e. macros can contain other
+      macros. Any processor MAY detect circular definitions.
+    </p>
+
+    <p>
+      It goes without saying that the notation <code>&amp;...;</code> may collide with other
+      XML entities. It lies in the responsibility of the author to take care of that.
+    </p>
+
+    <h2><a name="language-definition">3. Language Definition</a></h2>
+
+    <p>
+      tbd, just thoughts at this stage.
+      <br>
+      special character in id, encoding according to www.isi.edu/in-notes/iana/assignments/character-sets, 
+      causal stream, no implicit merging (not even with ids)
+      <br>
+      conformant converter is free to produce any additional topic/assocs appropriate??
+      <br>
+      in terms of an abstract pattern processor?
+      <br>
+      causal streams (really?) , performance at bigger maps
+      <br>
+      specifying additional behavior? auto complete, defaults for assocs (types?)
+    </p>
+
+    <h2><a name="conclusions">4. Conclusions</a></h2>
+
+    First experiments with the language have shown that most situations can be disambiguated by
+    a proper AsTMa processor. Still, a couple of issues remain:
+
+    <p>
+
+    <dl>
+      <dt>Completeness</dt>
+      <dd>The language is far from being complete relative to XTM. At a second thought, though, the
+	expressiveness of XTM should not be the goal. Along the same lines as XTM lacks all kinds
+	of <A HREF="http://www.ontopia.net/topicmaps/materials/tm-schemas-paper.pdf">application specific constraints</A>, 
+	also AsTMa should develop in a language
+	to define appropriate ontological models.</dd>
+      <dt>Border cases</dt>
+      <dd>There are - due to the declarativeness of the language - some cases in which coverters will produce some
+          non-intuitive results, depending on the implementation approach taken. This has to be resolved.</dd>
+      <dt>Relationship to <a href="http://www.ontopia.net/download/ltm.html">LTM</a></dt>
+      <dd>The existence of LTM itself has shown that there is definitely a need for a textual notation for authors
+      who are used to the expressiveness of textual user interfaces. Although LTM may have some shortcomings
+       relative to AsTMa, it might prove valuable in other contexts. So, for instance, is it not possible in
+       AsTMa to define topics directly within an association, whereas AsTMa's line orientedness is more convenient in text
+       editors or when fighting along the sed-awk-perl-grep monsters.</dd>
+	
+    </dl>
+    </p>
+
+    <h2><a name="tobedone">To Be Done</a></h2>
+
+    <ul>
+    <li>variants</li>
+    <li>resource refs, indicators, ids</li>
+    </ul>
+
+    <hr>
+    <address>&copy; 2001 <a href="mailto:rho@bond.edu.au-spam.no">Robert Barta</a>, Bond University</address>
+  </body>
+</html>

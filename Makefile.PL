@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
 	      'AUTHOR'        => 'rho@telecoma.net',
 	      'ABSTRACT_FROM' => 'lib/XTM.pm',
-	      'NAME'	    => 'XTM',
+	      'NAME'	      => 'XTM',
 	      'VERSION_FROM'  => 'lib/XTM.pm', # finds $VERSION
 	      'INSTALLBIN'    => '/usr/local/topicmaps/bin',
 	      'EXE_FILES'     => [ 'bin/xtm.pl' ],

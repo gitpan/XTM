@@ -1,4 +1,14 @@
 Revision history for Perl extension XTM.
+0.23  Sat Oct 13 12:32:11 EST 2001
+	- added XTM::ATM support, documentation in docs/astma.html
+	- fixed hickup in pod in XTM::Virtual
+	- silenced 'Uninitialized value....' during make test in XTM::XML and XTM::ATM
+	- fixed some documentation errors, formatting
+	- added more map debugging facility in XTM (see XTM::info)
+	- added map meta information to XTM and xtm.pl
+	- distinguished between topic and assoc searches in xtm.pl
+	- straightened syntax for XTM::topics 'assocs .....' to allow no trailing characters
+	- changed meaning of parameters of induced_vortex in a subtle but dangerous way
 
 0.22  Sat Mar 17 10:22:40 EST 2001
 	- fixed test maps which made 'make test' fail
@@ -13,6 +23,7 @@ Revision history for Perl extension XTM.
 		induced_vortex
 		induced_assoc_tree
 	- added XTM::base as introductory package
+	- moved XTM::XML::PSI to XTM::PSI
 	- removed _massage from XTM::XML::Grove2TM
 	- relaxed is-a ... pattern for queryingto allow for PSIs
 	- unified various redundant subroutines in XTM::Memory

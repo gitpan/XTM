@@ -99,6 +99,8 @@ sub _iso2utf8 {
 
 =pod
 
+=back
+
 =head1 AUTHOR INFORMATION
 
 Copyright 2001, Robert Barta <rho@telecoma.net>, All rights reserved.

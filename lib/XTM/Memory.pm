@@ -9,7 +9,7 @@ require AutoLoader;
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( );
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 use Data::Dumper;
 
@@ -46,8 +46,8 @@ XTM - Topic Map management, in-memory data structure.
    @rumstis = @{$tm->topics ( "baseName regexps /rumsti.*/" )};
 
    # fetching names for a scope
-   @names = @{$tm->baseNames ([ 't-paul-mccartney', 't-john-lennon' ], 
-			      [ 'http://www.topicmaps.org/xtm/language.xtm#en' ]);}
+   %names = %{$tm->baseNames ([ 't-paul-mccartney', 't-john-lennon' ], 
+			      [ 'http://www.topicmaps.org/xtm/language.xtm#en' ])};
 
 =head1 DESCRIPTION
 
@@ -59,14 +59,26 @@ for basic operations to add/delete topics/associations and to query the map via 
 
 The interface offers basic access function but also some sophisticated filters to create
 sub maps. More convenient functions to retrieve topic and association information can
-be found in the L<XTM::Server> package distributed seperately.
+be found in the XTM::server package distributed seperately.
 
 =head2 Constructor
 
 The constructor expects only one optional parameter, C<id>. If not provided, the C<id> will remain
 undefined.
 
-  $tm = new XTM::Memory ();
+=begin html
+
+<PRE>
+   $tm = new XTM::Memory ();
+</PRE>
+
+=end html
+
+=begin man
+
+   $tm = new XTM::Memory ();
+
+=end man
 
 =cut
   
@@ -276,12 +288,12 @@ sub _passes_filter {
       return 1 if $o->resource->isa ('XTM::resourceRef')  && $o->resource->href =~ /$regexp/i;
       return 1 if $o->resource->isa ('XTM::resourceData') && $o->resource->data =~ /$regexp/i;
     }
-  } elsif ($f =~ /^assocs(\s+via\s+(\S+))?(\s+as\s+(\S+))?(\s+with\s+(\S+))?(\s+transitively)?/) {
+  } elsif ($f =~ /^assocs(\s+via\s+(\S+))?(\s+as\s+(\S+))?(\s+with\s+(\S+))?(\s+transitively)?$/) {
     my $via   = $1 ? $2 : '';
-    my $role  = $3 ? $4 : '';
+    my $role  = $3 ? "#$4" : undef;
     my $with  = $5 ? $6 : '';
     my $trans = $7 || '';
-    elog ('XTM::Memory', 4, "    assocs via '$via' role '$role' with '$with', $trans");
+    elog ('XTM::Memory', 4, "    assocs via '$via' ".($role ? "role '$role'" : "")." with '$with', $trans");
     my $assocs = $memoize->{"a_instances => $via"} ||
       ($memoize->{"a_instances => $via"} = $via ? $self->associations ("is-a $via") : $self->associations ());
 
@@ -463,7 +475,7 @@ sub association {
 
 =pod
 
-=item C<baseNames>
+=item I<baseNames>
 
 receives a list reference containing topic C<id>s. It returns a hash reference containing
 the baseName for each topic as a value with the topic id the key. The additional parameter is interpreted as

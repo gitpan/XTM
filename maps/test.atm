@@ -1,0 +1,39 @@
+test:iso8895-1
+
+tt-type1
+bn @ en: The Type
+bn @ de: der Typ
+
+tt-type2
+bn @ en: The Type 2
+
+t-topic1 (tt-type1)
+bn @ en : Topic one
+bn @ de : Topic eins
+
+t-topic2 (tt-type1)
+bn: Topic2
+bn @ en: Topic two
+
+t-topic3 (tt-type1 tt-type2)
+bn: Topic3
+bn @ de : Topic drei
+oc (tt-website) : http://www.someexample.com.au/
+in (tt-description): any text will do
+
+t-topic4
+bn: Topic4
+oc (tt-website): http://www.somemoreexample.com.au/
+
+(at-is-associated-with)
+tt-brother : t-topic3
+tt-sister : t-topic4
+
+(at-is-associated-with)
+tt-brother : t-topic2
+tt-sister : t-topic4
+
+(at-is-associated-with)
+tt-sister : t-topic2
+tt-brother : t-topic1
+

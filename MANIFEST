@@ -7,6 +7,7 @@ lib/XTM.pm
 lib/XTM/Memory.pm
 lib/XTM/Virtual.pm
 lib/XTM/XML.pm
+lib/XTM/ATM.pm
 lib/XTM/Log.pm
 lib/XTM/topic.pm
 lib/XTM/topicRef.pm
@@ -36,8 +37,14 @@ t/01log.t
 t/02memory.t
 t/03xml.t
 t/04virtual.t
+t/06info.t
+t/07atm.t
 bin/xtm.pl
 maps/test.xtm
+maps/test.atm
 maps/test2.xtm
 maps/root.xtm
 maps/knowledge.xtm
+docs/astma.html
+docs/astma.css
+docs/draft.jpg
