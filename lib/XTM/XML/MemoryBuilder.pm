@@ -3,16 +3,19 @@ package XTM::XML::MemoryBuilder;
 use strict;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 use base qw(XML::SAX::Base);
+use XML::SAX::Exception;
+@XML::SAX::Exception::XTMError::ISA = ('XML::SAX::Exception');
 
 require Exporter;
 require AutoLoader;
 
-
 use XTM;
 use XTM::PSI;
 use XTM::Log ('elog');
-use XTM::XML::ParseError;
 use XTM::Namespaces;
+
+$VERSION = '0.06';
+
 
 my $tmns    = $XTM::Namespaces::topicmap_ns;
 my $xlinkns = $XTM::Namespaces::xlink_ns;
@@ -711,13 +714,11 @@ sub end_element {
 
 
 sub xtm_error {
-  my $self = shift;
+  my $self    = shift;
   my $message = shift;
 
-  my $exception = new XTM::XML::ParseError ($message.
-					    " [Ln: " . $self->{LineNumber} . ", Col: " . $self->{ColumnNumber} . "]");
-  $self->fatal_error($exception);
-  $exception->throw;
+  throw XML::SAX::Exception::XTMError (Message => $message.
+				       " [Ln: " . $self->{LineNumber} . ", Col: " . $self->{ColumnNumber} . "]");
 }
 
 =pod

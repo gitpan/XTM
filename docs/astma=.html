@@ -129,14 +129,23 @@
 	</p>
 
 	<p>
-	Any line also can contain comment introduced by the character '#':
+	Any line also can contain comment introduced by the character '#' (following a white-space character):
 
 	<pre class="astma">
    filesystem (software) # more information will follow
 </pre>
 
-	Such comments will be discarded by any processor and are only for <i>internal</i> documentation purposes. If you 
-	would like to have a comment in the processor output, then this comment MUST begin at the start of a line:
+	Such comments will be discarded by any processor and are only for <i>internal</i> documentation purposes.
+	</p>
+
+	<p>
+	Please note that (starting from Rev1.5) such a comment must have at least one blank before the '#'. This allows
+	the hasselfree notation of URIs containing a '#' avoiding that the XPointer part will be interpreted as comment.
+	The blanks between the text and the '#' are ignored.
+	</p>
+
+	<p>
+	If you would like to have a comment in the processor output, then this comment MUST begin at the start of a line:
 	</p>
     
 	<table border="1" width="100%">
@@ -589,62 +598,6 @@ sparclinux : iso-8859-1
 
 	</sect2>
 
-	<sect2>
-		<h3>Macros</h3>
-	<p>
-	For authors who have no access to a general macro expansion environment, the language
-	supports a rudimentary macro facility which comes handy when to abbreviate long strings. The
-	idea is to first declare a macro via
-
-	<pre class="astma">
-  de=http://www.topicmaps.org/xtm/1.0/language.xtm#de
-</pre>
-
-	somewhere towards the beginning of the document and then use this definition for, say,  scoping:
-
-	<table border="1" width="100%">
-	<tbody>
-	<tr><td>AsTMa=</td><td>XTM</td></tr>
-	<tr>
-		<td>
-		<pre class="astma">
-oc @ &amp;de; (press-release) : http://www....
-</pre>
-		</td>
-		<td>
-		<pre class="xtm">
-&lt;occurrence>
-  &lt;scope>
-     &lt;topicRef xlink:href="http:..language.xtm#de"/>
-  &lt;/scope>
-  &lt;instanceOf>
-     &lt;topicRef xlink:href="#press-release"/>
-  &lt;/instanceOf>
-  &lt;resourceRef xlink:href="http://www.s...."/>
-&lt;/occurrence>
-</pre>
-		</td>
-	</tr>
-	</tbody>
-	</table>
-	</p>
-
-	<p>
-	Every instance of <tt>&amp;de;</tt> throughout the document will be expanded by the above URL. 
-	</p>
-
-	<p>
-	While these macros cannot have parameters, they will be evaluated recursively, i.e. macros can contain other
-	macros.
-	</p>
-
-	<p>
-	It goes without saying that the notation <tt>&amp;...;</tt> may collide with other
-	XML entities. It lies in the responsibility of the author to take care of that.
-	</p>
-
-	</sect2>
-
 	<hr />
 		<h2>Language Specification</h2>
 
@@ -738,7 +691,7 @@ bn: this line is too long, so\
     
 	<blockquote>
 	      <i>instance</i> --> { <i>comment-section</i> } <i>name-encode-section</i> { <i>section</i> }<br />
-	      <i>section</i> --> <i>comment-section</i> | <i>topic-definition-section</i> | <i>association-definition-section</i> | <i>macro-definition-section</i>
+	      <i>section</i> --> <i>comment-section</i> | <i>topic-definition-section</i> | <i>association-definition-section</i>
 	</blockquote>
 	</p>
 
@@ -747,12 +700,7 @@ bn: this line is too long, so\
 
 	<ul>
 		<li>
-		The order of above components SHOULD NOT be relevant with the exception of macro definition sections.
-		With these, a processor should interpret them in lexicographical order. At any given line of the AsTMa=
-		instance, there exists then an effective set of macro definitions.
-		</li>
-		<li>
-		An AsTMa= processor MAY decline the processing of macros.
+		The order of above components SHOULD NOT be relevant.
 		</li>
 		<li>
 		An AsTMa= processor MAY issue warnings when topic ids are referenced but are never defined as part of
@@ -819,8 +767,10 @@ linux: iso-8859-1
 	      <i>comment-section</i> --> { '#' <i>string</i> eol }
 	</blockquote>
 
-	A <i>local comment</i> is introduced by a <tt>#</tt> NOT at the beginning of the line. Local comments reach until
-	the end of the current line and are discarded by AsTMa= processors.
+	A <i>local comment</i> is introduced by a <tt>#</tt> NOT at the beginning of the line AND
+	following at least one white-space character (changed in Rev1.5). Local comments include ALL white-space characters
+	before the '#' (changed in Rev1.5) and reach until
+	the end of the current line. They are discarded by AsTMa= processors.
 	</p>
 	</sect2>
 
@@ -1098,7 +1048,15 @@ linux (operating-system-technology open-source-software)
 	</p>
 
 	<p>
-	The precise semantics of each such directive is completely under the discretion of the AsTMa processor.
+	The precise semantics of each such directive is completely under the discretion of the AsTMa processor. Suggestions
+	for directives are:
+	<ul>
+		<li>Character encoding</li>
+		<li>logging, debugging and aborting the parse process</li>
+		<li>controls for specifying what to do in case of missing topics</li>
+		<li>controls for specifying what to do in case of missing topic parts (e.g. baseName)</li>
+	</ul>
+	Consult the processor's documentation.
 	</p>
 
 	</sect2>
@@ -1152,7 +1110,6 @@ linux (operating-system-technology open-source-software)
 	Following unresolved issues exist:
     
 	<ul>
-		<li>ditch macros?</li>
 		<li>conformant converter is free to produce any additional topic/assocs appropriate??</li>
 		<li>specifying additional behavior? auto complete, defaults for assocs (types?)</li>
 	</ul>
@@ -1181,7 +1138,7 @@ linux (operating-system-technology open-source-software)
 	<ul>
 		<li>
 		relative to <a href="astma=-1.0r1.5.html">v1.0 Rev.1.5</a>:
-		directives to control modalities of parsing, macros removed
+		directives to control modalities of parsing, macros removed, local comments MUST have at least one blank leading
 		</li>
 
 		<li>
@@ -1223,8 +1180,7 @@ linux (operating-system-technology open-source-software)
 
 		<tr><td><i>section</i></td><td>--></td><td><i>comment-section</i> |<br />
 	    <i>topic-definition-section</i> |<br />
-	    <i>association-definition-section</i> |<br />
-	    <i>macro-definition-section</i></td><td></td></tr>
+	    <i>association-definition-section</i></td><td></td></tr>
 
 		<tr><td><i>topic-definition</i></td><td>--></td><td>[ 'tid' ':' ] <i>topic-id</i> [ '(' <i>list-of-type-topic-ids</i> ')' ] eol { ws* <i>topic-characteristic</i> eol } </td><td></td></tr>
 
@@ -1245,7 +1201,6 @@ linux (operating-system-technology open-source-software)
 
 		<tr><td><i>association-member</i></td><td>--></td><td><i>role-topic-id</i> ':' { <i>member-topic-id</i> }</td><td></td></tr>
 
-		<tr><td><i>macro-definition</i></td><td>--></td><td><i>macro-name</i> '=' <i>string</i> eol</td><td></td></tr>
 		<tr><td><i>list-of-*-topic-ids</i></td><td>--></td><td><i>topic-id</i> { ws+ <i>topic-id</i> }</td><td></td></tr>
 
 		<tr><td><i>string</i></td><td>--></td><td>[ ws* ] { <i>character</i> } [ ws* ]</td><td></td></tr>

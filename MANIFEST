@@ -13,7 +13,6 @@ lib/XTM/Memory.pm
 lib/XTM/Namespaces.pm
 lib/XTM/PSI.pm
 lib/XTM/Virtual.pm
-lib/XTM/XML/ParseError.pm
 lib/XTM/XML/MemoryBuilder.pm
 lib/XTM/XML.pm
 lib/XTM/association.pm

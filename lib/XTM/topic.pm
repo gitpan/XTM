@@ -247,6 +247,7 @@ sub xml {
   }
   $self->subjectIdentity->xml ($writer) if $self->subjectIdentity;
   $writer->endTag ('topic');
+# variants still missing, better wait until DB solution
 }
 
 =pod

@@ -8,7 +8,7 @@ require AutoLoader;
 
 use base qw (XTM::IO);
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -118,7 +118,7 @@ Examples:
    $xtm = new XTM::XML (file => 'here.xml');
    $xtm = new XTM::XML (url  => 'file:here.xml',  # the same
 			auto_complete => 0);      # but with auto_completion turned off
-   $xtm = new XTM::XML (text => '<?xml version="1.0"?><topicmap> ...</topicmap>');
+   $xtm = new XTM::XML (text => '<?xml version="1.0"?><topicMap> ...</topicMap>');
 
 =cut
 
@@ -205,7 +205,7 @@ sub sync_in {
 #								     'http://xml.org/sax/features/validation' => 1,
 #								    }
 						);
-#  print "I'm using ", ref ($parser), "\n";
+#  print STDERR "I'm using ", ref ($parser), "\n";
 # this is to silence Perl in -w context: I use undef values sometimes in expressions and I'm happy with it
   use Carp ();
   local $SIG{__WARN__} = sub {};

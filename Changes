@@ -1,4 +1,7 @@
 Revision history for Perl extension XTM.
+0.31  Thu May 16 16:56:40 EST 2002
+	- got rid of XTM::XML::ParseError and used XML::SAX::Exception instead	
+
 0.30  Wed May  8 17:50:02 EST 2002
 	- removed dependency of File::Slurp (weird version number), reported by az
 	- fixed bug in incorrectly reporting line numbers in AsTMa::Parser, reported by az

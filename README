@@ -1,32 +1,52 @@
+What is it?
+-----------
+This base package contains Perl extension interfaces for Topic Maps
+
+   http://www.topicmaps.org/xtm/1.0/
+
+With it you can
+
+  - read/write XTM files
+  - read/write AsTMa resource
+  - manipulate and query topic maps via an API
+
+See also for xtm.pl, a simple command line driven workbench.
+
+Other packages of interest:
+
+  - XTM::slides .... creating slides from topic maps
+
 Prerequisites
 -------------
 
 Of course, XTM::base relies heavily on other Perl packages. Most
 of them (hopefully all) should be resolved automatically if you
-use the CPAN frontend.
+use the cpan frontend.
 
-One notable thing is that XTM::base depends on the rather new
-XML::LibXML which in turn needs the libxml2 libraries.
+One notable thing is that XTM::base depends on finding an XML SAX
+parser, so it depends on XML::SAX which ships with a Perl SAX parser.
+It is good, but not the fastest.
 
-For Debian users this is trivially done with 
+  -  If you are using XML::LibXML (see KNOWN_ISSUES) then obviously
+     the libraries have to be installed:
 
-  apt-get install libxml2
-  apt-get install libxml2-dev
+     For Debian users this is trivially done with 
 
-The others can find sources (RPMs?) at
+       apt-get install libxml2
+       apt-get install libxml2-dev
 
-  http://www.xmlsoft.org/
+     The others can find sources (RPMs?) at
 
-Please let me know if I missed a point here.
+     http://www.xmlsoft.org/
+
+  -  If you want to use the SAX version of Expat, install XML::SAX::Expat
+     (see KNOWN_ISSUES).
 
 Installation
 ------------
 
-This base package contains Perl extension interfaces for Topic Maps
-
-   http://www.topicmaps.org/xtm/1.0/
-
-To build the extensions, unpack this distribution somewhere, and
+This module should be completely installable via the cpan frontend.
+To build the extensions manually, unpack this distribution somewhere, and
 exercise the usual incantation:
 
 perl Makefile.PL
@@ -57,7 +77,7 @@ You can either
 
   - mail to the author (rho@telecoma.net)
   - discuss this in one of the topicmap mailing lists, or
-  - create an bug entry in rt.cpan.org
+  - create an bug entry in rt.cpan.org (preferred)
 
 
 Copyright 2001,2002 Robert Barta, rho@telecoma.net

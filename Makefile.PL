@@ -10,8 +10,6 @@ WriteMakefile(
 	      'EXE_FILES'     => [ 'bin/xtm.pl', 'bin/astma2xtm.pl', 'bin/prettifyxtm.pl' ],
 	      'NOECHO'        => '@',
 	      'PREREQ_PM'     => { 
-#				  'XML::SAX'             => 0.03,
-#				  'XML::LibXML'          => 1.31,
 				  'Data::Dumper' => 2.102,
 				  'IO::File' => 1.08,
 				  'File::stat' => 0,
@@ -25,7 +23,7 @@ WriteMakefile(
 				  'Test::More' => 0.40,
 				  'URI' => 1.18,
 				  'URI::file' => 0,
-				  'XML::SAX::ParserFactory' => 1.00,
+				  'XML::SAX::ParserFactory' => 1.01,
 				  'XML::Twig' => 3.01,
 				  'XML::Writer' => 0.4,
 				 },
