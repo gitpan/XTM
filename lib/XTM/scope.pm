@@ -13,7 +13,7 @@ use XTM::subjectIndicatorRef;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 =pod
 
@@ -28,6 +28,21 @@ XTM::scope - trivial class definition
 =head1 DESCRIPTION
 
 Generic container for accessor functions.
+
+=cut
+
+sub xml {
+  my $self   = shift;
+  my $writer = shift;
+
+  $writer->startTag ('scope');
+  foreach my $s (@{$self->references}) {
+    $s->xml ($writer);
+  }
+  $writer->endTag ('scope');
+};
+
+=pod
 
 =head1 SEE ALSO
 

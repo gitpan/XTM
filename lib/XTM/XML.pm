@@ -1,19 +1,14 @@
 package XTM::XML;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
+use vars qw($VERSION @EXPORT @EXPORT_OK);
 
 require Exporter;
 require AutoLoader;
 
-@ISA = qw(Exporter AutoLoader);
-@EXPORT = qw( );
-$VERSION = '0.06';
+use base qw (XTM::IO);
 
-use Carp;
-use XML::Grove;     
-use XML::Grove::Path;
-use XML::Parser::PerlSAX;
+$VERSION = '0.03';
 
 use XTM::Memory;
 use XTM::Log ('elog');
@@ -27,26 +22,25 @@ XTM::XML - Topic Map management, syncing with XML data
 =head1 SYNOPSIS
 
   use XTM::XML;
-
   # reading a topic map description from an XML file
   $xml = new XTM::XML (file => 'mymap.tm');
 
 =head1 DESCRIPTION
 
-This package provides an abstract class to deal with TMs stored in XML form,
-be it on files or as a string. The package honors
+This package provides interfacing with external resources based on 
+XTM (XML Topic Map) format as described in
 
 =begin html
 
 <BLOCKQUOTE>
-<A HREF="http://www.topicmaps.org/xtm/1.0/xtm1-20010302-2.html">http://www.topicmaps.org/xtm/1.0/xtm1-20010302-2.html</A>
+<A HREF="http://www.topicmaps.org/xtm/1.0/">http://www.topicmaps.org/xtm/1.0/</A>
 </BLOCKQUOTE>
 
 =end html
 
 =begin man
 
-   http://www.topicmaps.org/xtm/1.0/xtm1-20010302-2.html
+   http://www.topicmaps.org/xtm/1.0/
 
 =end man
 
@@ -56,17 +50,19 @@ except
 
 =item 
 
-ignores all merging related constraints (TNC) given in
+that it ignores all merging related constraints (TNC) given in
        http://www.topicmaps.org/xtm/1.0/#processing
 
 =item
 
-only allows ONE SINGLE <topicMap> element in a document violating
-    '4.4 XTM Document Conformance', item 2
+it only allows ONE SINGLE <topicMap> element in a document violating
+    '4.4 XTM Document Conformance', item 2. The reasoning for this is
+    that loading multiple maps implicitely means that some merging has
+    to occur.
 
 =item
 
-All elements with no explicit ID element remain anonymous, execept
+All elements with no explicit ID element remain anonymous, except
 
 =over
 
@@ -80,11 +76,10 @@ All elements with no explicit ID element remain anonymous, execept
 
 =back
 
-elements which will get an ID assigned.
+elements which will get an ID assigned automatically.
 
 =back
 
-  
 
 =head1 INTERFACE
 
@@ -103,47 +98,57 @@ If given then the XML data will be read/written from/to this url.
 If given then the XML data will be read/written from/to this file (This
 is just a convenience function as it will be mapped to I<url>).
 
-=item I<text>: 
+=item I<text>:
 
 If given then the XML data will be read/written from/to this text. (See method
 I<text> how to retrieve the current value).
 
+=item I<auto_complete>
+
+If set to 0, the XTM loader will NOT try to automatically generate topics which
+have been mentioned without being declared.
+
 =back
 
-If several fields are specified, an exception will be raised.
+If several fields (C<file>, C<url>, C<text>) are specified, it is undefined which 
+one will be taken.
 
 Examples:
 
    $xtm = new XTM::XML (file => 'here.xml');
-   $xtm = new XTM::XML (url  => 'file:here.xml');  # the same
+   $xtm = new XTM::XML (url  => 'file:here.xml',  # the same
+			auto_complete => 0);      # but with auto_completion turned off
    $xtm = new XTM::XML (text => '<?xml version="1.0"?><topicmap> ...</topicmap>');
 
 =cut
 
 sub new {
-  my $class = shift;
+  my $class   = shift;
   my %options = @_;
+
   elog ($class, 4, 'new');
-  die "XTM::XML: constructor: too many contradicting sources" if keys %options > 1;
+
+
   my $self = bless { }, $class;
   $self->{url} = 'inline:'.$options{text} if $options{text};
   $self->{url} = 'file:'.  $options{file} if $options{file};
   $self->{url} =           $options{url}  if $options{url};
+
+  $self->{auto_complete} = defined $options{auto_complete} ? $options{auto_complete} : 1;
+
   return $self;
 }
-
-my $tmns   = 'http://www.topicMaps.org/xtm/1.0/';
 
 =pod
 
 =head2 Methods
 
 The methods C<sync_in>, C<sync_out> and C<last_mod> implement the methods from
-the abstract class.
+the abstract class L<XTM::IO>
 
 =over
 
-=item C<last_mod> 
+=item I<last_mod> 
 
 returns the UNIX time when the resource has been modified last. C<undef> is
 returned if the result cannot be determined.
@@ -169,49 +174,74 @@ sub last_mod {
 
 =pod
 
-=item C<sync_in>
+=item I<sync_in>
 
 actually loads an XTM resource and returns a L<XTM::Memory> object.
 
 
 =cut
 
+use XTM::XML::MemoryBuilder;
+use XML::SAX::ParserFactory;
+
 sub sync_in {
   my $self = shift;
 
   elog ('XTM::XML', 3, 'sync in '.$self->{url});
   my $stream;
-  if ($self->{url} =~ /^inline:(.*)/) {
+  if ($self->{url} =~ /^inline:(.*)/s) {
     $stream = $1;
-  } else { # some kind of URL
+  } else {                                                  # some kind of URL
     use LWP::Simple;
     $stream = get($self->{url}) || die "XTM::XML: Unable to load '$self->{url}'\n";
     elog ('XTM::XML', 5, "synced in stream", \$stream);
   }
-  use XTM::XML::Latin1Parser;
-  my $grove_builder = XTM::XML::Latin1Parser->new;
-  elog ('XTM::XML', 5, '   start parse');
-  my $parser = XML::Parser::PerlSAX->new ( Handler => $grove_builder );
-  my $grove;
-  $grove  = $parser->parse ( Source => { String => $stream,
-                                         Encoding => 'ISO-8859-1' } );
-  elog ('XTM::XML', 5, '   end parse');
-  use Data::Grove::Visitor;
-  my $tm = new XTM::Memory;
-  use XTM::XML::Grove2TM;
+
+  my $builder = new XTM::XML::MemoryBuilder (tm            => new XTM::Memory,
+#					     auto_complete => $self->{auto_complete}
+					    );
+  my $parser  = XML::SAX::ParserFactory->parser(Handler          => $builder,
+#						RequiredFeatures => {
+#								     'http://xml.org/sax/features/validation' => 1,
+#								    }
+);
 # this is to silence Perl in -w context: I use undef values sometimes in expressions and I'm happy with it
   use Carp ();
   local $SIG{__WARN__} = sub {};
-##  $XTM::Log::loglevel = 5;
-  elog ('XTM::XML', 5, '   begin grove: ');
-  $grove->accept_name (XTM::XML::Grove2TM->new, $tm);
-  elog ('XTM::XML', 5, '   sync in tm: ', $tm);
-  return $tm;
+
+  $parser->parse_string($stream);
+
+  if ($self->{auto_complete}) {
+
+#print "topics: ", join ('\n', @{$builder->{tm}->topics()}), "\n";
+#  use Data::Dumper;
+#print Dumper $builder->{tm};
+
+    foreach my $t (map {$builder->{tm}->topic($_)} @{$builder->{tm}->topics}) {
+#print "checking out ", $t->id, "\n";
+      push @{$builder->{mentioned}}, @{$t->connected};
+      push @{$builder->{defined}},   $t->id;
+    }
+#print "defined: ", join ('\n', @{$builder->{defined}}), "\n";
+    foreach my $a (map {$builder->{tm}->association($_)} @{$builder->{tm}->associations}) {
+      push @{$builder->{mentioned}}, @{$a->connected};
+    }
+    foreach my $href (@{$builder->{mentioned}}) {
+      use URI;
+      my $u = new URI ($href);
+      next if $u->scheme; # external
+      next if $builder->{tm}->is_topic ($u->fragment);
+      
+      $builder->{tm}->add (new XTM::topic (id => $u->fragment, populate => \&XTM::topic::default_populate))
+    }
+  }
+
+  return $builder->{tm};
 }
 
 =pod
 
-=item C<sync_out>
+=item I<sync_out>
 
 is currently not implemented.
 
@@ -232,7 +262,7 @@ L<XTM>
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
  
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
@@ -242,4 +272,3 @@ and/or modify it under the same terms as Perl itself.
 1;
 
 __END__
-

@@ -1,5 +1,25 @@
 Revision history for Perl extension XTM.
 
+0.26  Mon Dec 31 21:49:37 EST 2001
+	- add xml output serialization for (most) classes
+	- revamped XML::ATM into XML::AsTMa, XML::ATM is not distributed any more
+	- added astma2xtm.pl into bin/ (converter)
+	- fixed some bugs in XTM::XML
+	- added connected methods to topic and association to return all topic refs mentioned there
+	- added test for topic IDs in XTM::topic.pm (experimental), have to be valid XML identifiers
+	- started to move to Test::More for testing
+	- added bin/prettifyxtm.pl
+	- fixed unclean code in XTM::topic::has_instanceOf, checking for URIs now
+	- moved XML parsing to XML::LibXML::SAX using the XML::SAX factory
+	- moved most testing to Test::More, added numerous tests
+	- added population mechanism into XTM::topic to load default values
+	- added auto_complete parameter to all XTM::IO subclasses to control auto_completion, default is 1
+	- updated README to reflect Perl version 5.6.1
+	- added support rt.cpan.org to README 
+	- added 'stats' command to xtm.pl
+	- added commands 'topics' and 'assocs' to xtm.pl
+	- modified URIs handling in xtm.pl: URIs without a scheme will default as file: URIs
+
 0.25  Mon Dec 17 18:06:24 EST 2001
 	- added statistics to info() in XTM
 	- added clusters() in XTM

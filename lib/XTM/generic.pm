@@ -8,9 +8,10 @@ require AutoLoader;
 
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw( AUTOLOAD );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 use XTM::Log;
+use XTM::Namespaces;
 
 =pod
 
@@ -117,6 +118,14 @@ sub undefine {
   foreach my $c (@_) {
     delete $self->{$c};
   }
+}
+
+=pod
+
+=cut
+
+sub xml {
+  die "XTM::generic: unimplemented feature 'XML serialisation of ".ref(shift)."'";
 }
 
 =pod

@@ -1,13 +1,14 @@
 # -*-perl-*-
 use strict;
-use Test;
+use Test::More;
 BEGIN { plan tests => 19 }
  
 use XTM;
 use XTM::XML;
 use Data::Dumper;
  
-my $tm = new XTM (tie => new XTM::XML (url => "file:maps/test.xtm"));
+my $tm = new XTM (tie => new XTM::XML (url => "file:maps/test.xtm",
+				       auto_complete => 0));
 
 my @all = ('informational', 'warnings', 'errors', 'statistics');
 foreach (@all) {
@@ -34,10 +35,13 @@ ok ($info->{informational}->{last_mod} == $info->{informational}->{last_syncin})
 ok ($info->{informational}->{nr_topics} == @{$tm->topics()});
 ok ($info->{informational}->{nr_assocs} == @{$tm->associations()});
 
-ok (grep (/^t-topic6$/, @{$info->{warnings}->{no_baseName}}));
-ok (grep (/^t-topic6$/, @{$info->{warnings}->{not_used}}));
+is (grep (/^t-topic6$/, @{$info->{warnings}->{no_baseName}}), 1, 'no baseName');
+is (grep (/^t-topic6$/, @{$info->{warnings}->{not_used}}),    1, 'not used');
 
-ok (grep (/^scope-dope$/, @{$info->{errors}->{undefined_topics}}));
+is (grep (/^scope-dope$/, @{$info->{errors}->{undefined_topics}}), 1, 'undefined topics');
+
+#print Dumper $info;
+#exit;
 
 # check clustering
 my $clusters = $tm->clusters();

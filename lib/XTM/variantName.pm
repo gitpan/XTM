@@ -12,7 +12,7 @@ use XTM::resourceData;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 =pod
 
@@ -27,6 +27,19 @@ XTM::variantName - trivial class definition
 =head1 DESCRIPTION
 
 Generic container for accessor functions.
+
+=cut
+
+sub xml {
+  my $self   = shift;
+  my $writer = shift;
+
+  $writer->startTag ('variantName');
+  $self->resource->xml ($writer);
+  $writer->endTag ('variantName');
+};
+
+=pod
 
 =head1 SEE ALSO
 

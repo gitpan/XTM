@@ -1,10 +1,14 @@
 package XTM::base;
 
+use strict;
+use vars qw($VERSION);
+$VERSION = '0.26';
+
 =pod
 
 =head1 NAME
 
-XTM::base - Topic Map, base distribution
+XTM - Topic Map, base distribution
 
 =head1 SYNOPSIS
 
@@ -43,6 +47,14 @@ Following programs come with this distribution:
 
 A simple text interface to load & query topic maps locally.
 
+=item L<astmaxtm>.pl
+
+An AsTMa= to XTM converter.
+
+=item L<prettify>.pl
+
+A filter which formats any incoming XTM stream into a nested XML document.
+
 =back
 
 =head1 PACKAGES
@@ -63,15 +75,21 @@ in-memory representation of a map
 
 PSI definitions
 
+=item L<XTM::IO>
+
+Abstract class
+
+=item L<XTM::AsTMa>
+
+AsTMa adapter, this allows you to bind maps to an external AsTMa instance
+
 =item L<XTM::XML>
 
-XML parser
+XML adapter, this allows to to bind maps to an external XTM document
 
-=item L<XTM::XML::Latin1Parser>
+=item L<XTM::XML::MemoryBuilder>
 
-=item L<XTM::XML::UTF8>
-
-=item L<XTM::XML::Grove2TM>
+SAX filter to create in-memory representation of a TM
 
 =item L<XTM::Log>
 
@@ -157,7 +175,7 @@ generic class definition
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
  
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

@@ -10,7 +10,7 @@ use XTM::generic;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 =pod
 
@@ -25,6 +25,21 @@ XTM::mergeMap - trivial class definition
 =head1 DESCRIPTION
 
 Generic container for accessor functions.
+
+=cut
+
+sub xml {
+  my $self = shift;
+  my $writer = shift;
+
+  $writer->startTag ('mergeMap', [ $XTM::Namespaces::xlink_ns, 'href'] => $self->href);
+  foreach my $r (@{$self->references}) {
+    $r->xml ($writer);
+  }
+  $writer->endTag ('mergeMap');
+}
+
+=pod
 
 =head1 SEE ALSO
 

@@ -10,7 +10,7 @@ use XTM::generic;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 =pod
 
@@ -27,6 +27,17 @@ XTM::topicRef - trivial class definition
 Generic container for accessor functions.
 
 =head1 SEE ALSO
+
+=cut
+
+sub xml {
+  my $self   = shift;
+  my $writer = shift;
+
+  $writer->emptyTag ('topicRef', [ $XTM::Namespaces::xlink_ns, 'href'] => $self->href);
+}
+
+=pod
 
 L<XTM>
 

@@ -12,7 +12,7 @@ use XTM::baseNameString;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 =pod
 
@@ -27,6 +27,23 @@ XTM::baseName - trivial class definition
 =head1 DESCRIPTION
 
 Generic container for accessor functions.
+
+=cut
+
+sub xml {
+  my $self   = shift;
+  my $writer = shift;
+
+  $writer->startTag ('baseName');
+  $self->scope->xml ($writer) if $self->scope->references;
+  $self->baseNameString->xml ($writer);
+#  foreach my $v ($self->variants ? @{$self->variants} : ()) {
+#     $v->xml ($writer);
+#  }
+  $writer->endTag ('baseName');
+};
+
+=pod
 
 =head1 SEE ALSO
 

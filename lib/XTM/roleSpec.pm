@@ -13,7 +13,7 @@ use XTM::subjectIndicatorRef;
 
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 =pod
 
@@ -28,6 +28,19 @@ XTM::roleSpec - trivial class definition
 =head1 DESCRIPTION
 
 Generic container for accessor functions.
+
+=cut
+
+sub xml {
+  my $self = shift;
+  my $writer = shift;
+
+  $writer->startTag ('roleSpec');
+  $self->reference->xml ($writer);
+  $writer->endTag ('roleSpec');
+}
+
+=pod
 
 =head1 SEE ALSO
 

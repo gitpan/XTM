@@ -253,9 +253,9 @@ sub _assert_atm {
   elog ('XTM::Virtual', 3, "_assert atm for '$url', '$key'");
   return $cache{$key} if staleness ($key) <= 0;
 
-  use XTM::ATM;
+  use XTM::AsTMa;
   elog ('XTM::Virtual', 3, "  ATM loading via $url");
-  return $cache{$key} = new XTM (tie         => new XTM::ATM (url => $url),
+  return $cache{$key} = new XTM (tie         => new XTM::AsTMa (url => $url),
 				 last_mod    => time,
 				 last_syncin => time);
 }
@@ -297,14 +297,16 @@ sub _assert_atom {
   return $cache{$key} if staleness ($key) <= 0;
 
   use URI;
-  my $uri = new URI ($expr); 
+  my $uri    = new URI ($expr);
+  $uri->scheme ('file') unless $uri->scheme; # default is 'file:'
   my $scheme = $uri->scheme;
-  elog ('XTM::Virtual', 3, "  loading from $uri, (".$uri->scheme.") base '$urlbase' path: ".$uri->path);
+
+  elog ('XTM::Virtual', 3, "  loading from $uri, ($scheme) base '$urlbase' path: ".$uri->path);
 
   if (grep (/$scheme/, qw(http ftp file))) {
     my $url = $urlbase =~ /^$scheme/ ?
       scalar URI->new_abs ($uri->path, $urlbase) :
-	$expr;
+      $uri->as_string;
     elog ('XTM::Virtual', 4, "  loading from $url");
     return $url =~ /\.atm$/i ? _assert_atm ($url) : _assert_xml($url);
   } elsif ($uri->scheme eq 'tm') {

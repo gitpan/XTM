@@ -4,7 +4,7 @@ use strict;
 no strict ('subs');
 use vars qw($VERSION);
 
-$VERSION = "0.4";
+$VERSION = "0.5";
 
 =pod
 
@@ -288,8 +288,10 @@ sub ExecuteCommand {
     print $OUT Dumper $tm->info ('warnings')->{warnings} if $tm && defined $tm->memory;
   } elsif (/^errors/) {
     print $OUT Dumper $tm->info ('errors')->{errors} if $tm && defined $tm->memory;
+  } elsif (/^stats/) {
+    print $OUT Dumper $tm->info ('statistics')->{statistics} if $tm && defined $tm->memory;
 ##-- finding -------------------------------------------------
-  } elsif (/^find\s+topic(\s+(.+?)\s*)?$/) {
+  } elsif (/^find\s+topic(\s+(.+?)\s*)?$/ || /^topics$/) {
     my $query = $2 if $1;
     eval {
       my $ts = $tm->topics ($query);
@@ -300,7 +302,7 @@ sub ExecuteCommand {
     }; if ($@) {
       print $OUT "xtm: Exception: $@";
     }
-  } elsif (/^find\s+assoc(\s+(.+?)\s*)?$/) {
+  } elsif (/^find\s+assoc(\s+(.+?)\s*)?$/ || /^assocs$/) {
     my $query = $2 if $1;
     eval {
       my $as = $tm->associations ($query);
@@ -338,12 +340,17 @@ load  <url>                          loading the topic map from the <url>
 topic <topic-id>                     shows some information about a particular topic
 assoc <assoc-id>                     shows some information about a particular association
 find topic  <query>                  finds all topics according to <query> (see XTM::Memory)
+find topic                           finds all topics
+topics                               finds all topics
 find assoc  <query>                  finds all assocs according to <query> (see XTM::Memory)
+find assoc                           finds all assocs
+assocs                               finds all assocs
 scope [ <scope-tid> ]                show/set scope
 
-info                                 get some statistical information about the map
+info                                 get some overview information about the map
 warn                                 find unused topics....
 errors                               find undefined topics...
+stats                                show some more statistical information
 
 dump                                 dumps out the whole map (can be huge!)
 

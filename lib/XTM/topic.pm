@@ -6,10 +6,13 @@ use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 require Exporter;
 require AutoLoader;
 
+use Data::Dumper;
+
 use XTM::generic;
 use XTM::instanceOf;
 use XTM::baseName;
 use XTM::scope;
+use XTM::PSI;
 use XTM::subjectIdentity;
 use XTM::occurrence;
 use XTM::topicRef;
@@ -23,9 +26,11 @@ use XTM::baseNameString;
 
 use XTM::Log ('elog');
 
+use URI;
+
 @ISA = qw(Exporter AutoLoader XTM::generic);
 @EXPORT = qw( );
-$VERSION = '0.05';
+$VERSION = '0.10';
 
 =pod
 
@@ -42,7 +47,14 @@ XTM::topic - Topic Map management, Topic
   print join (",", @{$t->occurrences()});
   print "bliss and happiness" if $t->has_instanceOf ('t-billionair');
 
-  # see XTM::generic for more
+  # now this time I am providing the id myself
+  my $t2 = new XTM::topic (id => '1234');
+
+  # there is also a cheap way to populate the topic with a default
+  my $t3 = new XTM::topic (id => '1234', populate => XTM::topic::default);
+
+
+  # see XTM::generic for more methods
 
 =head1 DESCRIPTION
 
@@ -67,16 +79,38 @@ The constructor expects a hash with following (optional) fields:
 my $topic_cntr = 0;
 
 sub new {
-  my $class = shift;
-  my %pars  = @_;
-  elog ($class, 5, "new '$pars{id}'");
+  my $class   = shift;
+  my %options = @_;
+  elog ($class, 5, "new '$options{id}'");
 
-  my $self  = bless { id          => $pars{id} || sprintf ("t-%10.10d", $topic_cntr++),
+  elog ($class, 1, "topic ID '$options{id}' might make problems with XML processors")
+    unless $options{id} =~ /^[\w_:][\w\d\-\.]*/ && $options{id} !~ /^xml:/;  # Professional XML, page 33
+
+
+  my $self  = bless { id          => $options{id} || sprintf ("t-%10.10d", $topic_cntr++),
 		      instanceOfs => [],
 		      baseNames   => [],
 		      occurrences => []
 		    }, $class;
+  &{$options{populate}} ($self)
+      if (defined $options{populate} && ref ($options{populate}) eq 'CODE');
   return $self;
+}
+
+
+# this is a simple routine (NO method) to fill a basename with a default scope
+sub default_populate {
+  my $t = shift;
+
+  my $name = $t->id;  # default base name
+  $name =~ s/-/ /g;
+  my $b = new XTM::baseName ();
+  $b->add_baseNameString (new XTM::baseNameString (string => $name));
+  $b->add_scope          (new XTM::scope());
+  $b->scope->add_reference_s (new XTM::topicRef (href => $XTM::PSI::xtm{universal_scope}) );
+  $t->add__s ($b);
+  my $i = new XTM::instanceOf (reference => new XTM::topicRef (href => $XTM::PSI::xtm{topic}));
+  $t->add__s ($i);
 }
 
 =pod
@@ -130,7 +164,8 @@ sub has_instanceOf {
   my $self = shift;
   my $ioid = shift;
 
-  if ($ioid =~ /^urn:/) { # absolute
+  my $u = new URI ($ioid);
+  if ($u->scheme) { # absolute
     foreach my $i (@{$self->{instanceOfs}}) {
       return 1 if $i->{reference}->{href} eq $ioid;
     }
@@ -140,6 +175,78 @@ sub has_instanceOf {
     }
   }
   return 0;
+}
+
+=pod
+
+=item I<connected>
+
+returns a list reference of all topic references mentioned in this topic. These
+references might be 'internal' or 'external' ones.
+
+Example:
+
+   foreach (@{$t->connected}) {
+     print "$t->id mentions $_\n";
+   }
+
+=cut
+
+sub connected {
+  my $self = shift;
+  my @connected = ();
+
+  foreach my $i (@{$self->instanceOfs}) {
+     push @connected, $i->reference->href;
+  }
+  foreach my $b (@{$self->baseNames}) {
+     foreach my $r (@{$b->scope->references}) {
+        push @connected, $r->href;
+     }
+  }
+  foreach my $o (@{$self->occurrences}) {
+     foreach my $r (@{$o->scope->references}) {
+        push @connected, $r->href;
+     }
+     push @connected, $o->instanceOf->reference->href;
+  }
+  if ($self->subjectIdentity) {
+     push @connected, $self->subjectIdentity->href;
+  }
+  # TOBEDONE
+  # variants
+  return \@connected;
+}
+
+=pod
+
+=item I<xml>
+
+returns an XML representation of the topic.
+
+Example:
+   $xmlwriter = new XML::Writer ...
+   ...
+   $t->xml($xmlwriter); # outputs all onto $xmlwriter
+
+=cut
+
+sub xml {
+  my $self   = shift;
+  my $writer = shift;
+
+  $writer->startTag ('topic', id => $self->{id});
+  foreach my $t (@{$self->instanceOfs}) {
+     $t->xml ($writer);
+  }
+  foreach my $b (@{$self->baseNames}) {
+     $b->xml ($writer);
+  }
+  foreach my $o (@{$self->occurrences}) {
+     $o->xml ($writer);
+  }
+  $self->subjectIdentity->xml ($writer) if $self->subjectIdentity;
+  $writer->endTag ('topic');
 }
 
 =pod

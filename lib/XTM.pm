@@ -9,10 +9,12 @@ require AutoLoader;
 @ISA = qw(Exporter AutoLoader);
 @EXPORT = qw();
 @EXPORT_OK = qw( );
-$VERSION = '0.25';
+$VERSION = '0.26';
 
 use XTM::Memory;
 use XTM::Log ('elog');
+
+use URI;
 
 =pod
 
@@ -149,7 +151,7 @@ sub memory {
 
 returns some meta/statistical information about the map in form of
 a hash reference containing one or more of the following components (you might
-want to discover the return value with Data::Dumper):
+want to discover the return values with Data::Dumper):
 
 =over
 
@@ -238,7 +240,7 @@ sub _usage {
     # instanceOfs
     foreach my $i (@{$self->topic($tid)->instanceOfs}) {
       $usage->{as_instanceOf}->{$1}++ if $i->reference->href =~ /^\#(.+)/;
-      $usage->{as_instance}->{$tid}++;
+      $usage->{as_instance}->{$tid}++ unless $i->reference->href eq $XTM::PSI::xtm{topic};
     }
     # scopes
     foreach my $b (@{$self->topic($tid)->baseNames}) { 
@@ -279,8 +281,10 @@ sub _usage {
   }
   return $usage;
 }
-##      use Data::Dumper;
+      use Data::Dumper;
 ##      print STDERR Dumper \%as_instanceOf, \%as_scope, \%as_member, \%as_role;
+##print Dumper $usage;
+
       $info->{$w}->{'not_used'} = [ 
          grep (! ( $usage->{as_instanceOf}->{$_} || 
 		   $usage->{as_instance}->{$_}   || 
@@ -713,7 +717,7 @@ L<XTM>
 
 =head1 AUTHOR INFORMATION
 
-Copyright 2001, Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 2001, 2002, Robert Barta <rho@telecoma.net>, All rights reserved.
  
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

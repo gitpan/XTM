@@ -13,18 +13,22 @@ make
 make test
 make install
 
-You will need perl version 5.005 or better to install these modules.
+You will need perl version 5.6.1 or better to install these modules.
 
 You will find an overview in XTM::base, further documentation is embedded 
 in the individual modules.
 
-See
+Support
+-------
 
-   http://topicmaps.bond.edu.au/
+You can either
 
-for up-to-date information about the package.
+  - mail to the author (rho@telecoma.net)
+  - discuss this in one of the topicmap mailing lists, or
+  - create an bug entry in rt.cpan.org
 
-Copyright 2001 Robert Barta
+
+Copyright 2001,2002 Robert Barta, rho@telecoma.net
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

@@ -98,6 +98,19 @@ sub new {
 
 =over
 
+=item I<id>
+
+Returns the id of the topic map. This can be empty it it has never been provided.
+
+=cut
+
+sub id {
+  my $self = shift;
+  return $self->{id};
+}
+
+=pod
+
 =item I<add> 
 
 Adds a (list of) topics, associations and/or maps to the map object with the following rules:
@@ -276,8 +289,6 @@ sub _passes_filter {
   } elsif ($f =~ /^id\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
     return $id =~ /$regexp/i;
-  } elsif ($f =~ /^id\s+eq\s+\'(.+)\'$/) {
-    return $id eq $1;
   } elsif ($f =~ /^text\s+regexps\s+\/(.+)\/$/) {
     my $regexp = $1;
     foreach my $b (@{$self->{topics}->{$id}->baseNames}) {  # only one matches => ok
@@ -288,6 +299,8 @@ sub _passes_filter {
       return 1 if $o->resource->isa ('XTM::resourceRef')  && $o->resource->href =~ /$regexp/i;
       return 1 if $o->resource->isa ('XTM::resourceData') && $o->resource->data =~ /$regexp/i;
     }
+  } elsif ($f =~ /^id\s+eq\s+\'(.+)\'$/) {
+    return $id eq $1;
   } elsif ($f =~ /^assocs(\s+via\s+(\S+))?(\s+as\s+(\S+))?(\s+with\s+(\S+))?(\s+transitively)?$/) {
     my $via   = $1 ? $2 : '';
     my $role  = $3 ? "#$4" : undef;
