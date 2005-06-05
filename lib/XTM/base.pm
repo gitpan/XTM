@@ -1,10 +1,10 @@
 package XTM::base;
 
-# $Id: base.pm,v 1.3 2004/02/29 06:33:20 az Exp $ 
+# $Id: base.pm,v 1.5 2005/06/05 09:22:43 rho Exp $ 
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.36';
+$VERSION = '0.37';
 
 =pod
 
@@ -181,7 +181,7 @@ generic class definition
 
 =head1 AUTHOR INFORMATION
 
-Copyright 200[1-2], Robert Barta <rho@telecoma.net>, All rights reserved.
+Copyright 200[1-25], Robert Barta <rho@telecoma.net>, All rights reserved.
 
 This library is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.

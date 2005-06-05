@@ -8,6 +8,7 @@ lib/XTM/AsTMa.pm
 lib/XTM/AsTMa/MemoryBuilder.pm
 lib/XTM/AsTMa/Parser.pm
 lib/XTM/AsTMa/CParser.pm
+lib/XTM/AsTMa/Converter.pm
 lib/XTM/LTM.pm
 lib/XTM/LTM/MemoryBuilder.pm
 lib/XTM/LTM/Parser.pm

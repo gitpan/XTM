@@ -1,5 +1,8 @@
 Revision history for Perl extension XTM.
 
+0.37 rho Sun Jun  5 19:23:20 EST 2005
+	- added XTM::AsTMa::Converter to do AsTMa= -> XTM conversion
+
 0.36 rho Wed Mar  9 19:29:21 EST 2005
 	- added patch from Niko Tyni <ntyni@iki.fi> to make it work under Perl 5.8.4 (MUCHAS GRACIAS)
 	- removed situations which created warnings under Perl 5.8
